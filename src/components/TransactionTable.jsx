@@ -1,3 +1,4 @@
+// src/components/TransactionTable.jsx
 import { useCallback, useMemo } from 'preact/hooks';
 import { useTransactions } from '../context/TransactionsContext';
 import { ITEM_OPTIONS } from '../utils/constants';
@@ -9,7 +10,26 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 export default function TransactionTable() {
   const { transactions, updateTransaction, removeTransaction, addTransaction } = useTransactions();
 
-  // ... (mantener la lógica igual)
+  console.log('TransactionTable - transacciones actuales:', transactions);
+
+  const handleItemChange = useCallback((index, value) => {
+    console.log('Cambiando item de transacción:', index, 'a:', value);
+    updateTransaction(index, { itemAsignado: value });
+  }, [updateTransaction]);
+
+  const handleRemoveTransaction = useCallback((index) => {
+    if (confirm('¿Estás seguro de que quieres eliminar esta transacción?')) {
+      removeTransaction(index);
+    }
+  }, [removeTransaction]);
+
+  const formattedTransactions = useMemo(() => {
+    console.log('Formateando transacciones para tabla');
+    return transactions.map(transaction => ({
+      ...transaction,
+      formattedImporte: formatCurrency(transaction.importe)
+    }));
+  }, [transactions]);
 
   if (transactions.length === 0) {
     return (
@@ -29,7 +49,7 @@ export default function TransactionTable() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Transacciones</CardTitle>
+        <CardTitle>Transacciones ({transactions.length})</CardTitle>
         <CardDescription>
           Gestiona y asigna items a tus transacciones financieras
         </CardDescription>

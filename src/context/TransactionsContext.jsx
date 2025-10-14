@@ -6,7 +6,7 @@ import { TRANSACTION_TEMPLATE } from '../utils/constants';
 const TransactionsContext = createContext();
 
 export function TransactionsProvider({ children }) {
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactionsState] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -14,17 +14,14 @@ export function TransactionsProvider({ children }) {
   const validateTransaction = useCallback((transaction) => {
     const errors = [];
     
-    // Validar fecha (formato DD/MM/AAAA)
     if (!/^\d{2}\/\d{2}\/\d{4}$/.test(transaction.fecha)) {
       errors.push('Formato de fecha inválido');
     }
     
-    // Validar importe
     if (isNaN(transaction.importe)) {
       errors.push('Importe debe ser un número válido');
     }
     
-    // Validar saldo
     if (isNaN(transaction.saldo)) {
       errors.push('Saldo debe ser un número válido');
     }
@@ -33,15 +30,16 @@ export function TransactionsProvider({ children }) {
   }, []);
 
   const addTransaction = useCallback(() => {
-    setTransactions(prev => [...prev, { ...TRANSACTION_TEMPLATE }]);
+    console.log('Agregando nueva transacción');
+    setTransactionsState(prev => [...prev, { ...TRANSACTION_TEMPLATE }]);
   }, []);
 
   const updateTransaction = useCallback((index, updates) => {
-    setTransactions(prev => {
+    console.log('Actualizando transacción:', index, updates);
+    setTransactionsState(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], ...updates };
       
-      // Validar la transacción actualizada
       const errors = validateTransaction(updated[index]);
       if (errors.length > 0) {
         console.warn('Errores de validación:', errors);
@@ -52,10 +50,13 @@ export function TransactionsProvider({ children }) {
   }, [validateTransaction]);
 
   const removeTransaction = useCallback((index) => {
-    setTransactions(prev => prev.filter((_, i) => i !== index));
+    console.log('Eliminando transacción:', index);
+    setTransactionsState(prev => prev.filter((_, i) => i !== index));
   }, []);
 
-  const setTransactionsWithValidation = useCallback((newTransactions) => {
+  const setTransactions = useCallback((newTransactions) => {
+    console.log('Estableciendo transacciones:', newTransactions);
+    
     // Validar todas las transacciones
     const validationResults = newTransactions.map(validateTransaction);
     const hasErrors = validationResults.some(errors => errors.length > 0);
@@ -64,7 +65,7 @@ export function TransactionsProvider({ children }) {
       console.warn('Algunas transacciones tienen errores de validación');
     }
     
-    setTransactions(newTransactions);
+    setTransactionsState(newTransactions);
   }, [validateTransaction]);
 
   const value = {
@@ -76,9 +77,8 @@ export function TransactionsProvider({ children }) {
     addTransaction,
     updateTransaction,
     removeTransaction,
-    setTransactions: setTransactionsWithValidation
+    setTransactions // Cambiado de setTransactionsWithValidation a setTransactions
   };
-  
 
   return (
     <TransactionsContext.Provider value={value}>

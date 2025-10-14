@@ -1,3 +1,4 @@
+// src/components/FileUpload.jsx
 import { useRef } from 'preact/hooks';
 import { useTransactions } from '../context/TransactionsContext';
 import { Button } from './ui/Button';
@@ -31,36 +32,53 @@ export default function FileUpload() {
   };
 
   const parseCSV = (csvContent) => {
+    console.log('Iniciando parseo de CSV...');
     const lines = csvContent.split('\n').filter(line => line.trim() !== '');
+    
+    console.log('Número de líneas:', lines.length);
     
     if (lines.length < 2) {
       throw new Error('El archivo CSV está vacío o no tiene el formato correcto');
     }
     
     const headers = lines[0].split(';').map(header => header.trim());
+    console.log('Headers encontrados:', headers);
+    
     const transactions = [];
     
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
+      console.log(`Procesando línea ${i}:`, line);
+      
       const values = parseCSVLine(line);
+      console.log(`Valores parseados línea ${i}:`, values);
       
-      const transaction = {
-        fecha: values[0] || '',
-        categoria: values[2] || '',
-        descripcion: values[3] || '',
-        importe: parseFloat(values[4]?.replace(',', '.') || 0),
-        saldo: parseFloat(values[5]?.replace(',', '.') || 0),
-        itemAsignado: ''
-      };
-      
-      transactions.push(transaction);
+      // Asegurarnos de que tenemos suficientes valores
+      if (values.length >= 6) {
+        const transaction = {
+          fecha: values[0]?.trim() || '',
+          categoria: values[2]?.trim() || '',
+          descripcion: values[3]?.trim() || '',
+          importe: parseFloat(values[4]?.replace(',', '.') || 0),
+          saldo: parseFloat(values[5]?.replace(',', '.') || 0),
+          itemAsignado: ''
+        };
+        
+        console.log(`Transacción ${i} creada:`, transaction);
+        transactions.push(transaction);
+      } else {
+        console.warn(`Línea ${i} ignorada - no tiene suficientes columnas:`, values);
+      }
     }
     
+    console.log('Total de transacciones parseadas:', transactions.length);
     return transactions;
   };
 
   const handleFile = (file) => {
     if (!file) return;
+    
+    console.log('Archivo seleccionado:', file.name, file.type, file.size);
     
     if (!file.name.toLowerCase().endsWith('.csv')) {
       setError('Por favor, selecciona un archivo CSV');
@@ -74,9 +92,19 @@ export default function FileUpload() {
     reader.onload = (e) => {
       try {
         const content = e.target.result;
+        console.log('Contenido del archivo (primeros 500 chars):', content.substring(0, 500));
+        
         const parsedData = parseCSV(content);
-        setTransactions(parsedData);
+        console.log('Datos parseados finales:', parsedData);
+        
+        if (parsedData.length > 0) {
+          setTransactions(parsedData);
+          console.log('Transacciones establecidas en el contexto');
+        } else {
+          setError('No se encontraron transacciones válidas en el archivo');
+        }
       } catch (error) {
+        console.error('Error al procesar el archivo:', error);
         setError('Error al procesar el archivo: ' + error.message);
       } finally {
         setLoading(false);
@@ -84,6 +112,7 @@ export default function FileUpload() {
     };
     
     reader.onerror = () => {
+      console.error('Error al leer el archivo');
       setError('Error al leer el archivo');
       setLoading(false);
     };
@@ -93,16 +122,19 @@ export default function FileUpload() {
 
   const handleFileInput = (e) => {
     const file = e.target.files[0];
+    console.log('Input de archivo cambiado:', file);
     handleFile(file);
-    // Reset input para permitir cargar el mismo archivo otra vez
     e.target.value = '';
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
+    console.log('Archivo soltado');
     dropAreaRef.current.classList.remove('border-primary/50', 'bg-muted/50');
     
     const files = e.dataTransfer.files;
+    console.log('Archivos en drop:', files);
+    
     if (files.length > 0) {
       handleFile(files[0]);
     }
