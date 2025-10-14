@@ -78,6 +78,7 @@ export function TransactionsProvider({ children }) {
     removeTransaction,
     setTransactions: setTransactionsWithValidation
   };
+  
 
   return (
     <TransactionsContext.Provider value={value}>

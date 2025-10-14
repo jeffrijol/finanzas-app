@@ -1,16 +1,68 @@
+---
+// src/layouts/Layout.astro
+import '../styles/globals.css';
+---
+
 <!DOCTYPE html>
 <html lang="es">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión Financiera Avance</title>
-    <style>
-      @tailwind base;
-      @tailwind components;
-      @tailwind utilities;
-    </style>
+    <title>Gestión Financiera Personal</title>
   </head>
-  <body class="bg-gray-50 min-h-screen">
-    <slot />
+  <body class="min-h-screen bg-background">
+    <div class="flex min-h-screen">
+      <!-- Sidebar -->
+      <div class="hidden w-64 border-r bg-muted/40 lg:block">
+        <div class="flex h-full max-h-screen flex-col gap-2">
+          <div class="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
+            <a href="/" class="flex items-center gap-2 font-semibold">
+              <span class="text-xl">💰 Finanzas</span>
+            </a>
+          </div>
+          <div class="flex-1">
+            <nav class="grid items-start px-2 text-sm font-medium lg:px-4">
+              <a
+                href="/"
+                class="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                Principal
+              </a>
+              <a
+                href="/reports"
+                class="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Reportes
+              </a>
+              <a
+                href="/otros"
+                class="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                </svg>
+                Otros
+              </a>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main content -->
+      <div class="flex-1 flex flex-col">
+        <header class="flex h-14 items-center gap-4 border-b bg-muted/40 px-6 lg:h-[60px]">
+          <h1 class="text-lg font-semibold">Gestión Financiera Personal</h1>
+        </header>
+        <main class="flex-1 p-6">
+          <slot />
+        </main>
+      </div>
+    </div>
   </body>
 </html>
