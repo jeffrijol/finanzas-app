@@ -31,6 +31,15 @@ export default function TransactionTable() {
     }));
   }, [transactions]);
 
+  // Calcular estadísticas
+  const stats = useMemo(() => {
+    const withItems = transactions.filter(t => t.itemAsignado).length;
+    const withoutItems = transactions.length - withItems;
+    const totalImporte = transactions.reduce((sum, t) => sum + t.importe, 0);
+    
+    return { withItems, withoutItems, totalImporte };
+  }, [transactions]);
+
   if (transactions.length === 0) {
     return (
       <Card>
@@ -51,7 +60,7 @@ export default function TransactionTable() {
       <CardHeader>
         <CardTitle>Transacciones ({transactions.length})</CardTitle>
         <CardDescription>
-          Gestiona y asigna items a tus transacciones financieras
+          {stats.withItems} con ítem asignado • {stats.withoutItems} sin asignar • Total: {formatCurrency(stats.totalImporte)}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -68,10 +77,12 @@ export default function TransactionTable() {
           </TableHeader>
           <TableBody>
             {formattedTransactions.map((transaction, index) => (
-              <TableRow key={index}>
+              <TableRow key={index} className={!transaction.itemAsignado ? 'bg-yellow-50' : ''}>
                 <TableCell className="font-medium">{transaction.fecha}</TableCell>
                 <TableCell>{transaction.categoria}</TableCell>
-                <TableCell className="max-w-xs truncate">{transaction.descripcion}</TableCell>
+                <TableCell className="max-w-xs truncate" title={transaction.descripcion}>
+                  {transaction.descripcion}
+                </TableCell>
                 <TableCell className={`text-right font-medium ${
                   transaction.importe < 0 ? 'text-destructive' : 'text-green-600'
                 }`}>
@@ -103,13 +114,17 @@ export default function TransactionTable() {
           </TableBody>
         </Table>
         
-        <div className="mt-4">
+        <div className="mt-4 flex justify-between items-center">
           <Button onClick={addTransaction} variant="outline">
             <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             Agregar Transacción
           </Button>
+          
+          <div className="text-sm text-muted-foreground">
+            Filas amarillas indican transacciones sin ítem asignado
+          </div>
         </div>
       </CardContent>
     </Card>

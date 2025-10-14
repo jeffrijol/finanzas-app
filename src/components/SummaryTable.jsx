@@ -8,8 +8,34 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 export default function SummaryTable() {
   const { transactions } = useTransactions();
 
-  // ... (mantener la lógica igual)
+  const summary = useMemo(() => {
+    console.log('Calculando resumen para transacciones:', transactions);
+    
+    const result = {};
+    
+    // Inicializar todos los ítems con suma 0
+    ITEM_OPTIONS.forEach(item => {
+      result[item] = 0;
+    });
+    
+    // Calcular sumas para transacciones que tienen item asignado
+    transactions.forEach(transaction => {
+      if (transaction.itemAsignado && ITEM_OPTIONS.includes(transaction.itemAsignado)) {
+        result[transaction.itemAsignado] += transaction.importe;
+      }
+    });
+    
+    console.log('Resumen calculado:', result);
+    return result;
+  }, [transactions]);
 
+  const total = useMemo(() => {
+    const totalSum = Object.values(summary).reduce((sum, amount) => sum + amount, 0);
+    console.log('Total calculado:', totalSum);
+    return totalSum;
+  }, [summary]);
+
+  // Mostrar el resumen solo si hay transacciones
   if (transactions.length === 0) {
     return null;
   }
@@ -42,7 +68,7 @@ export default function SummaryTable() {
               </TableRow>
             ))}
             <TableRow className="bg-muted/50 font-semibold">
-              <TableCell>Total</TableCell>
+              <TableCell>Total General</TableCell>
               <TableCell className={`text-right font-medium ${
                 total < 0 ? 'text-destructive' : 'text-green-600'
               }`}>
@@ -51,6 +77,14 @@ export default function SummaryTable() {
             </TableRow>
           </TableBody>
         </Table>
+        
+        {/* Información adicional */}
+        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-blue-800">
+            <strong>Nota:</strong> El resumen solo incluye transacciones que tienen un ítem asignado. 
+            Transacciones sin ítem asignado no se incluyen en el cálculo.
+          </p>
+        </div>
       </CardContent>
     </Card>
   );
