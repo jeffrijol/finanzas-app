@@ -1,0 +1,71 @@
+{
+  "periodo": "Q1 2025",
+  "rango": "Enero - Marzo 2025",
+  "transacciones": [
+    {
+      "id": "q1-001",
+      "fecha": "15/01/2025",
+      "fechaValor": "15/01/2025",
+      "categoria": "Transferencias",
+      "descripcion": "Alquiler Vivienda 1",
+      "importe": 1200.00,
+      "saldo": 15000.00,
+      "itemAsignado": "Vivienda 1"
+    },
+    {
+      "id": "q1-002", 
+      "fecha": "20/01/2025",
+      "fechaValor": "20/01/2025",
+      "categoria": "Recibos",
+      "descripcion": "Mantenimiento comunidad",
+      "importe": -150.00,
+      "saldo": 14850.00,
+      "itemAsignado": "Vivienda 1"
+    },
+    {
+      "id": "q1-003",
+      "fecha": "10/02/2025",
+      "fechaValor": "10/02/2025",
+      "categoria": "Transferencias", 
+      "descripcion": "Alquiler Vivienda 2",
+      "importe": 950.00,
+      "saldo": 15800.00,
+      "itemAsignado": "Vivienda 2"
+    },
+    {
+      "id": "q1-004",
+      "fecha": "15/02/2025",
+      "fechaValor": "15/02/2025",
+      "categoria": "Recibos",
+      "descripcion": "Reparación fontanería",
+      "importe": -320.00, 
+      "saldo": 15480.00,
+      "itemAsignado": "Vivienda 2"
+    },
+    {
+      "id": "q1-005",
+      "fecha": "01/03/2025",
+      "fechaValor": "01/03/2025",
+      "categoria": "Transferencias",
+      "descripcion": "Dividendos sociedad",
+      "importe": 2500.00,
+      "saldo": 17980.00,
+      "itemAsignado": "Sociedad Anonima 1"
+    },
+    {
+      "id": "q1-006",
+      "fecha": "10/03/2025",
+      "fechaValor": "10/03/2025",
+      "categoria": "Recibos",
+      "descripcion": "Gastos administrativos",
+      "importe": -180.00,
+      "saldo": 17800.00,
+      "itemAsignado": "Sociedad Anonima 1"
+    }
+  ],
+  "resumen": {
+    "Vivienda 1": { "ingresos": 1200.00, "gastos": 150.00 },
+    "Vivienda 2": { "ingresos": 950.00, "gastos": 320.00 },
+    "Sociedad Anonima 1": { "ingresos": 2500.00, "gastos": 180.00 }
+  }
+}

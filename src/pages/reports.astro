@@ -1,29 +1,74 @@
 ---
+// src/pages/reportes.astro
 import Layout from '../layouts/Layout.astro';
+import ReportsDashboard from '../components/reports/ReportsDashboard.jsx';
+
+// Interfaz para los módulos JSON
+interface HistoricalModule {
+  default: {
+    periodo: string;
+    rango: string;
+    transacciones: Array<{
+      id?: string;
+      fecha: string;
+      fechaValor: string;
+      categoria: string;
+      descripcion: string;
+      importe: number;
+      saldo: number;
+      itemAsignado: string;
+    }>;
+    resumen?: {
+      [key: string]: {
+        ingresos: number;
+        gastos: number;
+      };
+    };
+  };
+}
+
+// Cargar todos los archivos JSON de la carpeta content dinámicamente
+const historicalDataModules = import.meta.glob<HistoricalModule>('../content/*.json');
+const historicalDataPromises = Object.values(historicalDataModules).map(module => module());
+const historicalDataResults = await Promise.allSettled(historicalDataPromises);
+
+// Filtrar y mapear los datos históricos
+const historicalData = historicalDataResults
+  .filter((result): result is PromiseFulfilledResult<HistoricalModule> => result.status === 'fulfilled')
+  .map(result => result.value.default)
+  .filter(data => data && data.periodo && data.transacciones);
 ---
 
 <Layout>
   <div class="space-y-6">
     <div>
-      <h1 class="text-2xl font-light text-gray-900">Reportes</h1>
-      <p class="text-muted-foreground mt-2">Análisis y reportes financieros detallados</p>
+      <h1 class="text-3xl font-bold">Reportes Financieros</h1>
+      <p class="text-muted-foreground">Análisis visual de ingresos y gastos por período</p>
     </div>
     
-    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-        <h3 class="font-semibold">Reporte Mensual</h3>
-        <p class="text-sm text-muted-foreground mt-2">Próximamente</p>
-      </div>
-      
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-        <h3 class="font-semibold">Análisis por Categoría</h3>
-        <p class="text-sm text-muted-foreground mt-2">Próximamente</p>
-      </div>
-      
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-        <h3 class="font-semibold">Tendencias</h3>
-        <p class="text-sm text-muted-foreground mt-2">Próximamente</p>
-      </div>
-    </div>
+    <ReportsDashboard client:load />
   </div>
+
+  <!-- Inyectar datos históricos en el HTML para que el componente los pueda leer -->
+  <script id="historical-data" type="application/json">
+    {
+      "historicalData": <%= JSON.stringify(historicalData) %>
+    }
+  </script>
+
+  <script>
+    // Función auxiliar para que el componente pueda acceder a los datos
+    window.getHistoricalData = function() {
+      try {
+        const scriptElement = document.getElementById('historical-data');
+        if (scriptElement && scriptElement.textContent) {
+          const data = JSON.parse(scriptElement.textContent);
+          return data.historicalData || [];
+        }
+      } catch (error) {
+        console.error('Error parsing historical data:', error);
+      }
+      return [];
+    };
+  </script>
 </Layout>
