@@ -1,3 +1,4 @@
+// src/components/SummaryTable.jsx
 import { useMemo } from 'preact/hooks';
 import { useTransactions } from '../context/TransactionsContext';
 import { ITEM_OPTIONS } from '../utils/constants';
@@ -8,10 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 export default function SummaryTable() {
   const { transactions } = useTransactions();
 
-  const summary = useMemo(() => {
+  const { summary, hasAssignedItems, assignedItemsCount } = useMemo(() => {
     console.log('Calculando resumen para transacciones:', transactions);
     
     const result = {};
+    let assignedCount = 0;
     
     // Inicializar todos los ítems con suma 0
     ITEM_OPTIONS.forEach(item => {
@@ -22,21 +24,27 @@ export default function SummaryTable() {
     transactions.forEach(transaction => {
       if (transaction.itemAsignado && ITEM_OPTIONS.includes(transaction.itemAsignado)) {
         result[transaction.itemAsignado] += transaction.importe;
+        assignedCount++;
       }
     });
     
-    console.log('Resumen calculado:', result);
-    return result;
+    const hasItems = assignedCount > 0;
+    
+    console.log('Resumen calculado:', result, 'Tiene items asignados:', hasItems);
+    return { 
+      summary: result, 
+      hasAssignedItems: hasItems,
+      assignedItemsCount: assignedCount
+    };
   }, [transactions]);
 
   const total = useMemo(() => {
     const totalSum = Object.values(summary).reduce((sum, amount) => sum + amount, 0);
-    console.log('Total calculado:', totalSum);
     return totalSum;
   }, [summary]);
 
-  // Mostrar el resumen solo si hay transacciones
-  if (transactions.length === 0) {
+  // No mostrar el resumen si no hay transacciones con items asignados
+  if (!hasAssignedItems) {
     return null;
   }
 
@@ -45,7 +53,7 @@ export default function SummaryTable() {
       <CardHeader>
         <CardTitle>Resumen por Item</CardTitle>
         <CardDescription>
-          Resumen financiero organizado por categorías
+          {assignedItemsCount} transacciones asignadas • Total general: {formatCurrency(total)}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -77,14 +85,6 @@ export default function SummaryTable() {
             </TableRow>
           </TableBody>
         </Table>
-        
-        {/* Información adicional */}
-        <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-sm text-blue-800">
-            <strong>Nota:</strong> El resumen solo incluye transacciones que tienen un ítem asignado. 
-            Transacciones sin ítem asignado no se incluyen en el cálculo.
-          </p>
-        </div>
       </CardContent>
     </Card>
   );

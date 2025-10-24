@@ -14,7 +14,7 @@ export function TransactionsProvider({ children }) {
   const validateTransaction = useCallback((transaction) => {
     const errors = [];
     
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(transaction.fecha)) {
+    if (transaction.fecha && !/^\d{2}\/\d{2}\/\d{4}$/.test(transaction.fecha)) {
       errors.push('Formato de fecha inválido');
     }
     
@@ -30,12 +30,10 @@ export function TransactionsProvider({ children }) {
   }, []);
 
   const addTransaction = useCallback(() => {
-    console.log('Agregando nueva transacción');
     setTransactionsState(prev => [...prev, { ...TRANSACTION_TEMPLATE }]);
   }, []);
 
   const updateTransaction = useCallback((index, updates) => {
-    console.log('Actualizando transacción:', index, updates);
     setTransactionsState(prev => {
       const updated = [...prev];
       updated[index] = { ...updated[index], ...updates };
@@ -50,23 +48,30 @@ export function TransactionsProvider({ children }) {
   }, [validateTransaction]);
 
   const removeTransaction = useCallback((index) => {
-    console.log('Eliminando transacción:', index);
     setTransactionsState(prev => prev.filter((_, i) => i !== index));
   }, []);
 
   const setTransactions = useCallback((newTransactions) => {
-    console.log('Estableciendo transacciones:', newTransactions);
+    // Limpiar transacciones anteriores completamente
+    setTransactionsState([]);
     
-    // Validar todas las transacciones
-    const validationResults = newTransactions.map(validateTransaction);
-    const hasErrors = validationResults.some(errors => errors.length > 0);
-    
-    if (hasErrors) {
-      console.warn('Algunas transacciones tienen errores de validación');
-    }
-    
-    setTransactionsState(newTransactions);
+    // Pequeño delay para asegurar el renderizado
+    setTimeout(() => {
+      // Validar todas las transacciones
+      const validationResults = newTransactions.map(validateTransaction);
+      const hasErrors = validationResults.some(errors => errors.length > 0);
+      
+      if (hasErrors) {
+        console.warn('Algunas transacciones tienen errores de validación');
+      }
+      
+      setTransactionsState(newTransactions);
+    }, 10);
   }, [validateTransaction]);
+
+  const clearTransactions = useCallback(() => {
+    setTransactionsState([]);
+  }, []);
 
   const value = {
     transactions,
@@ -77,7 +82,8 @@ export function TransactionsProvider({ children }) {
     addTransaction,
     updateTransaction,
     removeTransaction,
-    setTransactions // Cambiado de setTransactionsWithValidation a setTransactions
+    setTransactions,
+    clearTransactions
   };
 
   return (

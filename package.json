@@ -16,7 +16,8 @@
     "jspdf-autotable": "latest",
     "lucide-react": "^0.545.0",
     "preact": "latest",
-    "tailwind-merge": "^3.3.1"
+    "tailwind-merge": "^3.3.1",
+    "xlsx": "latest"
   },
   "devDependencies": {
     "@astrojs/tailwind": "^5.0.0",

@@ -8,61 +8,92 @@ import '../styles/globals.css';
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión Financiera Personal</title>
+    <title>Finanzas App</title>
   </head>
   <body class="min-h-screen bg-background">
-    <div class="flex min-h-screen">
-      <!-- Sidebar -->
-      <div class="hidden w-64 border-r bg-muted/40 lg:block">
-        <div class="flex h-full max-h-screen flex-col gap-2">
-          <div class="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <a href="/" class="flex items-center gap-2 font-semibold">
-              <span class="text-xl">💰 Finanzas</span>
+    <!-- Header minimalista fijo -->
+    <header class="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+      <div class="container mx-auto px-4">
+        <div class="flex h-14 items-center justify-center">
+          <!-- Navegación centrada -->
+          <nav class="flex items-center space-x-8 relative">
+            <!-- Líneas decorativas -->
+            <div class="absolute -bottom-2 left-0 right-0 flex justify-center">
+              <div class="w-full max-w-xs border-t border-gray-200"></div>
+            </div>
+            <div class="absolute -bottom-3 left-0 right-0 flex justify-center">
+              <div class="w-full max-w-xs border-t border-gray-100"></div>
+            </div>
+
+            <!-- Enlaces de navegación -->
+            <a 
+              href="/" 
+              class="text-xs font-normal text-gray-600 hover:text-gray-900 transition-colors relative pb-4"
+            >
+              Principal
+              <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 transform scale-x-0 transition-transform duration-200"></span>
             </a>
-          </div>
-          <div class="flex-1">
-            <nav class="grid items-start px-2 text-sm font-medium lg:px-4">
-              <a
-                href="/"
-                class="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                </svg>
-                Principal
-              </a>
-              <a
-                href="/reports"
-                class="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                Reportes
-              </a>
-              <a
-                href="/otros"
-                class="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary"
-              >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                </svg>
-                Otros
-              </a>
-            </nav>
+            <a 
+              href="/reports" 
+              class="text-xs font-normal text-gray-600 hover:text-gray-900 transition-colors relative pb-4"
+            >
+              Reportes
+              <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 transform scale-x-0 transition-transform duration-200"></span>
+            </a>
+            <a 
+              href="/otros" 
+              class="text-xs font-normal text-gray-600 hover:text-gray-900 transition-colors relative pb-4"
+            >
+              Otros
+              <span class="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900 transform scale-x-0 transition-transform duration-200"></span>
+            </a>
+          </nav>
+
+          <!-- Controles a la derecha -->
+          <div class="absolute right-4 flex items-center space-x-2">
+            <!-- Botón modo oscuro -->
+            <button class="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            </button>
+
+            <!-- Botón login -->
+            <button class="flex items-center space-x-1 px-3 py-1.5 text-xs text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors border border-gray-200">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span>Login</span>
+            </button>
           </div>
         </div>
       </div>
+    </header>
 
-      <!-- Main content -->
-      <div class="flex-1 flex flex-col">
-        <header class="flex h-14 items-center gap-4 border-b bg-muted/40 px-6 lg:h-[60px]">
-          <h1 class="text-lg font-semibold">Gestión Financiera Personal</h1>
-        </header>
-        <main class="flex-1 p-6">
-          <slot />
-        </main>
-      </div>
-    </div>
+    <!-- Contenido principal -->
+    <main class="container mx-auto px-4 py-8">
+      <slot />
+    </main>
+
+    <script>
+      // Script para resaltar la página activa
+      document.addEventListener('DOMContentLoaded', function() {
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('nav a');
+        
+        navLinks.forEach(link => {
+          const linkPath = link.getAttribute('href');
+          // Resaltar si es la página exacta o si es la raíz y estamos en la raíz
+          if ((currentPath === '/' && linkPath === '/') || 
+              (currentPath !== '/' && currentPath === linkPath)) {
+            link.classList.add('text-gray-900');
+            link.querySelector('span').classList.add('scale-x-100');
+          } else {
+            link.classList.remove('text-gray-900');
+            link.querySelector('span').classList.remove('scale-x-100');
+          }
+        });
+      });
+    </script>
   </body>
 </html>
