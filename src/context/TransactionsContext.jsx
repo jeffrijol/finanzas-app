@@ -73,6 +73,39 @@ export function TransactionsProvider({ children }) {
     setTransactionsState([]);
   }, []);
 
+  // Función para obtener datos procesados para gráficos
+  const getChartData = useCallback(() => {
+    const assignedTransactions = transactions.filter(t => t.itemAsignado);
+    
+    if (assignedTransactions.length === 0) {
+      return null;
+    }
+
+    // Agrupar por ítem
+    const itemsData = {};
+    assignedTransactions.forEach(transaction => {
+      const item = transaction.itemAsignado;
+      if (!itemsData[item]) {
+        itemsData[item] = { ingresos: 0, gastos: 0, transacciones: [] };
+      }
+      
+      if (transaction.importe > 0) {
+        itemsData[item].ingresos += transaction.importe;
+      } else {
+        itemsData[item].gastos += Math.abs(transaction.importe);
+      }
+      
+      itemsData[item].transacciones.push(transaction);
+    });
+
+    return {
+      itemsData,
+      totalIngresos: Object.values(itemsData).reduce((sum, item) => sum + item.ingresos, 0),
+      totalGastos: Object.values(itemsData).reduce((sum, item) => sum + item.gastos, 0),
+      totalTransacciones: assignedTransactions.length
+    };
+  }, [transactions]);
+
   const value = {
     transactions,
     loading,
@@ -83,7 +116,8 @@ export function TransactionsProvider({ children }) {
     updateTransaction,
     removeTransaction,
     setTransactions,
-    clearTransactions
+    clearTransactions,
+    getChartData
   };
 
   return (
