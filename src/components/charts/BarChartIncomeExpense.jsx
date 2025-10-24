@@ -12,6 +12,7 @@ import {
 } from 'chart.js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/Card';
 
+// Registrar componentes de Chart.js
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -54,7 +55,7 @@ export default function BarChartIncomeExpense({ chartData }) {
       },
       title: {
         display: true,
-        text: `Ingresos vs Gastos por Ítem (${chartData.periodo === 'mensual' ? 'Mensual' : 'Trimestral'})`,
+        text: 'Ingresos vs Gastos por Ítem',
       },
       tooltip: {
         callbacks: {

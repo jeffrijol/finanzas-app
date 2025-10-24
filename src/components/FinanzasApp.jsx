@@ -2,6 +2,7 @@
 import { TransactionsProvider } from '../context/TransactionsContext';
 import FileUpload from './FileUpload.jsx';
 import TransactionTable from './TransactionTable.jsx';
+import FinancialDashboard from './FinancialDashboard.jsx';
 import ExportButtons from './ExportButtons.jsx';
 import LoadingSpinner from './LoadingSpinner.jsx';
 import ErrorMessage from './ErrorMessage.jsx';
@@ -14,6 +15,7 @@ export default function FinanzasApp() {
         <LoadingSpinner />
         <ErrorMessage />
         <TransactionTable />
+        <FinancialDashboard />
         <ExportButtons />
       </div>
     </TransactionsProvider>

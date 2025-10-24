@@ -1,13 +1,4 @@
 {
   "include": [".astro/types.d.ts", "**/*"],
-  "exclude": ["dist"],
-  "compilerOptions": {
-    "types": ["vite/client"],
-    "allowJs": true,
-    "checkJs": true,
-    "noEmit": true,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
-  }
+  "exclude": ["dist"]
 }

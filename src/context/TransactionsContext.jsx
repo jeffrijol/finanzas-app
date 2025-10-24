@@ -1,7 +1,7 @@
 // src/context/TransactionsContext.jsx
 import { createContext } from 'preact';
-import { useState, useCallback, useContext, useMemo } from 'preact/hooks';
-import { TRANSACTION_TEMPLATE, ITEM_OPTIONS } from '../utils/constants';
+import { useState, useCallback, useContext } from 'preact/hooks';
+import { TRANSACTION_TEMPLATE } from '../utils/constants';
 
 const TransactionsContext = createContext();
 
@@ -9,7 +9,6 @@ export function TransactionsProvider({ children }) {
   const [transactions, setTransactionsState] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState('mensual'); // 'mensual', 'trimestral'
 
   // Validación de transacciones
   const validateTransaction = useCallback((transaction) => {
@@ -53,9 +52,12 @@ export function TransactionsProvider({ children }) {
   }, []);
 
   const setTransactions = useCallback((newTransactions) => {
+    // Limpiar transacciones anteriores completamente
     setTransactionsState([]);
     
+    // Pequeño delay para asegurar el renderizado
     setTimeout(() => {
+      // Validar todas las transacciones
       const validationResults = newTransactions.map(validateTransaction);
       const hasErrors = validationResults.some(errors => errors.length > 0);
       
@@ -71,73 +73,26 @@ export function TransactionsProvider({ children }) {
     setTransactionsState([]);
   }, []);
 
-  // Función mejorada para obtener datos procesados para gráficos con agrupación temporal
-  const getChartData = useCallback((periodo = periodoSeleccionado) => {
+  // Función para obtener datos procesados para gráficos
+  const getChartData = useCallback(() => {
     const assignedTransactions = transactions.filter(t => t.itemAsignado);
     
     if (assignedTransactions.length === 0) {
       return null;
     }
 
-    // Agrupar por ítem y período
+    // Agrupar por ítem
     const itemsData = {};
-    const periodosData = {};
-    
     assignedTransactions.forEach(transaction => {
       const item = transaction.itemAsignado;
-      if (!ITEM_OPTIONS.includes(item)) return;
-      
-      // Parsear fecha
-      const [day, month, year] = transaction.fecha.split('/');
-      const fecha = new Date(`${year}-${month}-${day}`);
-      
-      // Determinar período
-      let periodoKey;
-      let periodoLabel;
-      
-      if (periodo === 'mensual') {
-        periodoKey = `${year}-${month.padStart(2, '0')}`;
-        periodoLabel = `${month}/${year}`;
-      } else {
-        // Trimestral
-        const trimestre = Math.floor((parseInt(month) - 1) / 3) + 1;
-        periodoKey = `T${trimestre}-${year}`;
-        periodoLabel = `T${trimestre} ${year}`;
-      }
-      
-      // Inicializar datos del ítem
       if (!itemsData[item]) {
         itemsData[item] = { ingresos: 0, gastos: 0, transacciones: [] };
       }
       
-      // Inicializar datos del período
-      if (!periodosData[periodoKey]) {
-        periodosData[periodoKey] = {
-          label: periodoLabel,
-          ingresos: 0,
-          gastos: 0,
-          items: {}
-        };
-      }
-      
-      // Acumular datos
       if (transaction.importe > 0) {
         itemsData[item].ingresos += transaction.importe;
-        periodosData[periodoKey].ingresos += transaction.importe;
-        
-        if (!periodosData[periodoKey].items[item]) {
-          periodosData[periodoKey].items[item] = { ingresos: 0, gastos: 0 };
-        }
-        periodosData[periodoKey].items[item].ingresos += transaction.importe;
       } else {
-        const gasto = Math.abs(transaction.importe);
-        itemsData[item].gastos += gasto;
-        periodosData[periodoKey].gastos += gasto;
-        
-        if (!periodosData[periodoKey].items[item]) {
-          periodosData[periodoKey].items[item] = { ingresos: 0, gastos: 0 };
-        }
-        periodosData[periodoKey].items[item].gastos += gasto;
+        itemsData[item].gastos += Math.abs(transaction.importe);
       }
       
       itemsData[item].transacciones.push(transaction);
@@ -145,23 +100,16 @@ export function TransactionsProvider({ children }) {
 
     return {
       itemsData,
-      periodosData,
       totalIngresos: Object.values(itemsData).reduce((sum, item) => sum + item.ingresos, 0),
       totalGastos: Object.values(itemsData).reduce((sum, item) => sum + item.gastos, 0),
-      totalTransacciones: assignedTransactions.length,
-      periodo: periodoSeleccionado
+      totalTransacciones: assignedTransactions.length
     };
-  }, [transactions, periodoSeleccionado]);
-
-  // Datos memoizados para mejor rendimiento
-  const chartData = useMemo(() => getChartData(), [getChartData]);
+  }, [transactions]);
 
   const value = {
     transactions,
     loading,
     error,
-    periodoSeleccionado,
-    setPeriodoSeleccionado,
     setLoading,
     setError,
     addTransaction,
@@ -169,8 +117,7 @@ export function TransactionsProvider({ children }) {
     removeTransaction,
     setTransactions,
     clearTransactions,
-    getChartData,
-    chartData // Datos memoizados
+    getChartData
   };
 
   return (
