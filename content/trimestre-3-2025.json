@@ -1,0 +1,71 @@
+{
+  "periodo": "Q3 2025",
+  "rango": "Julio - Septiembre 2025",
+  "transacciones": [
+    {
+      "id": "q3-001",
+      "fecha": "15/07/2025",
+      "fechaValor": "15/07/2025",
+      "categoria": "Transferencias",
+      "descripcion": "Alquiler Vivienda 1",
+      "importe": 1200.00,
+      "saldo": 23000.00,
+      "itemAsignado": "Vivienda 1"
+    },
+    {
+      "id": "q3-002",
+      "fecha": "20/07/2025",
+      "fechaValor": "20/07/2025",
+      "categoria": "Recibos",
+      "descripcion": "Seguro comunidad",
+      "importe": -320.00,
+      "saldo": 22680.00,
+      "itemAsignado": "Vivienda 1"
+    },
+    {
+      "id": "q3-003",
+      "fecha": "10/08/2025",
+      "fechaValor": "10/08/2025",
+      "categoria": "Transferencias",
+      "descripcion": "Alquiler Vivienda 2",
+      "importe": 950.00,
+      "saldo": 23630.00,
+      "itemAsignado": "Vivienda 2"
+    },
+    {
+      "id": "q3-004",
+      "fecha": "15/08/2025",
+      "fechaValor": "15/08/2025",
+      "categoria": "Recibos",
+      "descripcion": "Pintura fachada",
+      "importe": -1200.00,
+      "saldo": 22430.00,
+      "itemAsignado": "Vivienda 2"
+    },
+    {
+      "id": "q3-005",
+      "fecha": "01/09/2025",
+      "fechaValor": "01/09/2025",
+      "categoria": "Transferencias",
+      "descripcion": "Dividendos sociedad",
+      "importe": 3500.00,
+      "saldo": 25930.00,
+      "itemAsignado": "Sociedad Anonima 1"
+    },
+    {
+      "id": "q3-006",
+      "fecha": "10/09/2025",
+      "fechaValor": "10/09/2025",
+      "categoria": "Recibos",
+      "descripcion": "Gastos legales",
+      "importe": -420.00,
+      "saldo": 25510.00,
+      "itemAsignado": "Sociedad Anonima 1"
+    }
+  ],
+  "resumen": {
+    "Vivienda 1": { "ingresos": 1200.00, "gastos": 320.00 },
+    "Vivienda 2": { "ingresos": 950.00, "gastos": 1200.00 },
+    "Sociedad Anonima 1": { "ingresos": 3500.00, "gastos": 420.00 }
+  }
+}
