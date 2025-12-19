@@ -1,0 +1,47 @@
+{
+    "name": "@finanzas-app/backend",
+    "version": "1.0.0",
+    "main": "dist/index.js",
+    "private": true,
+    "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc && tsc-alias",
+        "start": "node dist/index.js",
+        "lint": "eslint src --ext .ts",
+        "format": "prettier --write src/**/*.ts",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "clean": "rm -rf dist node_modules",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate dev",
+        "prisma:studio": "prisma studio"
+    },
+    "prisma": {
+        "seed": "tsx src/prisma/seed.ts"
+    },
+    "dependencies": {
+        "@prisma/client": "^5.10.0",
+        "cors": "latest",
+        "dotenv": "latest",
+        "express": "latest",
+        "express-async-errors": "latest",
+        "helmet": "latest",
+        "multer": "latest",
+        "xlsx": "latest",
+        "zod": "latest"
+    },
+    "devDependencies": {
+        "@types/cors": "latest",
+        "@types/express": "latest",
+        "@types/multer": "latest",
+        "@types/node": "latest",
+        "@typescript-eslint/eslint-plugin": "latest",
+        "@typescript-eslint/parser": "latest",
+        "eslint": "latest",
+        "prisma": "^5.10.0",
+        "tsc-alias": "latest",
+        "tsx": "latest",
+        "typescript": "latest",
+        "vitest": "latest"
+    }
+}

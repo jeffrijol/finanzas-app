@@ -1,0 +1,24 @@
+import { Router } from 'express';
+import multer from 'multer';
+import * as itemController from '../controllers/item.controller';
+import * as transactionController from '../controllers/transaction.controller';
+import * as uploadController from '../controllers/upload.controller';
+
+const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
+
+// Items
+router.get('/items', itemController.listItems);
+router.post('/items', itemController.createItem);
+router.put('/items/:id', itemController.updateItem);
+router.delete('/items/:id', itemController.deleteItem);
+
+// Transactions
+router.get('/transactions', transactionController.listTransactions);
+router.put('/transactions/:id', transactionController.updateTransaction);
+router.get('/transactions/stats', transactionController.getStats);
+
+// Upload
+router.post('/upload', upload.single('file'), uploadController.uploadFile);
+
+export default router;

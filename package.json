@@ -1,0 +1,26 @@
+{
+  "name": "finanzas-app",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "format": "turbo run format",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:up": "docker-compose up -d postgres",
+    "db:down": "docker-compose down",
+    "db:studio": "cd packages/backend && npx prisma studio"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "turbo": "latest",
+    "typescript": "latest"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

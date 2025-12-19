@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Transaction {
+  id             String       @id @default(cuid())
+  fechaValor     DateTime
+  categoria      String
+  descripcion    String
+  importe        Float
+  saldo          Float
+  itemAsignadoId String?
+  itemAsignado   Item?        @relation(fields: [itemAsignadoId], references: [id], onDelete: SetNull)
+  metadata       String?    // Para almacenar datos adicionales del Excel (JSON stringified)
+  excelUploadId  String?
+  excelUpload    ExcelUpload? @relation(fields: [excelUploadId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([fechaValor])
+  @@index([categoria])
+  @@index([itemAsignadoId])
+  @@index([excelUploadId])
+}
+
+model Item {
+  id           String        @id @default(cuid())
+  nombre       String        @unique
+  descripcion  String?
+  activo       Boolean       @default(true)
+  color        String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+}
+
+model ExcelUpload {
+  id           String        @id @default(cuid())
+  filename     String
+  fileSize     Int
+  totalRows    Int
+  processed    Boolean       @default(false)
+  errors       String?    // Errores durante el procesamiento (JSON stringified)
+  userId       String?
+  createdAt    DateTime      @default(now())
+  transactions Transaction[]
+}
