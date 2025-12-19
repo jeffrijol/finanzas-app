@@ -1,5 +1,17 @@
 import { z } from 'zod';
 
+export const uploadSchema = z.object({
+    file: z.object({
+        originalname: z.string(),
+        mimetype: z.enum([
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
+            'text/csv'
+        ]),
+        size: z.number().max(10 * 1024 * 1024), // 10MB
+    }),
+});
+
 export const transactionSchema = z.object({
     fechaValor: z.string().transform((str) => new Date(str)),
     categoria: z.string().min(1),
@@ -16,19 +28,7 @@ export const itemSchema = z.object({
 });
 
 export const transactionUpdateSchema = z.object({
-    itemAsignadoId: z.string().nullable().optional(),
-    categoria: z.string().optional(),
-    descripcion: z.string().optional(),
+    itemAsignadoId: z.string().cuid().nullable().optional(),
+    categoria: z.string().min(1).optional(),
+    descripcion: z.string().min(1).optional(),
 });
-
-export function validateTransaction(data: any) {
-    return transactionSchema.safeParse(data);
-}
-
-export function validateItem(data: any) {
-    return itemSchema.safeParse(data);
-}
-
-export function validateTransactionUpdate(data: any) {
-    return transactionUpdateSchema.safeParse(data);
-}

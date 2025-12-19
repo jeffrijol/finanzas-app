@@ -1,18 +1,23 @@
 import { Request, Response } from 'express';
 import { ExcelService } from '../services/excel.service';
 import { ApiResponseHelper } from '../utils/apiResponse';
+import { uploadSchema } from '../utils/validators';
 
 export const uploadFile = async (req: Request, res: Response) => {
-    if (!req.file) {
-        throw new Error('No file uploaded');
+    // Validar con Zod
+    const validation = uploadSchema.safeParse({ file: req.file });
+
+    if (!validation.success) {
+        return res.status(400).json(
+            ApiResponseHelper.error('Archivo inválido', validation.error.issues)
+        );
     }
 
-    // Default 10MB limit check handled by multer/env usually, but explicit check good too
-    // req.userId would come from auth middleware if we had it
+    const file = req.file!;
     const result = await ExcelService.processExcelFile(
-        req.file.buffer,
-        req.file.originalname,
-        req.file.size
+        file.buffer,
+        file.originalname,
+        file.size
     );
 
     if (!result.success) {

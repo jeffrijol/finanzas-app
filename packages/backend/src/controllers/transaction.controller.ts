@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { TransactionsService } from '../services/transactions.service';
 import { ApiResponseHelper } from '../utils/apiResponse';
+import { transactionUpdateSchema } from '../utils/validators';
 
 export const listTransactions = async (req: Request, res: Response) => {
     const filters = {
@@ -32,10 +33,15 @@ export const listTransactions = async (req: Request, res: Response) => {
 
 export const updateTransaction = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const data = req.body;
 
-    // Use proper service method which handles the update logic
-    const transaction = await TransactionsService.updateTransaction(id, data);
+    const validation = transactionUpdateSchema.safeParse(req.body);
+    if (!validation.success) {
+        return res.status(400).json(
+            ApiResponseHelper.error('Datos de actualización inválidos', validation.error.issues)
+        );
+    }
+
+    const transaction = await TransactionsService.updateTransaction(id, validation.data);
     res.json(ApiResponseHelper.success(transaction));
 };
 

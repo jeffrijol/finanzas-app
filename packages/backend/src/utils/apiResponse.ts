@@ -7,6 +7,7 @@ export class ApiResponseHelper {
             data,
             message,
             meta,
+            timestamp: new Date().toISOString(),
         };
     }
 
@@ -14,7 +15,11 @@ export class ApiResponseHelper {
         return {
             success: false,
             message,
-            error: error?.message || error?.toString(),
+            error: typeof error === 'string' ? error : (error?.message || message),
+            meta: {
+                details: error
+            },
+            timestamp: new Date().toISOString(),
         };
     }
 

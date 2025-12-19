@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ItemsService } from '../services/items.service';
 import { ApiResponseHelper } from '../utils/apiResponse';
-import { validateItem } from '../utils/validationHelpers';
+import { itemSchema } from '../utils/validators';
 
 export const listItems = async (req: Request, res: Response) => {
     const includeInactive = req.query.includeInactive === 'true';
@@ -10,18 +10,27 @@ export const listItems = async (req: Request, res: Response) => {
 };
 
 export const createItem = async (req: Request, res: Response) => {
-    const validation = validateItem(req.body);
+    const validation = itemSchema.safeParse(req.body);
     if (!validation.success) {
-        throw new Error(validation.error.message);
+        return res.status(400).json(
+            ApiResponseHelper.error('Datos del item inválidos', validation.error.issues)
+        );
     }
 
-    const item = await ItemsService.createItem(req.body);
+    const item = await ItemsService.createItem(validation.data);
     res.status(201).json(ApiResponseHelper.success(item, 'Item created successfully'));
 };
 
 export const updateItem = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const item = await ItemsService.updateItem(id, req.body);
+    const validation = itemSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+        return res.status(400).json(
+            ApiResponseHelper.error('Datos de actualización inválidos', validation.error.issues)
+        );
+    }
+
+    const item = await ItemsService.updateItem(id, validation.data);
     res.json(ApiResponseHelper.success(item));
 };
 

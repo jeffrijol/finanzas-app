@@ -85,14 +85,15 @@ export class ExcelParser {
     }
 
     private static findHeaderRow(data: any[][]): number {
-        // Buscar la fila que contiene "FECHA VALOR" (mayúsculas/minúsculas)
+        // Buscar la fila que contiene "FECHA CONTABLE" o "FECHA VALOR"
         for (let i = 0; i < Math.min(10, data.length); i++) {
             const row = data[i];
             if (row && Array.isArray(row)) {
-                const hasFechaValor = row.some(cell =>
-                    String(cell).toUpperCase().includes('FECHA VALOR')
-                );
-                if (hasFechaValor) {
+                const hasHeader = row.some(cell => {
+                    const cellStr = String(cell).toUpperCase();
+                    return cellStr.includes('FECHA CONTABLE') || cellStr.includes('FECHA VALOR');
+                });
+                if (hasHeader) {
                     return i;
                 }
             }
