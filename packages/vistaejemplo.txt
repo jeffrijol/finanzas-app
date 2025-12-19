@@ -1,0 +1,29 @@
+[Logo] Transaction Manager          [Filtro Mes] [Avatar]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📤 SUBIR ARCHIVO EXCEL
+────────────────────────
+Arrastra tu archivo aquí o haz click para buscar
+Formatos soportados: .xlsx, .csv
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TRANSACCIONES (142)  [📁 Filtro Categoría]  [🔍 Buscar]  [📊 Solo sin asignar]
+────────────────────────────────────────────────────────
+Fecha        Descripción                Importe    Saldo      Item
+2025-10-13   Transf interna/marta       -309.55    306,736.53 [Sin asignar] ▼
+2025-10-10   Recib/comunidad de...      -122.08    307,046.08 [Casa 1] ▼
+2025-10-08   Recib/com. prop...         -137.08    307,168.16 [Casa 2] ▼
+...6 filas más...
+
+[← Anterior]  [1] [2] [3] [4] [5]  [Siguiente →]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOTALES:  Ingresos: €45,320.56  |  Gastos: €38,450.12  |  Balance: €6,870.44
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PANEL DE ITEMS
+Casa 1        🔵  24 transacciones  €12,450.32
+Casa 2        🟢  18 transacciones  €8,230.15
+Inversión 3   🟣  32 transacciones  €45,320.56
+Inversión 4   🟡  28 transacciones  €22,150.89
+Sin asignar   ⚪  40 transacciones  €15,230.67

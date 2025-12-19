@@ -160,23 +160,54 @@ export class TransactionsService {
         }
 
         // Obtener todas las transacciones para calcular estadísticas
-        const transactions = await prisma.transaction.findMany({ where });
+        const transactions = await prisma.transaction.findMany({
+            where,
+            include: {
+                itemAsignado: true
+            }
+        });
+
+        const items = await prisma.item.findMany({ where: { activo: true } });
 
         let totalIngresos = 0;
         let totalGastos = 0;
 
-        transactions.forEach((t: { importe: number; }) => {
+        const transaccionesPorItem: Record<string, { itemId: string; itemNombre: string; cantidad: number; total: number }> = {};
+
+        items.forEach(item => {
+            transaccionesPorItem[item.id] = {
+                itemId: item.id,
+                itemNombre: item.nombre,
+                cantidad: 0,
+                total: 0
+            };
+        });
+
+        const sinAsignar = {
+            cantidad: 0,
+            total: 0
+        };
+
+        transactions.forEach((t) => {
+            // Ingresos/Gastos globales
             if (t.importe > 0) {
                 totalIngresos += t.importe;
             } else {
                 totalGastos += Math.abs(t.importe);
             }
+
+            // Estadísticas por item
+            if (t.itemAsignadoId && transaccionesPorItem[t.itemAsignadoId]) {
+                transaccionesPorItem[t.itemAsignadoId].cantidad++;
+                transaccionesPorItem[t.itemAsignadoId].total += t.importe;
+            } else {
+                sinAsignar.cantidad++;
+                sinAsignar.total += t.importe;
+            }
         });
 
         const totalTransacciones = transactions.length;
-        const transaccionesConItem = await prisma.transaction.count({
-            where: { ...where, NOT: { itemAsignadoId: null } },
-        });
+        const transaccionesConItem = transactions.filter(t => t.itemAsignadoId !== null).length;
 
         // Obtener saldo actual (última transacción)
         const ultimaTransaccion = await prisma.transaction.findFirst({
@@ -184,16 +215,14 @@ export class TransactionsService {
             orderBy: { fechaValor: 'desc' },
         });
 
-        const saldoActual = ultimaTransaccion?.saldo || 0;
-
-        // Calcular promedio mensual (simplificado)
-        const promedioMensual = totalIngresos - totalGastos;
+        const balance = ultimaTransaccion?.saldo || 0;
 
         return {
             totalIngresos,
             totalGastos,
-            saldoActual,
-            promedioMensual,
+            balance,
+            transaccionesPorItem: Object.values(transaccionesPorItem),
+            sinAsignar,
             totalTransacciones,
             transaccionesConItem,
         };

@@ -48,8 +48,17 @@ export interface PaginationParams {
 export interface TransactionStats {
     totalIngresos: number;
     totalGastos: number;
-    saldoActual: number;
-    promedioMensual: number;
+    balance: number;
+    transaccionesPorItem: {
+        itemId: string;
+        itemNombre: string;
+        cantidad: number;
+        total: number;
+    }[];
+    sinAsignar: {
+        cantidad: number;
+        total: number;
+    };
     totalTransacciones: number;
     transaccionesConItem: number;
 }
