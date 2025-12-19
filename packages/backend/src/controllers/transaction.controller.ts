@@ -1,77 +1,52 @@
 import { Request, Response } from 'express';
-import prisma from '../prisma';
+import { TransactionsService } from '../services/transactions.service';
+import { ApiResponseHelper } from '../utils/apiResponse';
 
 export const listTransactions = async (req: Request, res: Response) => {
-    const { page = 1, limit = 50, categoria, itemAsignadoId, search } = req.query;
-    const skip = (Number(page) - 1) * Number(limit);
+    const filters = {
+        startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
+        endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
+        categoria: req.query.categoria as string,
+        itemAsignadoId: req.query.itemAsignadoId as string,
+        search: req.query.search as string,
+        minAmount: req.query.minAmount ? Number(req.query.minAmount) : undefined,
+        maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : undefined,
+    };
 
-    const where: any = {};
-    if (categoria) where.categoria = String(categoria);
-    if (itemAsignadoId) where.itemAsignadoId = String(itemAsignadoId);
-    if (search) {
-        where.descripcion = { contains: String(search), mode: 'insensitive' };
-    }
+    const pagination = {
+        page: req.query.page ? Number(req.query.page) : 1,
+        limit: req.query.limit ? Number(req.query.limit) : 50,
+        sortBy: req.query.sortBy as string,
+        sortOrder: req.query.sortOrder as 'asc' | 'desc',
+    };
 
-    const [transactions, total] = await Promise.all([
-        prisma.transaction.findMany({
-            where,
-            skip,
-            take: Number(limit),
-            orderBy: { fechaValor: 'desc' },
-            include: { itemAsignado: true }
-        }),
-        prisma.transaction.count({ where })
-    ]);
+    const result = await TransactionsService.getTransactions(filters, pagination);
 
-    res.json({
-        success: true,
-        data: transactions,
-        meta: {
-            total,
-            page: Number(page),
-            limit: Number(limit),
-            totalPages: Math.ceil(total / Number(limit))
-        }
-    });
+    res.json(ApiResponseHelper.paginated(
+        result.transactions,
+        result.total,
+        result.page,
+        result.limit
+    ));
 };
 
 export const updateTransaction = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const { itemAsignadoId, categoria, descripcion } = req.body;
+    const data = req.body;
 
-    const transaction = await prisma.transaction.update({
-        where: { id },
-        data: {
-            itemAsignadoId,
-            categoria,
-            descripcion
-        },
-        include: { itemAsignado: true }
-    });
-
-    res.json({ success: true, data: transaction });
+    // Use proper service method which handles the update logic
+    const transaction = await TransactionsService.updateTransaction(id, data);
+    res.json(ApiResponseHelper.success(transaction));
 };
 
 export const getStats = async (req: Request, res: Response) => {
-    // Basic stats by category (assigned Item)
-    const stats = await prisma.transaction.groupBy({
-        by: ['itemAsignadoId'],
-        _sum: { importe: true },
-        _count: { id: true },
-        where: {
-            itemAsignadoId: { not: null } // Only analyzed ones
-        }
-    });
+    const filters = {
+        startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
+        endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
+        categoria: req.query.categoria as string,
+        itemAsignadoId: req.query.itemAsignadoId as string,
+    };
 
-    // Enrich with Item names
-    const enrichedStats = await Promise.all(stats.map(async (s) => {
-        const item = s.itemAsignadoId ? await prisma.item.findUnique({ where: { id: s.itemAsignadoId } }) : null;
-        return {
-            ...s,
-            itemName: item?.nombre || 'Unknown',
-            color: item?.color
-        };
-    }));
-
-    res.json({ success: true, data: enrichedStats });
+    const stats = await TransactionsService.getStats(filters);
+    res.json(ApiResponseHelper.success(stats));
 };

@@ -1,38 +1,32 @@
 import { Request, Response } from 'express';
-import prisma from '../prisma';
+import { ItemsService } from '../services/items.service';
+import { ApiResponseHelper } from '../utils/apiResponse';
+import { validateItem } from '../utils/validationHelpers';
 
 export const listItems = async (req: Request, res: Response) => {
-    const items = await prisma.item.findMany({
-        where: { activo: true },
-        orderBy: { nombre: 'asc' }
-    });
-    res.json({ success: true, data: items });
+    const includeInactive = req.query.includeInactive === 'true';
+    const items = await ItemsService.getAllItems(includeInactive);
+    res.json(ApiResponseHelper.success(items));
 };
 
 export const createItem = async (req: Request, res: Response) => {
-    const { nombre, descripcion, color } = req.body;
-    const item = await prisma.item.create({
-        data: { nombre, descripcion, color }
-    });
-    res.status(201).json({ success: true, data: item });
+    const validation = validateItem(req.body);
+    if (!validation.success) {
+        throw new Error(validation.error.message);
+    }
+
+    const item = await ItemsService.createItem(req.body);
+    res.status(201).json(ApiResponseHelper.success(item, 'Item created successfully'));
 };
 
 export const updateItem = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const data = req.body;
-    const item = await prisma.item.update({
-        where: { id },
-        data
-    });
-    res.json({ success: true, data: item });
+    const item = await ItemsService.updateItem(id, req.body);
+    res.json(ApiResponseHelper.success(item));
 };
 
 export const deleteItem = async (req: Request, res: Response) => {
     const { id } = req.params;
-    // Soft delete
-    await prisma.item.update({
-        where: { id },
-        data: { activo: false }
-    });
-    res.json({ success: true, message: 'Item deleted' });
+    await ItemsService.deleteItem(id);
+    res.json(ApiResponseHelper.success(null, 'Item deleted successfully'));
 };

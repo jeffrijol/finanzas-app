@@ -8,45 +8,47 @@ datasource db {
 }
 
 model Transaction {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   fechaValor     DateTime
   categoria      String
   descripcion    String
   importe        Float
   saldo          Float
   itemAsignadoId String?
-  itemAsignado   Item?        @relation(fields: [itemAsignadoId], references: [id], onDelete: SetNull)
+  itemAsignado   Item?    @relation(fields: [itemAsignadoId], references: [id], onDelete: SetNull)
   metadata       String?    // Para almacenar datos adicionales del Excel (JSON stringified)
   excelUploadId  String?
   excelUpload    ExcelUpload? @relation(fields: [excelUploadId], references: [id])
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@index([fechaValor])
   @@index([categoria])
   @@index([itemAsignadoId])
+  @@index([createdAt])
   @@index([excelUploadId])
 }
 
 model Item {
-  id           String        @id @default(cuid())
-  nombre       String        @unique
-  descripcion  String?
-  activo       Boolean       @default(true)
-  color        String?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id          String       @id @default(cuid())
+  nombre      String       @unique
+  descripcion String?
+  activo      Boolean      @default(true)
+  color       String?      // Para identificación visual
+  icono       String?      // Icono para la UI
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
   transactions Transaction[]
 }
 
 model ExcelUpload {
-  id           String        @id @default(cuid())
-  filename     String
-  fileSize     Int
-  totalRows    Int
-  processed    Boolean       @default(false)
-  errors       String?    // Errores durante el procesamiento (JSON stringified)
-  userId       String?
-  createdAt    DateTime      @default(now())
+  id         String   @id @default(cuid())
+  filename   String
+  fileSize   Int
+  totalRows  Int
+  processed  Boolean  @default(false)
+  errors     String?    // Errores durante el procesamiento (JSON stringified)
+  userId     String?  // Si implementas autenticación
+  createdAt  DateTime @default(now())
   transactions Transaction[]
 }

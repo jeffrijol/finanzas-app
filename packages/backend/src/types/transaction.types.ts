@@ -37,3 +37,19 @@ export interface TransactionFilters {
     minAmount?: number;
     maxAmount?: number;
 }
+
+export interface PaginationParams {
+    page?: number;
+    limit?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+}
+
+export interface TransactionStats {
+    totalIngresos: number;
+    totalGastos: number;
+    saldoActual: number;
+    promedioMensual: number;
+    totalTransacciones: number;
+    transaccionesConItem: number;
+}

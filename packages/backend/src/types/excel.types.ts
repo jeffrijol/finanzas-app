@@ -1,14 +1,5 @@
 import { ExcelTransaction } from "./transaction.types";
 
-export interface ExcelHeaderMapping {
-    fechaValor: string;
-    categoria: string;
-    descripcion: string;
-    importe: string;
-    saldo: string;
-    [key: string]: string;
-}
-
 export interface ExcelProcessingResult {
     totalRows: number;
     processedRows: number;
@@ -23,8 +14,10 @@ export interface ExcelProcessingError {
     error: string;
 }
 
-export interface ExcelUploadRequest {
-    filename: string;
-    fileSize: number;
-    userId?: string;
+export interface ExcelUploadResponse {
+    success: boolean;
+    message: string;
+    totalProcessed: number;
+    totalErrors: number;
+    errors?: ExcelProcessingError[];
 }
