@@ -1,0 +1,23 @@
+­ƒî▒ Iniciando seed de la base de datos...
+­ƒùæ´©Å Datos anteriores eliminados
+Ô£à ├ìtems creados: Casa 1, Casa 2, Inversi├│n 3, Inversi├│n 4
+­ƒôä Registro de ExcelUpload creado
+­ƒôè Generadas 91 transacciones simuladas
+­ƒÆ░ Saldo inicial: 1,500,000.00
+­ƒÆ░ Saldo final: 1.183.400,42
+ÔØî Error durante el seed: PrismaClientUnknownRequestError: 
+Invalid `prisma.transaction.createMany()` invocation in
+D:\desarrollo\finanzas-app\packages\backend\src\prisma\seed.ts:202:34
+
+  199 for (let i = 0; i < transactions.length; i += batchSize) {
+  200     const batch = transactions.slice(i, i + batchSize);
+  201 
+ÔåÆ 202     await prisma.transaction.createMany(
+Operation 'createMany' for model 'Transaction' does not match any query.
+    at In.handleRequestError (D:\desarrollo\finanzas-app\node_modules\.pnpm\@prisma+client@5.10.0_prisma@5.10.0\node_modules\@prisma\client\runtime\library.js:123:7044)
+    at In.handleAndLogRequestError (D:\desarrollo\finanzas-app\node_modules\.pnpm\@prisma+client@5.10.0_prisma@5.10.0\node_modules\@prisma\client\runtime\library.js:123:6188)
+    at In.request (D:\desarrollo\finanzas-app\node_modules\.pnpm\@prisma+client@5.10.0_prisma@5.10.0\node_modules\@prisma\client\runtime\library.js:123:5896)
+    at async l (D:\desarrollo\finanzas-app\node_modules\.pnpm\@prisma+client@5.10.0_prisma@5.10.0\node_modules\@prisma\client\runtime\library.js:128:10871)
+    at async main (D:\desarrollo\finanzas-app\packages\backend\src\prisma\seed.ts:202:9) {
+  clientVersion: '5.10.0'
+}

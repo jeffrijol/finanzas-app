@@ -4,8 +4,19 @@ import * as itemController from '../controllers/item.controller';
 import * as transactionController from '../controllers/transaction.controller';
 import * as uploadController from '../controllers/upload.controller';
 
+import { ApiResponseHelper } from '../utils/apiResponse';
+
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+// Health Check
+router.get('/health', (req, res) => {
+    res.json(ApiResponseHelper.success({
+        status: 'ok',
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
+    }, 'API is healthy'));
+});
 
 // Items
 router.get('/items', itemController.listItems);
