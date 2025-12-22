@@ -3,12 +3,38 @@ import { TransactionsService } from '../services/transactions.service';
 import { ApiResponseHelper } from '../utils/apiResponse';
 import { transactionUpdateSchema } from '../utils/validators';
 
+// Helper para fechas
+const getPeriodDates = (yearStr?: string, quarterStr?: string) => {
+    if (!yearStr) return {};
+
+    const year = Number(yearStr);
+    const quarter = quarterStr ? Number(quarterStr) : undefined;
+
+    let startDate = new Date(year, 0, 1);
+    let endDate = new Date(year, 11, 31, 23, 59, 59, 999);
+
+    if (quarter && !isNaN(quarter) && quarter >= 1 && quarter <= 4) {
+        const startMonth = (quarter - 1) * 3;
+        // Fin del trimestre: último día del tercer mes
+        // mes clave para Date: 0=Ene, 1=Feb...
+        // Q1: start=0 (Ene), end=2 (Mar). Date(year, 3, 0) -> Ultimo dia Mar
+        endDate = new Date(year, startMonth + 3, 0, 23, 59, 59, 999);
+        startDate = new Date(year, startMonth, 1);
+    }
+
+    return { startDate, endDate };
+};
+
 export const listTransactions = async (req: Request, res: Response) => {
+    // Calcular fechas desde year/quarter si existen y no hay start/end explícitos
+    const periodDates = getPeriodDates(req.query.year as string, req.query.quarter as string);
+
     const filters = {
-        startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
-        endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
+        startDate: (req.query.startDate ? new Date(req.query.startDate as string) : undefined) || periodDates.startDate,
+        endDate: (req.query.endDate ? new Date(req.query.endDate as string) : undefined) || periodDates.endDate,
         categoria: req.query.categoria as string,
         itemAsignadoId: req.query.itemAsignadoId as string,
+        tipoItem: req.query.tipoItem as string,
         search: req.query.search as string,
         minAmount: req.query.minAmount ? Number(req.query.minAmount) : undefined,
         maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : undefined,
@@ -69,11 +95,14 @@ export const updateTransaction = async (req: Request, res: Response) => {
 };
 
 export const getStats = async (req: Request, res: Response) => {
+    const periodDates = getPeriodDates(req.query.year as string, req.query.quarter as string);
+
     const filters = {
-        startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
-        endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
+        startDate: (req.query.startDate ? new Date(req.query.startDate as string) : undefined) || periodDates.startDate,
+        endDate: (req.query.endDate ? new Date(req.query.endDate as string) : undefined) || periodDates.endDate,
         categoria: req.query.categoria as string,
         itemAsignadoId: req.query.itemAsignadoId as string,
+        tipoItem: req.query.tipoItem as string,
     };
 
     const stats = await TransactionsService.getStats(filters);
