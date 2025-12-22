@@ -57,8 +57,9 @@ export function FiltersBar({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="ALL">Todos los Tipos</SelectItem>
-                            <SelectItem value="BIENES_INMUEBLES">Bienes Inmuebles</SelectItem>
-                            <SelectItem value="INVERSIONES">Inversiones</SelectItem>
+                            <SelectItem value="INMUEBLE">Inmueble</SelectItem>
+                            <SelectItem value="INVERSION">Inversión</SelectItem>
+                            <SelectItem value="AVANZE_SOCIEDAD">Avanze Sociedad</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

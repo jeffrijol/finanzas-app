@@ -19,6 +19,17 @@ export function AnnualStatsChart({ data, year }: AnnualStatsChartProps) {
         return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
     };
 
+    const formatLabel = (val: string) => {
+        const map: Record<string, string> = {
+            'INMUEBLE': 'Inmueble',
+            'INVERSION': 'Inversión',
+            'AVANZE_SOCIEDAD': 'Avanze Soc.',
+            'BIENES_INMUEBLES': 'Inmueble',
+            'INVERSIONES': 'Inversión'
+        };
+        return map[val] || val;
+    };
+
     return (
         <Card className="col-span-1 shadow-sm border-slate-200">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -44,6 +55,7 @@ export function AnnualStatsChart({ data, year }: AnnualStatsChartProps) {
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                             <XAxis
                                 dataKey="tipo"
+                                tickFormatter={formatLabel}
                                 stroke="#64748b"
                                 fontSize={12}
                                 tickLine={false}

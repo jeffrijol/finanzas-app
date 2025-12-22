@@ -96,8 +96,9 @@ export function ReportsPage() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="ALL">Todos</SelectItem>
-                                            <SelectItem value="BIENES_INMUEBLES">Bienes Inmuebles</SelectItem>
-                                            <SelectItem value="INVERSIONES">Inversiones</SelectItem>
+                                            <SelectItem value="INMUEBLE">Inmueble</SelectItem>
+                                            <SelectItem value="INVERSION">Inversión</SelectItem>
+                                            <SelectItem value="AVANZE_SOCIEDAD">Avanze Sociedad</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -210,6 +211,6 @@ export function ReportsPage() {
                     </Card>
                 </div>
             </div>
-        </DashboardLayout>
+        </DashboardLayout >
     );
 }

@@ -26,11 +26,25 @@ export function ItemsList({ items, isLoading, onEdit, onDelete }: ItemsListProps
     }
 
     const getTipoLabel = (tipo: string) => {
-        return tipo === 'BIENES_INMUEBLES' ? 'Bienes Inmuebles' : 'Inversiones';
+        const labels: Record<string, string> = {
+            'INMUEBLE': 'Inmueble',
+            'INVERSION': 'Inversión',
+            'AVANZE_SOCIEDAD': 'Avanze Sociedad',
+            'BIENES_INMUEBLES': 'Inmueble', // Backward comp
+            'INVERSIONES': 'Inversión' // Backward comp
+        };
+        return labels[tipo] || tipo;
     };
 
     const getTipoColor = (tipo: string) => {
-        return tipo === 'BIENES_INMUEBLES' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700';
+        const colors: Record<string, string> = {
+            'INMUEBLE': 'bg-blue-100 text-blue-700',
+            'INVERSION': 'bg-emerald-100 text-emerald-700',
+            'AVANZE_SOCIEDAD': 'bg-purple-100 text-purple-700',
+            'BIENES_INMUEBLES': 'bg-blue-100 text-blue-700',
+            'INVERSIONES': 'bg-emerald-100 text-emerald-700'
+        };
+        return colors[tipo] || 'bg-gray-100 text-gray-700';
     };
 
     return (

@@ -11,6 +11,7 @@ export class TransactionsService {
             endDate,
             categoria,
             itemAsignadoId,
+            tipoItem,
             search,
             minAmount,
             maxAmount,
@@ -48,8 +49,15 @@ export class TransactionsService {
         }
 
         // Filtrar por item asignado
-        if (itemAsignadoId) {
+        if (itemAsignadoId && itemAsignadoId !== 'ALL') {
             where.itemAsignadoId = itemAsignadoId;
+        }
+
+        // Filtrar por tipo de item
+        if (tipoItem && tipoItem !== 'ALL') {
+            where.itemAsignado = {
+                tipo: tipoItem
+            };
         }
 
         // Filtrar por búsqueda en descripción
@@ -153,6 +161,7 @@ export class TransactionsService {
             endDate,
             categoria,
             itemAsignadoId,
+            tipoItem,
         } = filters;
 
         const where: any = {};
@@ -171,8 +180,14 @@ export class TransactionsService {
             where.categoria = categoria;
         }
 
-        if (itemAsignadoId) {
+        if (itemAsignadoId && itemAsignadoId !== 'ALL') {
             where.itemAsignadoId = itemAsignadoId;
+        }
+
+        if (tipoItem && tipoItem !== 'ALL') {
+            where.itemAsignado = {
+                tipo: tipoItem
+            };
         }
 
         // Obtener todas las transacciones para calcular estadísticas
@@ -192,8 +207,9 @@ export class TransactionsService {
 
         // Estructura para agrupar por Tipo de Item
         const porTipoItem: Record<string, { tipo: string; ingresos: number; gastos: number }> = {
-            'BIENES_INMUEBLES': { tipo: 'Bienes Inmuebles', ingresos: 0, gastos: 0 },
-            'INVERSIONES': { tipo: 'Inversiones', ingresos: 0, gastos: 0 }
+            'INMUEBLE': { tipo: 'Inmueble', ingresos: 0, gastos: 0 },
+            'INVERSION': { tipo: 'Inversión', ingresos: 0, gastos: 0 },
+            'AVANZE_SOCIEDAD': { tipo: 'Avanze Sociedad', ingresos: 0, gastos: 0 }
         };
 
         items.forEach(item => {
@@ -229,6 +245,11 @@ export class TransactionsService {
 
                 // Agrupar por Tipo
                 if (item && item.tipo) {
+                    // Inicializar si no existe (por seguridad)
+                    if (!porTipoItem[item.tipo]) {
+                        porTipoItem[item.tipo] = { tipo: item.tipo, ingresos: 0, gastos: 0 };
+                    }
+
                     if (esIngreso) {
                         porTipoItem[item.tipo].ingresos += t.importe;
                     } else {
