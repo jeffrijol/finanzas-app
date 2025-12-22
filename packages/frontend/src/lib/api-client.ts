@@ -73,14 +73,26 @@ class ApiClient {
     }
 
     // Transactions endpoints
-    async getTransactions(filters: TransactionFilters = {}): Promise<PaginatedResponse<Transaction>> {
+    async getTransactions(filters: {
+        page?: number;
+        limit?: number;
+        categoria?: string;
+        itemAsignadoId?: string;
+        tipoItem?: string;
+        search?: string;
+        quarter?: number;
+        year?: number;
+    } = {}): Promise<PaginatedResponse<Transaction>> {
         const params = new URLSearchParams();
 
         if (filters.page) params.append('page', filters.page.toString());
         if (filters.limit) params.append('limit', filters.limit.toString());
         if (filters.categoria) params.append('categoria', filters.categoria);
-        if (filters.sinAsignar !== undefined) params.append('sinAsignar', filters.sinAsignar.toString());
+        if (filters.itemAsignadoId) params.append('itemAsignadoId', filters.itemAsignadoId);
+        if (filters.tipoItem) params.append('tipoItem', filters.tipoItem);
         if (filters.search) params.append('search', filters.search);
+        if (filters.quarter) params.append('quarter', filters.quarter.toString());
+        if (filters.year) params.append('year', filters.year.toString());
 
         const queryString = params.toString();
         const endpoint = `/transactions${queryString ? `?${queryString}` : ''}`;
@@ -96,6 +108,20 @@ class ApiClient {
         };
     }
 
+    async createTransaction(data: {
+        fechaValor: string;
+        descripcion: string;
+        importe: number;
+        categoria: string;
+        itemAsignadoId?: string | null;
+    }): Promise<Transaction> {
+        const response = await this.request<Transaction>('/transactions', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+        return response.data;
+    }
+
     async updateTransaction(id: string, data: Partial<Transaction>): Promise<Transaction> {
         const response = await this.request<Transaction>(`/transactions/${id}`, {
             method: 'PUT',
@@ -104,8 +130,20 @@ class ApiClient {
         return response.data;
     }
 
-    async getTransactionStats(): Promise<TransactionStats> {
-        const response = await this.request<TransactionStats>('/transactions/stats');
+    async getStats(filters: {
+        startDate?: string;
+        endDate?: string;
+        year?: number;
+        quarter?: number;
+    } = {}): Promise<TransactionStats> {
+        const params = new URLSearchParams();
+        if (filters.startDate) params.append('startDate', filters.startDate);
+        if (filters.endDate) params.append('endDate', filters.endDate);
+        if (filters.year) params.append('year', filters.year.toString());
+        if (filters.quarter) params.append('quarter', filters.quarter.toString());
+
+        const queryString = params.toString();
+        const response = await this.request<TransactionStats>(`/transactions/stats${queryString ? `?${queryString}` : ''}`);
         return response.data;
     }
 

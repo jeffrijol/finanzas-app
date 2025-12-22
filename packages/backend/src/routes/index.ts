@@ -26,6 +26,7 @@ router.delete('/items/:id', itemController.deleteItem);
 
 // Transactions
 router.get('/transactions', transactionController.listTransactions);
+router.post('/transactions', transactionController.createTransaction);
 router.put('/transactions/:id', transactionController.updateTransaction);
 router.get('/transactions/stats', transactionController.getStats);
 

@@ -64,6 +64,7 @@ async function main() {
         }
     });
 
+
     console.log('📄 Registro de ExcelUpload creado');
 
     // 4. Obtener todos los ítems para asignarlos a transacciones

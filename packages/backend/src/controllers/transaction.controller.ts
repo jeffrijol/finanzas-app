@@ -31,6 +31,29 @@ export const listTransactions = async (req: Request, res: Response) => {
     ));
 };
 
+export const createTransaction = async (req: Request, res: Response) => {
+    const { fechaValor, descripcion, importe, categoria, saldo, itemAsignadoId, metadata } = req.body;
+
+    // Validación básica
+    if (!fechaValor || !descripcion || importe === undefined) {
+        return res.status(400).json(
+            ApiResponseHelper.error('Faltan campos requeridos: fechaValor, descripcion, importe')
+        );
+    }
+
+    const newTransaction = await TransactionsService.createTransaction({
+        fechaValor: new Date(fechaValor),
+        descripcion,
+        importe,
+        categoria: categoria || 'Sin categoría',
+        saldo: saldo || 0,
+        itemAsignadoId: itemAsignadoId || null,
+        metadata: metadata || null,
+    });
+
+    res.status(201).json(ApiResponseHelper.success(newTransaction, 'Transacción creada exitosamente'));
+};
+
 export const updateTransaction = async (req: Request, res: Response) => {
     const { id } = req.params;
 

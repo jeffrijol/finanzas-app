@@ -33,6 +33,7 @@ export interface Item {
     id: string;
     nombre: string;
     descripcion?: string;
+    tipo: 'BIENES_INMUEBLES' | 'INVERSIONES';
     color?: string;
     icono?: string;
     activo: boolean;
@@ -45,6 +46,7 @@ export interface UploadResponse {
     fileSize: number;
     totalRows: number;
     processed: boolean;
+    transactions?: Partial<Transaction>[];
 }
 
 export interface TransactionStats {
@@ -56,6 +58,11 @@ export interface TransactionStats {
         itemNombre: string;
         cantidad: number;
         total: number;
+    }[];
+    porTipoItem: {
+        tipo: string;
+        ingresos: number;
+        gastos: number;
     }[];
     sinAsignar: {
         cantidad: number;

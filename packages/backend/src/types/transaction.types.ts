@@ -55,6 +55,11 @@ export interface TransactionStats {
         cantidad: number;
         total: number;
     }[];
+    porTipoItem: {
+        tipo: string;
+        ingresos: number;
+        gastos: number;
+    }[];
     sinAsignar: {
         cantidad: number;
         total: number;

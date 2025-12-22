@@ -96,9 +96,25 @@ export class TransactionsService {
         };
     }
 
-    static async getTransactionById(id: string) {
-        return prisma.transaction.findUnique({
-            where: { id },
+    static async createTransaction(data: {
+        fechaValor: Date;
+        descripcion: string;
+        importe: number;
+        categoria: string;
+        saldo?: number;
+        itemAsignadoId?: string | null;
+        metadata?: string | null;
+    }) {
+        return prisma.transaction.create({
+            data: {
+                fechaValor: data.fechaValor,
+                descripcion: data.descripcion,
+                importe: data.importe,
+                categoria: data.categoria,
+                saldo: data.saldo || 0,
+                itemAsignadoId: data.itemAsignadoId || null,
+                metadata: data.metadata || null,
+            },
             include: {
                 itemAsignado: true,
             },
@@ -174,6 +190,12 @@ export class TransactionsService {
 
         const transaccionesPorItem: Record<string, { itemId: string; itemNombre: string; cantidad: number; total: number }> = {};
 
+        // Estructura para agrupar por Tipo de Item
+        const porTipoItem: Record<string, { tipo: string; ingresos: number; gastos: number }> = {
+            'BIENES_INMUEBLES': { tipo: 'Bienes Inmuebles', ingresos: 0, gastos: 0 },
+            'INVERSIONES': { tipo: 'Inversiones', ingresos: 0, gastos: 0 }
+        };
+
         items.forEach(item => {
             transaccionesPorItem[item.id] = {
                 itemId: item.id,
@@ -189,17 +211,30 @@ export class TransactionsService {
         };
 
         transactions.forEach((t) => {
+            const esIngreso = t.importe > 0;
+            const importeAbs = Math.abs(t.importe);
+
             // Ingresos/Gastos globales
-            if (t.importe > 0) {
+            if (esIngreso) {
                 totalIngresos += t.importe;
             } else {
-                totalGastos += Math.abs(t.importe);
+                totalGastos += importeAbs;
             }
 
-            // Estadísticas por item
+            // Estadísticas por item y por tipo
             if (t.itemAsignadoId && transaccionesPorItem[t.itemAsignadoId]) {
+                const item = items.find(i => i.id === t.itemAsignadoId);
                 transaccionesPorItem[t.itemAsignadoId].cantidad++;
                 transaccionesPorItem[t.itemAsignadoId].total += t.importe;
+
+                // Agrupar por Tipo
+                if (item && item.tipo) {
+                    if (esIngreso) {
+                        porTipoItem[item.tipo].ingresos += t.importe;
+                    } else {
+                        porTipoItem[item.tipo].gastos += importeAbs; // Guardamos gastos como positivo para gráficos
+                    }
+                }
             } else {
                 sinAsignar.cantidad++;
                 sinAsignar.total += t.importe;
@@ -222,6 +257,7 @@ export class TransactionsService {
             totalGastos,
             balance,
             transaccionesPorItem: Object.values(transaccionesPorItem),
+            porTipoItem: Object.values(porTipoItem), // Retornar array
             sinAsignar,
             totalTransacciones,
             transaccionesConItem,
