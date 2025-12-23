@@ -13,6 +13,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
@@ -24,6 +26,7 @@ interface Transaction {
     importe: number;
     categoria: string;
     itemAsignadoId?: string | null;
+    categoryId?: string | null;
 }
 
 interface Item {
@@ -35,7 +38,7 @@ interface Item {
 interface TransactionReviewTableProps {
     transactions: Transaction[];
     items: Item[];
-    onUpdateTransaction: (transactionId: string, itemId: string | null) => void;
+    onUpdateTransaction: (transactionId: string, updates: Partial<Transaction>) => void;
 }
 
 export function TransactionReviewTable({
@@ -43,6 +46,24 @@ export function TransactionReviewTable({
     items,
     onUpdateTransaction,
 }: TransactionReviewTableProps) {
+    const { data: itemTypes = [] } = useQuery({
+        queryKey: ['itemTypes'],
+        queryFn: () => apiClient.getItemTypes(),
+    });
+
+    const getAvailableCategories = (transaction: Transaction) => {
+        if (!transaction.itemAsignadoId) return [];
+        const item = items.find(i => i.id === transaction.itemAsignadoId);
+        if (!item) return [];
+
+        // En items passed to prop we need itemTypeId, if not present we might fail filtering
+        // Assuming Item type in frontend includes itemTypeId as updated previously.
+        const type = itemTypes.find(t => t.id === (item as any).itemTypeId);
+        if (!type || !type.categories) return [];
+
+        const isIncome = transaction.importe > 0;
+        return type.categories.filter(c => isIncome ? c.type === 'INCOME' : c.type === 'EXPENSE');
+    };
     if (transactions.length === 0) {
         return (
             <div className="text-center py-12 text-gray-500">
@@ -64,6 +85,9 @@ export function TransactionReviewTable({
                             <TableHead className="font-semibold text-gray-700 text-right">Importe</TableHead>
                             <TableHead className="font-semibold text-gray-700 w-[200px]">
                                 Asignar Item
+                            </TableHead>
+                            <TableHead className="font-semibold text-gray-700 w-[200px]">
+                                Asignar Categoría
                             </TableHead>
                         </TableRow>
                     </TableHeader>
@@ -93,7 +117,8 @@ export function TransactionReviewTable({
                                         value={transaction.itemAsignadoId || 'sin-asignar'}
                                         onValueChange={(value) => {
                                             const itemId = value === 'sin-asignar' ? null : value;
-                                            onUpdateTransaction(transaction.tempId!, itemId);
+                                            // Reset category if item changes
+                                            onUpdateTransaction(transaction.tempId!, { itemAsignadoId: itemId, categoryId: null });
                                         }}
                                     >
                                         <SelectTrigger className="w-full">
@@ -119,6 +144,30 @@ export function TransactionReviewTable({
                                         </SelectContent>
                                     </Select>
                                 </TableCell>
+                                <TableCell>
+                                    <Select
+                                        value={transaction.categoryId || 'sin-categoria'}
+                                        onValueChange={(value) => {
+                                            const categoryId = value === 'sin-categoria' ? null : value;
+                                            onUpdateTransaction(transaction.tempId!, { categoryId });
+                                        }}
+                                        disabled={!transaction.itemAsignadoId}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder={transaction.itemAsignadoId ? "Categoría..." : "-"} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="sin-categoria">
+                                                <span className="text-gray-400 italic">Sin categoría</span>
+                                            </SelectItem>
+                                            {getAvailableCategories(transaction).map((cat) => (
+                                                <SelectItem key={cat.id} value={cat.id}>
+                                                    {cat.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -134,6 +183,6 @@ export function TransactionReviewTable({
                     con item asignado
                 </p>
             </div>
-        </div>
+        </div >
     );
 }

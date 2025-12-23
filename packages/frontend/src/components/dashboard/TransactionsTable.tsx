@@ -57,19 +57,13 @@ export function TransactionsTable({
                                     Fecha
                                 </th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Categoría
-                                </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                     Descripción
                                 </th>
                                 <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                                     Importe
                                 </th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Saldo
-                                </th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Item
+                                    Item / Categoría
                                 </th>
                             </tr>
                         </thead>

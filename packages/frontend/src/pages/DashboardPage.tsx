@@ -150,25 +150,7 @@ export function DashboardPage() {
                     </div>
                 </div>
 
-                {/* Charts Section */}
-                {stats && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div id="dashboard-chart-annual">
-                            <AnnualStatsChart
-                                data={stats.porTipoItem}
-                                year={Number(year)}
-                            />
-                        </div>
-                        {stats.porCategoria && stats.porCategoria.length > 0 && (
-                            <div id="dashboard-chart-pie">
-                                <CategoryPieChart
-                                    data={stats.porCategoria}
-                                    type="gastos"
-                                />
-                            </div>
-                        )}
-                    </div>
-                )}
+
 
                 {/* Period Selector */}
                 <Card className="border-slate-200 shadow-sm">
@@ -214,6 +196,26 @@ export function DashboardPage() {
                         />
                     </CardContent>
                 </Card>
+
+                {/* Charts Section */}
+                {stats && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div id="dashboard-chart-annual">
+                            <AnnualStatsChart
+                                data={stats.porTipoItem}
+                                year={Number(year)}
+                            />
+                        </div>
+                        {stats.porCategoria && stats.porCategoria.length > 0 && (
+                            <div id="dashboard-chart-pie">
+                                <CategoryPieChart
+                                    data={stats.porCategoria}
+                                    type="gastos"
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </DashboardLayout>
     );

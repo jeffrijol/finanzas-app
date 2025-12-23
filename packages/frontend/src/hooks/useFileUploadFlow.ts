@@ -11,6 +11,7 @@ interface Transaction {
     importe: number;
     categoria: string;
     itemAsignadoId?: string | null;
+    categoryId?: string | null;
 }
 
 export function useFileUploadFlow() {
@@ -58,6 +59,7 @@ export function useFileUploadFlow() {
                     importe: t.importe,
                     categoria: t.categoria,
                     itemAsignadoId: t.itemAsignadoId || null,
+                    categoryId: t.categoryId || null,
                 })
             );
             return Promise.all(promises);
@@ -89,11 +91,19 @@ export function useFileUploadFlow() {
         uploadMutation.mutate(file);
     };
 
-    const handleUpdateDraftTransaction = (transactionId: string, itemId: string | null) => {
+    const handleUpdateDraftTransaction = (transactionId: string, updates: any) => {
         setUploadedTransactions((prev) =>
-            prev.map((t) =>
-                t.tempId === transactionId ? { ...t, itemAsignadoId: itemId } : t
-            )
+            prev.map((t) => {
+                if (t.tempId !== transactionId) return t;
+
+                // Si 'updates' es un string/null (legacy) lo tratamos como itemId
+                if (typeof updates === 'string' || updates === null) {
+                    return { ...t, itemAsignadoId: updates };
+                }
+
+                // Si es objeto, hacemos merge
+                return { ...t, ...updates };
+            })
         );
     };
 

@@ -3,6 +3,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Item } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
 
 interface FiltersBarProps {
     searchQuery: string;
@@ -27,9 +29,14 @@ export function FiltersBar({
     items,
 }: FiltersBarProps) {
 
+    const { data: itemTypes = [] } = useQuery({
+        queryKey: ['itemTypes'],
+        queryFn: () => apiClient.getItemTypes(),
+    });
+
     // Filtrar items basado en el tipo seleccionado
     const filteredItems = selectedTipoItem && selectedTipoItem !== 'ALL'
-        ? items.filter(i => i.tipo === selectedTipoItem)
+        ? items.filter(i => i.itemTypeId === selectedTipoItem)
         : items;
 
     return (
@@ -57,9 +64,11 @@ export function FiltersBar({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="ALL">Todos los Tipos</SelectItem>
-                            <SelectItem value="INMUEBLE">Inmueble</SelectItem>
-                            <SelectItem value="INVERSION">Inversión</SelectItem>
-                            <SelectItem value="AVANZE_SOCIEDAD">Avanze Sociedad</SelectItem>
+                            {itemTypes.map((type) => (
+                                <SelectItem key={type.id} value={type.id}>
+                                    {type.name}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
