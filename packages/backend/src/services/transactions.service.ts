@@ -212,6 +212,8 @@ export class TransactionsService {
             'AVANZE_SOCIEDAD': { tipo: 'Avanze Sociedad', ingresos: 0, gastos: 0 }
         };
 
+        const porCategoria: Record<string, { categoria: string; ingresos: number; gastos: number }> = {};
+
         items.forEach(item => {
             transaccionesPorItem[item.id] = {
                 itemId: item.id,
@@ -235,6 +237,17 @@ export class TransactionsService {
                 totalIngresos += t.importe;
             } else {
                 totalGastos += importeAbs;
+            }
+
+            // Agrupar por Categoría
+            const catName = t.categoria || 'Sin categoría';
+            if (!porCategoria[catName]) {
+                porCategoria[catName] = { categoria: catName, ingresos: 0, gastos: 0 };
+            }
+            if (esIngreso) {
+                porCategoria[catName].ingresos += t.importe;
+            } else {
+                porCategoria[catName].gastos += importeAbs;
             }
 
             // Estadísticas por item y por tipo
@@ -279,6 +292,9 @@ export class TransactionsService {
             balance,
             transaccionesPorItem: Object.values(transaccionesPorItem),
             porTipoItem: Object.values(porTipoItem), // Retornar array
+            porCategoria: Object.values(porCategoria)
+                .sort((a, b) => b.gastos - a.gastos) // Ordenar por gastos mayor a menor
+                .filter(c => c.gastos > 0 || c.ingresos > 0),
             sinAsignar,
             totalTransacciones,
             transaccionesConItem,

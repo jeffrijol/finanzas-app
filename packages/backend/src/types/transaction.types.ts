@@ -61,6 +61,11 @@ export interface TransactionStats {
         ingresos: number;
         gastos: number;
     }[];
+    porCategoria: {
+        categoria: string;
+        ingresos: number;
+        gastos: number;
+    }[];
     sinAsignar: {
         cantidad: number;
         total: number;

@@ -5,7 +5,6 @@ import type {
     Item,
     UploadResponse,
     TransactionStats,
-    TransactionFilters,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -135,12 +134,16 @@ class ApiClient {
         endDate?: string;
         year?: number;
         quarter?: number;
+        tipoItem?: string;
+        itemAsignadoId?: string;
     } = {}): Promise<TransactionStats> {
         const params = new URLSearchParams();
         if (filters.startDate) params.append('startDate', filters.startDate);
         if (filters.endDate) params.append('endDate', filters.endDate);
         if (filters.year) params.append('year', filters.year.toString());
         if (filters.quarter) params.append('quarter', filters.quarter.toString());
+        if (filters.tipoItem) params.append('tipoItem', filters.tipoItem);
+        if (filters.itemAsignadoId) params.append('itemAsignadoId', filters.itemAsignadoId);
 
         const queryString = params.toString();
         const response = await this.request<TransactionStats>(`/transactions/stats${queryString ? `?${queryString}` : ''}`);

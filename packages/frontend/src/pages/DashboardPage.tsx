@@ -7,6 +7,11 @@ import { TransactionsTable } from '@/components/dashboard/TransactionsTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePeriodStore } from '@/stores/period-store';
 import { FiltersBar } from '@/components/dashboard/FiltersBar';
+import { Download, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { PdfGeneratorService } from '@/lib/pdf-service';
+import { CategoryPieChart } from '@/components/charts/CategoryPieChart';
+import { AnnualStatsChart } from '@/components/charts/AnnualStatsChart';
 
 export function DashboardPage() {
     const { year, quarter } = usePeriodStore();
@@ -17,6 +22,7 @@ export function DashboardPage() {
     const [selectedTipoItem, setSelectedTipoItem] = useState<string>('');
     const [selectedItemId, setSelectedItemId] = useState<string>('');
     const [updatingTransactionId, setUpdatingTransactionId] = useState<string | undefined>();
+    const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
     // Fetch items
     const { data: items = [] } = useQuery({
@@ -40,6 +46,17 @@ export function DashboardPage() {
                 year: Number(year),
                 quarter: quarter === 'all' ? undefined : Number(quarter),
             }),
+    });
+
+    // Fetch Stats with same filters
+    const { data: stats } = useQuery({
+        queryKey: ['stats', year, quarter, selectedTipoItem, selectedItemId],
+        queryFn: () => apiClient.getStats({
+            year: Number(year),
+            quarter: quarter === 'all' ? undefined : Number(quarter),
+            tipoItem: selectedTipoItem || undefined,
+            itemAsignadoId: selectedItemId || undefined,
+        })
     });
 
     const handlePageChange = (newPage: number) => {
@@ -72,6 +89,35 @@ export function DashboardPage() {
         setPage(1);
     };
 
+    const handleDownloadPdf = async () => {
+        if (!transactionsData?.items) return;
+
+        setIsGeneratingPdf(true);
+        // Small delay to ensure render
+        await new Promise(r => setTimeout(r, 100));
+
+        try {
+            const chartIds = ['dashboard-chart-annual'];
+            if (stats?.porCategoria && stats.porCategoria.length > 0) {
+                chartIds.push('dashboard-chart-pie');
+            }
+
+            const itemName = selectedItemId ? items.find(i => i.id === selectedItemId)?.nombre : 'Todos';
+            const typeName = selectedTipoItem && selectedTipoItem !== 'ALL' ? selectedTipoItem : 'Todos';
+
+            await PdfGeneratorService.generateDashboardReport({
+                title: `Reporte Financiero - ${periodLabel}${quarterLabel}`,
+                subtitle: `Tipo: ${typeName} | Item: ${itemName}`,
+                transactions: transactionsData.items,
+                chartIds
+            });
+        } catch (err) {
+            console.error('Error generating PDF', err);
+        } finally {
+            setIsGeneratingPdf(false);
+        }
+    };
+
     const periodLabel = `Año ${year}`;
     const quarterLabel = quarter === 'all' ? '' : ` • Trimestre ${quarter}`;
 
@@ -86,7 +132,43 @@ export function DashboardPage() {
                             {periodLabel}{quarterLabel}
                         </p>
                     </div>
+
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                            onClick={handleDownloadPdf}
+                            disabled={isGeneratingPdf || isLoadingTransactions}
+                        >
+                            {isGeneratingPdf ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                                <Download className="h-4 w-4 mr-2" />
+                            )}
+                            Descargar Reporte
+                        </Button>
+                    </div>
                 </div>
+
+                {/* Charts Section */}
+                {stats && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div id="dashboard-chart-annual">
+                            <AnnualStatsChart
+                                data={stats.porTipoItem}
+                                year={Number(year)}
+                            />
+                        </div>
+                        {stats.porCategoria && stats.porCategoria.length > 0 && (
+                            <div id="dashboard-chart-pie">
+                                <CategoryPieChart
+                                    data={stats.porCategoria}
+                                    type="gastos"
+                                />
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Period Selector */}
                 <Card className="border-slate-200 shadow-sm">

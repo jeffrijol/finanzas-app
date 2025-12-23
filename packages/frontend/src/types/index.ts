@@ -33,7 +33,7 @@ export interface Item {
     id: string;
     nombre: string;
     descripcion?: string;
-    tipo: 'BIENES_INMUEBLES' | 'INVERSIONES';
+    tipo: string;
     color?: string;
     icono?: string;
     activo: boolean;
@@ -61,6 +61,11 @@ export interface TransactionStats {
     }[];
     porTipoItem: {
         tipo: string;
+        ingresos: number;
+        gastos: number;
+    }[];
+    porCategoria: {
+        categoria: string;
         ingresos: number;
         gastos: number;
     }[];
