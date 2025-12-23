@@ -7,6 +7,7 @@ export class ItemsService {
 
         const items = await prisma.item.findMany({
             where,
+            include: { itemType: true },
             orderBy: {
                 nombre: 'asc',
             },
@@ -106,6 +107,14 @@ export class ItemsService {
         return prisma.item.update({
             where: { id },
             data: { activo: false },
+        });
+    }
+    static async getItemTypes() {
+        return prisma.itemType.findMany({
+            include: {
+                categories: true
+            },
+            orderBy: { name: 'asc' }
         });
     }
 }

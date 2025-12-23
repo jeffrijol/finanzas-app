@@ -2,6 +2,7 @@ import { Item } from '@prisma/client';
 
 export interface ItemCreateInput {
     nombre: string;
+    itemTypeId: string;
     descripcion?: string;
     color?: string;
     icono?: string;

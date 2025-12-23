@@ -19,6 +19,7 @@ router.get('/health', (req, res) => {
 });
 
 // Items
+router.get('/item-types', itemController.getItemTypes);
 router.get('/items', itemController.listItems);
 router.post('/items', itemController.createItem);
 router.put('/items/:id', itemController.updateItem);

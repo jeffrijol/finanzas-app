@@ -15,6 +15,21 @@ export interface PaginatedResponse<T> {
 }
 
 // Domain types
+export interface ItemType {
+    id: string;
+    name: string;
+    code: string;
+    description?: string;
+    categories?: TransactionCategory[];
+}
+
+export interface TransactionCategory {
+    id: string;
+    name: string;
+    type: 'INCOME' | 'EXPENSE';
+    itemTypeId: string;
+}
+
 export interface Transaction {
     id: string;
     fechaValor: string;
@@ -24,6 +39,8 @@ export interface Transaction {
     saldo: number;
     itemAsignadoId?: string | null;
     itemAsignado?: Item | null;
+    categoryId?: string | null;
+    categoryRel?: TransactionCategory | null;
     metadata?: string;
     createdAt: string;
     updatedAt: string;
@@ -33,7 +50,8 @@ export interface Item {
     id: string;
     nombre: string;
     descripcion?: string;
-    tipo: string;
+    itemTypeId: string;
+    itemType?: ItemType;
     color?: string;
     icono?: string;
     activo: boolean;

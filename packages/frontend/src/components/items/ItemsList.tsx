@@ -25,27 +25,7 @@ export function ItemsList({ items, isLoading, onEdit, onDelete }: ItemsListProps
         );
     }
 
-    const getTipoLabel = (tipo: string) => {
-        const labels: Record<string, string> = {
-            'INMUEBLE': 'Inmueble',
-            'INVERSION': 'Inversión',
-            'AVANZE_SOCIEDAD': 'Avanze Sociedad',
-            'BIENES_INMUEBLES': 'Inmueble', // Backward comp
-            'INVERSIONES': 'Inversión' // Backward comp
-        };
-        return labels[tipo] || tipo;
-    };
 
-    const getTipoColor = (tipo: string) => {
-        const colors: Record<string, string> = {
-            'INMUEBLE': 'bg-blue-100 text-blue-700',
-            'INVERSION': 'bg-emerald-100 text-emerald-700',
-            'AVANZE_SOCIEDAD': 'bg-purple-100 text-purple-700',
-            'BIENES_INMUEBLES': 'bg-blue-100 text-blue-700',
-            'INVERSIONES': 'bg-emerald-100 text-emerald-700'
-        };
-        return colors[tipo] || 'bg-gray-100 text-gray-700';
-    };
 
     return (
         <div className="rounded-lg border border-gray-200 overflow-hidden">
@@ -76,8 +56,8 @@ export function ItemsList({ items, isLoading, onEdit, onDelete }: ItemsListProps
                             </TableCell>
                             <TableCell className="font-medium">{item.nombre}</TableCell>
                             <TableCell>
-                                <Badge variant="secondary" className={getTipoColor(item.tipo)}>
-                                    {getTipoLabel(item.tipo)}
+                                <Badge variant="secondary" className="bg-blue-100 text-blue-700">
+                                    {item.itemType?.name || 'Desconocido'}
                                 </Badge>
                             </TableCell>
                             <TableCell>

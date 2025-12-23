@@ -41,8 +41,15 @@ export function TransactionRow({
             </td>
 
             {/* Categoría */}
+            {/* Categoría */}
             <td className="px-4 py-3 text-sm">
-                {transaction.categoria}
+                {transaction.categoryRel ? (
+                    <Badge variant="secondary" className="bg-slate-800 text-slate-300">
+                        {transaction.categoryRel.name}
+                    </Badge>
+                ) : (
+                    <span className="text-slate-500">{transaction.categoria}</span>
+                )}
             </td>
 
             {/* Descripción */}

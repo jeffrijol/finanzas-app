@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Item } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '@/lib/api-client';
 
 interface ItemFormProps {
     item: Item | null;
@@ -17,10 +19,15 @@ export function ItemForm({ item, onSubmit, onCancel, isLoading }: ItemFormProps)
     const [formData, setFormData] = useState({
         nombre: '',
         descripcion: '',
-        tipo: 'INVERSIONES' as 'BIENES_INMUEBLES' | 'INVERSIONES',
+        itemTypeId: '',
         color: '#3B82F6',
         icono: '💰',
         activo: true,
+    });
+
+    const { data: itemTypes = [] } = useQuery({
+        queryKey: ['itemTypes'],
+        queryFn: () => apiClient.getItemTypes(),
     });
 
     useEffect(() => {
@@ -28,7 +35,7 @@ export function ItemForm({ item, onSubmit, onCancel, isLoading }: ItemFormProps)
             setFormData({
                 nombre: item.nombre,
                 descripcion: item.descripcion || '',
-                tipo: item.tipo,
+                itemTypeId: item.itemTypeId,
                 color: item.color || '#3B82F6',
                 icono: item.icono || '💰',
                 activo: item.activo,
@@ -62,17 +69,21 @@ export function ItemForm({ item, onSubmit, onCancel, isLoading }: ItemFormProps)
                         <div>
                             <Label htmlFor="tipo">Tipo *</Label>
                             <Select
-                                value={formData.tipo}
-                                onValueChange={(value: 'BIENES_INMUEBLES' | 'INVERSIONES') =>
-                                    setFormData({ ...formData, tipo: value })
+                                value={formData.itemTypeId}
+                                onValueChange={(value) =>
+                                    setFormData({ ...formData, itemTypeId: value })
                                 }
+                                required
                             >
                                 <SelectTrigger>
-                                    <SelectValue />
+                                    <SelectValue placeholder="Seleccionar tipo..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="BIENES_INMUEBLES">Bienes Inmuebles</SelectItem>
-                                    <SelectItem value="INVERSIONES">Inversiones</SelectItem>
+                                    {itemTypes.map((type) => (
+                                        <SelectItem key={type.id} value={type.id}>
+                                            {type.name}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>

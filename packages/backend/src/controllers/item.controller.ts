@@ -9,6 +9,11 @@ export const listItems = async (req: Request, res: Response) => {
     res.json(ApiResponseHelper.success(items));
 };
 
+export const getItemTypes = async (req: Request, res: Response) => {
+    const types = await ItemsService.getItemTypes();
+    res.json(ApiResponseHelper.success(types));
+};
+
 export const createItem = async (req: Request, res: Response) => {
     const validation = itemSchema.safeParse(req.body);
     if (!validation.success) {

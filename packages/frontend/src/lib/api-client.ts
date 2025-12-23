@@ -3,6 +3,7 @@ import type {
     PaginatedResponse,
     Transaction,
     Item,
+    ItemType,
     UploadResponse,
     TransactionStats,
 } from '../types';
@@ -44,6 +45,11 @@ class ApiClient {
     }
 
     // Items endpoints
+    async getItemTypes(): Promise<ItemType[]> {
+        const response = await this.request<ItemType[]>('/item-types');
+        return response.data;
+    }
+
     async getItems(): Promise<Item[]> {
         const response = await this.request<Item[]>('/items');
         return response.data;

@@ -22,6 +22,7 @@ export const transactionSchema = z.object({
 
 export const itemSchema = z.object({
     nombre: z.string().min(1).max(100),
+    itemTypeId: z.string().cuid(),
     descripcion: z.string().optional(),
     color: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
     icono: z.string().optional(),

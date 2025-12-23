@@ -54,9 +54,13 @@ export class TransactionsService {
         }
 
         // Filtrar por tipo de item
+        // Filtrar por tipo de item
         if (tipoItem && tipoItem !== 'ALL') {
+            // Si el ID parece CUID (25 chars aprox), filtramos por id
+            // Si no, asumimos que es el CODE antiguo o nombre?
+            // El frontend enviará el ID del tipo ahora si actualizamos el filtro.
             where.itemAsignado = {
-                tipo: tipoItem
+                itemTypeId: tipoItem
             };
         }
 
@@ -86,7 +90,10 @@ export class TransactionsService {
         const transactions = await prisma.transaction.findMany({
             where,
             include: {
-                itemAsignado: true,
+                itemAsignado: {
+                    include: { itemType: true }
+                },
+                categoryRel: true
             },
             orderBy: {
                 [sortBy]: sortOrder,
@@ -186,7 +193,7 @@ export class TransactionsService {
 
         if (tipoItem && tipoItem !== 'ALL') {
             where.itemAsignado = {
-                tipo: tipoItem
+                itemTypeId: tipoItem
             };
         }
 
@@ -194,11 +201,14 @@ export class TransactionsService {
         const transactions = await prisma.transaction.findMany({
             where,
             include: {
-                itemAsignado: true
+                itemAsignado: { include: { itemType: true } }
             }
         });
 
-        const items = await prisma.item.findMany({ where: { activo: true } });
+        const items = await prisma.item.findMany({
+            where: { activo: true },
+            include: { itemType: true }
+        });
 
         let totalIngresos = 0;
         let totalGastos = 0;
@@ -206,11 +216,13 @@ export class TransactionsService {
         const transaccionesPorItem: Record<string, { itemId: string; itemNombre: string; cantidad: number; total: number }> = {};
 
         // Estructura para agrupar por Tipo de Item
-        const porTipoItem: Record<string, { tipo: string; ingresos: number; gastos: number }> = {
-            'INMUEBLE': { tipo: 'Inmueble', ingresos: 0, gastos: 0 },
-            'INVERSION': { tipo: 'Inversión', ingresos: 0, gastos: 0 },
-            'AVANZE_SOCIEDAD': { tipo: 'Avanze Sociedad', ingresos: 0, gastos: 0 }
-        };
+        const porTipoItem: Record<string, { tipo: string; ingresos: number; gastos: number }> = {};
+
+        // Inicializar con tipos existentes
+        const allTypes = await prisma.itemType.findMany();
+        allTypes.forEach(t => {
+            porTipoItem[t.name] = { tipo: t.name, ingresos: 0, gastos: 0 };
+        });
 
         const porCategoria: Record<string, { categoria: string; ingresos: number; gastos: number }> = {};
 
@@ -257,16 +269,17 @@ export class TransactionsService {
                 transaccionesPorItem[t.itemAsignadoId].total += t.importe;
 
                 // Agrupar por Tipo
-                if (item && item.tipo) {
+                if (item && item.itemType) {
+                    const typeName = item.itemType.name;
                     // Inicializar si no existe (por seguridad)
-                    if (!porTipoItem[item.tipo]) {
-                        porTipoItem[item.tipo] = { tipo: item.tipo, ingresos: 0, gastos: 0 };
+                    if (!porTipoItem[typeName]) {
+                        porTipoItem[typeName] = { tipo: typeName, ingresos: 0, gastos: 0 };
                     }
 
                     if (esIngreso) {
-                        porTipoItem[item.tipo].ingresos += t.importe;
+                        porTipoItem[typeName].ingresos += t.importe;
                     } else {
-                        porTipoItem[item.tipo].gastos += importeAbs; // Guardamos gastos como positivo para gráficos
+                        porTipoItem[typeName].gastos += importeAbs; // Guardamos gastos como positivo para gráficos
                     }
                 }
             } else {

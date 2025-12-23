@@ -10,12 +10,19 @@ datasource db {
 model Transaction {
   id             String   @id @default(cuid())
   fechaValor     DateTime
-  categoria      String
+  categoria      String   // Categoria original del banco
   descripcion    String
   importe        Float
   saldo          Float
+  
+  // Relacion Item
   itemAsignadoId String?
   itemAsignado   Item?    @relation(fields: [itemAsignadoId], references: [id], onDelete: SetNull)
+  
+  // Relacion Categoria Interna (Nueva)
+  categoryId     String?
+  categoryRel    TransactionCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
   metadata       String?    // Para almacenar datos adicionales del Excel (JSON stringified)
   excelUploadId  String?
   excelUpload    ExcelUpload? @relation(fields: [excelUploadId], references: [id])
@@ -25,6 +32,7 @@ model Transaction {
   @@index([fechaValor])
   @@index([categoria])
   @@index([itemAsignadoId])
+  @@index([categoryId])
   @@index([createdAt])
   @@index([excelUploadId])
 }
@@ -33,13 +41,37 @@ model Item {
   id          String       @id @default(cuid())
   nombre      String       @unique
   descripcion String?
-  tipo        String       @default("INVERSIONES")  // BIENES_INMUEBLES o INVERSIONES
+  
+  // Nuevo modelo de tipos
+  itemTypeId  String
+  itemType    ItemType     @relation(fields: [itemTypeId], references: [id])
+  
   activo      Boolean      @default(true)
   color       String?      // Para identificación visual
   icono       String?      // Icono para la UI
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   transactions Transaction[]
+}
+
+model ItemType {
+  id          String   @id @default(cuid())
+  name        String   // Nombre visual: "Inmueble"
+  code        String   @unique // Clave interna: "INMUEBLE"
+  description String?
+  items       Item[]
+  categories  TransactionCategory[]
+}
+
+model TransactionCategory {
+  id          String   @id @default(cuid())
+  name        String   // "Alquiler", "IBI"
+  type        String   // "INCOME", "EXPENSE"
+  itemTypeId  String
+  itemType    ItemType @relation(fields: [itemTypeId], references: [id])
+  transactions Transaction[]
+
+  @@unique([name, itemTypeId, type])
 }
 
 model ExcelUpload {
