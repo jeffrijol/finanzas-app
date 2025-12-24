@@ -2,9 +2,7 @@ import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Item } from '@/types';
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { Item, ItemType } from '@/types';
 
 interface FiltersBarProps {
     searchQuery: string;
@@ -16,7 +14,8 @@ interface FiltersBarProps {
     selectedItemId?: string;
     onItemChange: (value: string) => void;
 
-    items: Item[]; // Para llenar el select de items
+    items: Item[];
+    itemTypes: ItemType[];
 }
 
 export function FiltersBar({
@@ -27,12 +26,9 @@ export function FiltersBar({
     selectedItemId,
     onItemChange,
     items,
+    itemTypes,
 }: FiltersBarProps) {
 
-    const { data: itemTypes = [] } = useQuery({
-        queryKey: ['itemTypes'],
-        queryFn: () => apiClient.getItemTypes(),
-    });
 
     // Filtrar items basado en el tipo seleccionado
     const filteredItems = selectedTipoItem && selectedTipoItem !== 'ALL'

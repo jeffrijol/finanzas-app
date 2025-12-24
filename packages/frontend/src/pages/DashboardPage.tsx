@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
@@ -15,6 +15,7 @@ import { AnnualStatsChart } from '@/components/charts/AnnualStatsChart';
 
 export function DashboardPage() {
     const { year, quarter } = usePeriodStore();
+    const queryClient = useQueryClient();
 
     // State for filters and pagination
     const [page, setPage] = useState(1);
@@ -28,6 +29,12 @@ export function DashboardPage() {
     const { data: items = [] } = useQuery({
         queryKey: ['items'],
         queryFn: () => apiClient.getItems(),
+    });
+
+    // Fetch itemTypes
+    const { data: itemTypes = [] } = useQuery({
+        queryKey: ['itemTypes'],
+        queryFn: () => apiClient.getItemTypes(),
     });
 
     // Fetch transactions with filters
@@ -67,6 +74,21 @@ export function DashboardPage() {
         setUpdatingTransactionId(transactionId);
         try {
             await apiClient.updateTransaction(transactionId, { itemAsignadoId: itemId });
+            // Invalidate queries to refresh the table and stats
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['stats'] });
+        } finally {
+            setUpdatingTransactionId(undefined);
+        }
+    };
+
+    const handleAssignCategory = async (transactionId: string, categoryId: string | null) => {
+        setUpdatingTransactionId(transactionId);
+        try {
+            await apiClient.updateTransaction(transactionId, { categoryId });
+            // Invalidate queries to refresh the table and stats
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['stats'] });
         } finally {
             setUpdatingTransactionId(undefined);
         }
@@ -182,16 +204,19 @@ export function DashboardPage() {
                             selectedItemId={selectedItemId}
                             onItemChange={handleItemChange}
                             items={items}
+                            itemTypes={itemTypes}
                         />
 
                         <TransactionsTable
                             transactions={transactionsData?.items || []}
                             items={items}
+                            itemTypes={itemTypes}
                             isLoading={isLoadingTransactions}
                             currentPage={page}
                             totalPages={transactionsData?.totalPages || 1}
                             onPageChange={handlePageChange}
                             onAssignItem={handleAssignItem}
+                            onAssignCategory={handleAssignCategory}
                             updatingTransactionId={updatingTransactionId}
                         />
                     </CardContent>

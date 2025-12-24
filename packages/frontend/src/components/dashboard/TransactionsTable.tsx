@@ -1,4 +1,4 @@
-import { Transaction, Item } from '@/types';
+import { Transaction, Item, ItemType } from '@/types';
 import { TransactionRow } from './TransactionRow';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
@@ -6,22 +6,26 @@ import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 interface TransactionsTableProps {
     transactions: Transaction[];
     items: Item[];
+    itemTypes: ItemType[];
     isLoading: boolean;
     currentPage: number;
     totalPages: number;
     onPageChange: (page: number) => void;
     onAssignItem: (transactionId: string, itemId: string | null) => void;
+    onAssignCategory: (transactionId: string, categoryId: string | null) => void;
     updatingTransactionId?: string;
 }
 
 export function TransactionsTable({
     transactions,
     items,
+    itemTypes,
     isLoading,
     currentPage,
     totalPages,
     onPageChange,
     onAssignItem,
+    onAssignCategory,
     updatingTransactionId,
 }: TransactionsTableProps) {
     if (isLoading) {
@@ -48,32 +52,34 @@ export function TransactionsTable({
     return (
         <div className="space-y-4">
             {/* Table */}
-            <div className="rounded-lg border border-slate-800 overflow-hidden">
+            <div className="rounded-lg border border-slate-200 overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                     <table className="w-full">
-                        <thead className="bg-slate-900/50">
-                            <tr className="border-b border-slate-800">
-                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <thead className="bg-slate-50">
+                            <tr className="border-b border-slate-200">
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-[120px]">
                                     Fecha
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Descripción
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                    Descripción / Importe
                                 </th>
-                                <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Importe
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-[200px]">
+                                    Item
                                 </th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                                    Item / Categoría
+                                <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-[200px]">
+                                    Categoría
                                 </th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="bg-white divide-y divide-slate-100">
                             {transactions.map((transaction) => (
                                 <TransactionRow
                                     key={transaction.id}
                                     transaction={transaction}
                                     items={items}
+                                    itemTypes={itemTypes}
                                     onAssignItem={onAssignItem}
+                                    onAssignCategory={onAssignCategory}
                                     isUpdating={updatingTransactionId === transaction.id}
                                 />
                             ))}
@@ -84,8 +90,8 @@ export function TransactionsTable({
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-between">
-                    <div className="text-sm text-muted-foreground">
+                <div className="flex items-center justify-between pt-4">
+                    <div className="text-sm text-slate-500">
                         Página {currentPage} de {totalPages}
                     </div>
                     <div className="flex gap-2">
@@ -94,8 +100,9 @@ export function TransactionsTable({
                             size="sm"
                             onClick={() => onPageChange(currentPage - 1)}
                             disabled={currentPage === 1}
+                            className="h-8"
                         >
-                            <ChevronLeft className="h-4 w-4" />
+                            <ChevronLeft className="h-4 w-4 mr-1" />
                             Anterior
                         </Button>
                         <Button
@@ -103,9 +110,10 @@ export function TransactionsTable({
                             size="sm"
                             onClick={() => onPageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
+                            className="h-8"
                         >
                             Siguiente
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="h-4 w-4 ml-1" />
                         </Button>
                     </div>
                 </div>

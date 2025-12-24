@@ -3,6 +3,7 @@ import multer from 'multer';
 import * as itemController from '../controllers/item.controller';
 import * as transactionController from '../controllers/transaction.controller';
 import * as uploadController from '../controllers/upload.controller';
+import * as categoryController from '../controllers/transaction-categories.controller';
 
 import { ApiResponseHelper } from '../utils/apiResponse';
 
@@ -24,6 +25,13 @@ router.get('/items', itemController.listItems);
 router.post('/items', itemController.createItem);
 router.put('/items/:id', itemController.updateItem);
 router.delete('/items/:id', itemController.deleteItem);
+
+// Transaction Categories
+router.get('/transaction-categories', categoryController.getCategories);
+router.get('/transaction-categories/:id', categoryController.getCategory);
+router.post('/transaction-categories', categoryController.createCategory);
+router.put('/transaction-categories/:id', categoryController.updateCategory);
+router.delete('/transaction-categories/:id', categoryController.deleteCategory);
 
 // Transactions
 router.get('/transactions', transactionController.listTransactions);

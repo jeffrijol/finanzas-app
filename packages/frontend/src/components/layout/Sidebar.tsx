@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 const menuItems = [
     { icon: UploadCloud, label: 'Cargar Datos', path: '/' },
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Wallet, label: 'Items', path: '/items' },
+    { icon: Wallet, label: 'Mantenimiento', path: '/mantenimiento' },
     { icon: PieChart, label: 'Reportes', path: '/reportes' },
 ];
 

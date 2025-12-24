@@ -5,6 +5,7 @@ import type {
     Item,
     ItemType,
     UploadResponse,
+    TransactionCategory,
     TransactionStats,
 } from '../types';
 
@@ -77,7 +78,36 @@ class ApiClient {
         });
     }
 
+    // Transaction Category Endpoints
+    async getCategories(): Promise<TransactionCategory[]> {
+        const response = await this.request<TransactionCategory[]>('/transaction-categories');
+        return response.data;
+    }
+
+    async createCategory(data: Omit<TransactionCategory, 'id'>): Promise<TransactionCategory> {
+        const response = await this.request<TransactionCategory>('/transaction-categories', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+        return response.data;
+    }
+
+    async updateCategory(id: string, data: Partial<TransactionCategory>): Promise<TransactionCategory> {
+        const response = await this.request<TransactionCategory>(`/transaction-categories/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+        return response.data;
+    }
+
+    async deleteCategory(id: string): Promise<void> {
+        await this.request<void>(`/transaction-categories/${id}`, {
+            method: 'DELETE',
+        });
+    }
+
     // Transactions endpoints
+
     async getTransactions(filters: {
         page?: number;
         limit?: number;

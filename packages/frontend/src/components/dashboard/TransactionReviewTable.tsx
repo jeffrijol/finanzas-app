@@ -62,6 +62,23 @@ export function TransactionReviewTable({
         if (!type || !type.categories) return [];
 
         const isIncome = transaction.importe > 0;
+
+        // Fix: If no Item Type found or type has no categories, return all compatible categories
+        // We need access to ALL categories here, but we only have itemTypes with nested categories.
+        // As a fallback, if we can't find specific categories, we might want to show all.
+        // However, given the current structure, we rely on item types.
+
+        // Specific fix for "Retenciones": 
+        // If the item type has NO categories defined, we should probably allow selecting ANY category 
+        // that matches the transaction type (Income/Expense). 
+        // Since we don't have a flat list of all categories here easily without fetching, 
+        // we can try to collect all categories from all item types as a fallback.
+
+        if (!type || !type.categories || type.categories.length === 0) {
+            const allCategories = itemTypes.flatMap(t => t.categories || []);
+            return allCategories.filter(c => isIncome ? c.type === 'INCOME' : c.type === 'EXPENSE');
+        }
+
         return type.categories.filter(c => isIncome ? c.type === 'INCOME' : c.type === 'EXPENSE');
     };
     if (transactions.length === 0) {
@@ -83,10 +100,10 @@ export function TransactionReviewTable({
                             <TableHead className="font-semibold text-gray-700">Descripción</TableHead>
                             <TableHead className="font-semibold text-gray-700">Categoría</TableHead>
                             <TableHead className="font-semibold text-gray-700 text-right">Importe</TableHead>
-                            <TableHead className="font-semibold text-gray-700 w-[200px]">
+                            <TableHead className="font-semibold text-gray-700 w-[250px] min-w-[250px]">
                                 Asignar Item
                             </TableHead>
-                            <TableHead className="font-semibold text-gray-700 w-[200px]">
+                            <TableHead className="font-semibold text-gray-700 w-[250px] min-w-[250px]">
                                 Asignar Categoría
                             </TableHead>
                         </TableRow>
