@@ -10,6 +10,8 @@ interface CategoryStats {
 interface CategoryPieChartProps {
     data: CategoryStats[];
     type: 'ingresos' | 'gastos';
+    title?: string;
+    disableAnimation?: boolean;
 }
 
 const COLORS = [
@@ -17,7 +19,7 @@ const COLORS = [
     '#ec4899', '#6366f1', '#14b8a6', '#f97316', '#06b6d4'
 ];
 
-export function CategoryPieChart({ data, type }: CategoryPieChartProps) {
+export function CategoryPieChart({ data, type, title: titleProp, disableAnimation = false }: CategoryPieChartProps) {
     // Filtrar y preparar datos
     const chartData = data
         .map(d => ({
@@ -40,7 +42,7 @@ export function CategoryPieChart({ data, type }: CategoryPieChartProps) {
         return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
     };
 
-    const title = type === 'ingresos' ? 'Ingresos por Categoría' : 'Distribución de Gastos';
+    const title = titleProp || (type === 'ingresos' ? 'Ingresos por Categoría' : 'Distribución de Gastos');
     const description = type === 'ingresos' ? 'Fuentes de ingresos principales' : 'Desglose de gastos por categoría';
 
     if (finalData.length === 0) return null;
@@ -63,13 +65,14 @@ export function CategoryPieChart({ data, type }: CategoryPieChartProps) {
                                 outerRadius={80}
                                 paddingAngle={2}
                                 dataKey="value"
+                                isAnimationActive={!disableAnimation}
                             >
-                                {finalData.map((entry, index) => (
+                                {finalData.map((_, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />
                                 ))}
                             </Pie>
                             <Tooltip
-                                formatter={(value: number) => formatCurrency(value)}
+                                formatter={(value: any) => formatCurrency(Number(value))}
                                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                             />
                             <Legend

@@ -1,17 +1,14 @@
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import html2canvas from 'html2canvas';
-import { Transaction } from '@/types';
 
 interface ReportOptions {
     title: string;
     subtitle: string;
-    transactions: Transaction[];
     chartIds: string[]; // IDs de los elementos DOM de gráficos a capturar
 }
 
 export const PdfGeneratorService = {
-    async generateDashboardReport({ title, subtitle, transactions, chartIds }: ReportOptions) {
+    async generateDashboardReport({ title, subtitle, chartIds }: ReportOptions) {
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.width;
         let currentY = 20;
@@ -64,40 +61,6 @@ export const PdfGeneratorService = {
                 }
             }
         }
-
-        // --- Transactions Table ---
-        if (currentY > doc.internal.pageSize.height - 60) {
-            doc.addPage();
-            currentY = 20;
-        } else {
-            currentY += 10; // Espacio antes de la tabla
-        }
-
-        doc.setFontSize(14);
-        doc.setTextColor(0);
-        doc.text('Detalle de Transacciones', 14, currentY);
-        currentY += 5;
-
-        const tableBody = transactions.map(t => [
-            new Date(t.fechaValor).toLocaleDateString(),
-            t.categoria || 'Sin categoría',
-            t.descripcion,
-            t.itemAsignado?.nombre || '-',
-            new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(t.importe)
-        ]);
-
-        autoTable(doc, {
-            startY: currentY,
-            head: [['Fecha', 'Categoría', 'Descripción', 'Item', 'Importe']],
-            body: tableBody,
-            styles: { fontSize: 8 },
-            headStyles: { fillColor: [16, 185, 129] }, // Emerald header
-            alternateRowStyles: { fillColor: [248, 250, 252] },
-            margin: { top: 20 },
-            didDrawPage: (data) => {
-                // Footer page number?
-            }
-        });
 
         // Save
         doc.save(`reporte_financiero_${new Date().getTime()}.pdf`);

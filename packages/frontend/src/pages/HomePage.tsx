@@ -52,9 +52,9 @@ export function HomePage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className={`grid grid-cols-1 gap-8 ${!isReviewMode ? 'lg:grid-cols-3' : ''}`}>
                     {/* Left Column (2/3): Upload & Work Area */}
-                    <div className="lg:col-span-2 space-y-6">
+                    <div className={!isReviewMode ? 'lg:col-span-2 space-y-6' : 'space-y-6'}>
                         {!isReviewMode ? (
                             <Card className="border-dashed border-2 border-slate-200 shadow-none bg-slate-50/50">
                                 <CardHeader>
@@ -128,38 +128,40 @@ export function HomePage() {
                     </div>
 
                     {/* Right Column (1/3): Charts & Actions */}
-                    <div className="space-y-6">
-                        {/* Stats Chart - Compact View */}
-                        {stats?.porTipoItem ? (
-                            <AnnualStatsChart data={stats.porTipoItem} year={2025} />
-                        ) : (
-                            <Card className="shadow-sm border-slate-200">
-                                <CardContent className="h-[200px] flex items-center justify-center text-slate-400">
-                                    Cargando estadísticas...
+                    {!isReviewMode && (
+                        <div className="space-y-6">
+                            {/* Stats Chart - Compact View */}
+                            {stats?.porTipoItem ? (
+                                <AnnualStatsChart data={stats.porTipoItem} year={2025} />
+                            ) : (
+                                <Card className="shadow-sm border-slate-200">
+                                    <CardContent className="h-[200px] flex items-center justify-center text-slate-400">
+                                        Cargando estadísticas...
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            <Card className="border-slate-200 shadow-sm">
+                                <CardHeader>
+                                    <CardTitle className="text-base font-semibold text-slate-900">Acciones Rápidas</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-3">
+                                    <Link to="/reportes">
+                                        <Button variant="outline" className="w-full justify-start hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors">
+                                            <TrendingUp className="w-4 h-4 mr-2" />
+                                            Ver Reportes Detallados
+                                        </Button>
+                                    </Link>
+                                    <Link to="/dashboard">
+                                        <Button variant="outline" className="w-full justify-start hover:bg-slate-50">
+                                            <BarChart3 className="w-4 h-4 mr-2" />
+                                            Ir al Histórico
+                                        </Button>
+                                    </Link>
                                 </CardContent>
                             </Card>
-                        )}
-
-                        <Card className="border-slate-200 shadow-sm">
-                            <CardHeader>
-                                <CardTitle className="text-base font-semibold text-slate-900">Acciones Rápidas</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <Link to="/reportes">
-                                    <Button variant="outline" className="w-full justify-start hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-colors">
-                                        <TrendingUp className="w-4 h-4 mr-2" />
-                                        Ver Reportes Detallados
-                                    </Button>
-                                </Link>
-                                <Link to="/dashboard">
-                                    <Button variant="outline" className="w-full justify-start hover:bg-slate-50">
-                                        <BarChart3 className="w-4 h-4 mr-2" />
-                                        Ir al Histórico
-                                    </Button>
-                                </Link>
-                            </CardContent>
-                        </Card>
-                    </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </DashboardLayout>

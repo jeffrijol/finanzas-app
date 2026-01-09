@@ -12,9 +12,11 @@ interface StatsByType {
 interface AnnualStatsChartProps {
     data: StatsByType[];
     year: number;
+    title?: string;
+    disableAnimation?: boolean;
 }
 
-export function AnnualStatsChart({ data, year }: AnnualStatsChartProps) {
+export function AnnualStatsChart({ data, year, title, disableAnimation = false }: AnnualStatsChartProps) {
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
     };
@@ -34,7 +36,7 @@ export function AnnualStatsChart({ data, year }: AnnualStatsChartProps) {
         <Card className="col-span-1 shadow-sm border-slate-200">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <div className="space-y-1">
-                    <CardTitle className="text-xl font-bold text-slate-900">Estadísticas {year}</CardTitle>
+                    <CardTitle className="text-xl font-bold text-slate-900">{title || `Estadísticas ${year}`}</CardTitle>
                     <CardDescription>Resumen de rendimiento por tipo de activo</CardDescription>
                 </div>
                 <Link
@@ -80,6 +82,7 @@ export function AnnualStatsChart({ data, year }: AnnualStatsChartProps) {
                                 fill="#10B981"
                                 radius={[4, 4, 0, 0]}
                                 maxBarSize={60}
+                                isAnimationActive={!disableAnimation}
                             />
                             <Bar
                                 dataKey="gastos"
@@ -87,6 +90,7 @@ export function AnnualStatsChart({ data, year }: AnnualStatsChartProps) {
                                 fill="#EF4444"
                                 radius={[4, 4, 0, 0]}
                                 maxBarSize={60}
+                                isAnimationActive={!disableAnimation}
                             />
                         </BarChart>
                     </ResponsiveContainer>

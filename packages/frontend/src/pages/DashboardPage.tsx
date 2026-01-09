@@ -112,11 +112,9 @@ export function DashboardPage() {
     };
 
     const handleDownloadPdf = async () => {
-        if (!transactionsData?.items) return;
-
         setIsGeneratingPdf(true);
-        // Small delay to ensure render
-        await new Promise(r => setTimeout(r, 100));
+        // Delay to ensure render of static charts (no animation)
+        await new Promise(r => setTimeout(r, 500));
 
         try {
             const chartIds = ['dashboard-chart-annual'];
@@ -129,8 +127,7 @@ export function DashboardPage() {
 
             await PdfGeneratorService.generateDashboardReport({
                 title: `Reporte Financiero - ${periodLabel}${quarterLabel}`,
-                subtitle: `Tipo: ${typeName} | Item: ${itemName}`,
-                transactions: transactionsData.items,
+                subtitle: `Filtros - Tipo: ${typeName} | Item: ${itemName}`,
                 chartIds
             });
         } catch (err) {
@@ -229,6 +226,8 @@ export function DashboardPage() {
                             <AnnualStatsChart
                                 data={stats.porTipoItem}
                                 year={Number(year)}
+                                title={`Finanzas ${year}${quarter !== 'all' ? ` - Q${quarter}` : ''} ${selectedTipoItem && selectedTipoItem !== 'ALL' ? `(${selectedTipoItem})` : ''}`}
+                                disableAnimation={isGeneratingPdf}
                             />
                         </div>
                         {stats.porCategoria && stats.porCategoria.length > 0 && (
@@ -236,6 +235,8 @@ export function DashboardPage() {
                                 <CategoryPieChart
                                     data={stats.porCategoria}
                                     type="gastos"
+                                    title={`Distribución de Gastos ${selectedItemId ? `(${items.find(i => i.id === selectedItemId)?.nombre})` : ''}`}
+                                    disableAnimation={isGeneratingPdf}
                                 />
                             </div>
                         )}
