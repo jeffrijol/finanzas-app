@@ -153,8 +153,6 @@ export function useFileUploadFlow() {
 
                 // Logic for state transition
                 const hasItem = !!updatedT.itemAsignadoId;
-                // If it was synced and we change it, it becomes assigned/dirty
-                const wasSynced = !t.isDirty && t.state === 'synced';
 
                 if (hasItem) {
                     // If we are just restoring a value that matches 'synced' state, ideally we check that
@@ -171,6 +169,7 @@ export function useFileUploadFlow() {
             })
         );
     };
+
 
     // Save Partial: Saves all 'assigned' (dirty) transactions
     const handleSavePartial = useCallback(async (silent = false) => {
@@ -193,9 +192,86 @@ export function useFileUploadFlow() {
                 toast({ title: 'Cambios guardados', description: `Se sincronizaron ${transactionsToSave.length} transacciones.` });
             }
         } catch (e) {
-            // Error handling handled in mutation
+            if (!silent) throw e;
         }
     }, [uploadedTransactions, toast, saveMutation]);
+
+    // Save with Feedback (Toast updates)
+    const saveWithFeedback = async () => {
+        const { id, update } = toast({
+            title: '🔄 Guardando cambios...',
+            description: 'Sincronizando con el servidor, por favor espera.',
+            duration: Infinity, // Keep open until done
+        });
+
+        try {
+            await handleSavePartial(true); // Run silent logic
+            update({
+                id, // Update existing toast
+                title: '✅ Guardado exitoso',
+                description: 'Todas las transacciones asignadas han sido sincronizadas.',
+                duration: 2000,
+                variant: 'default', // or specific success style if available
+            });
+        } catch (error) {
+            update({
+                id,
+                title: '❌ Error al guardar',
+                description: 'Hubo un problema al sincronizar. Intenta nuevamente.',
+                variant: 'destructive',
+                duration: 3000,
+            });
+        }
+    };
+
+    // Bulk Assign
+    const handleBulkAssign = (transactionIds: string[], itemId: string) => {
+        const timestamp = Date.now();
+        lastInteractionRef.current = timestamp;
+
+        setUploadedTransactions((prev) =>
+            prev.map((t) => {
+                if (transactionIds.includes(t.tempId)) {
+                    return {
+                        ...t,
+                        itemAsignadoId: itemId,
+                        state: 'assigned',
+                        isDirty: true,
+                    };
+                }
+                return t;
+            })
+        );
+
+        toast({
+            title: 'Asignación masiva aplicada',
+            description: `Se actualizó el item para ${transactionIds.length} transacciones.`,
+        });
+    };
+
+    // Export State
+    const exportReviewState = () => {
+        const data = {
+            exportedAt: new Date().toISOString(),
+            total: uploadedTransactions.length,
+            transactions: uploadedTransactions
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `finanzas-backup-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        toast({
+            title: 'Respaldo exportado',
+            description: 'El archivo JSON se ha descargado correctamente.',
+        });
+    };
 
     // Finalize: Clear everything
     const handleFinalizeQuarter = async () => {
@@ -246,6 +322,9 @@ export function useFileUploadFlow() {
         handleFileUpload,
         handleUpdateDraftTransaction,
         handleSavePartial,
+        saveWithFeedback,
+        handleBulkAssign,
+        exportReviewState,
         handleFinalizeQuarter,
         handleCancelReview,
     };

@@ -1,392 +1,185 @@
-Quiero una nueva dirección que quieres tomar: pasar de un estilo "fintech" a un dashboard de trabajo más limpio y funcional, centrado en un flujo de carga y revisión de archivos.
+MI PLAN MODIFICADO (RECOMENDACIÓN)
+Paso 1: Toast para Auto-Save (Prioridad Alta)
 
-Este es el plan detallado para implementar los cambios que solicitas.
-📋 Resumen del Plan de Implementación
+// En useFileUploadFlow.ts
+const { toast } = useToast();
 
-El objetivo es transformar la aplicación en un dashboard de área de trabajo con dos vistas principales y un flujo de carga claro. A continuación, te detallo el plan paso a paso:
+const saveWithFeedback = async () => {
+  const toastId = toast({ 
+    title: "🔄 Guardando cambios...",
+    description: "Por favor espera",
+    duration: 0, // No auto-close
+  });
+  
+  try {
+    await handleSavePartial();
+    toast({
+      id: toastId,
+      title: "✅ Guardado",
+      description: "Cambios sincronizados con el servidor",
+      duration: 2000,
+    });
+  } catch (error) {
+    toast({
+      id: toastId,
+      title: "❌ Error al guardar",
+      description: "Intenta guardar manualmente",
+      variant: "destructive",
+    });
+  }
+};
 
-    Reestructurar la Navegación y Vistas: Crear dos páginas/rutas distintas:
+Paso 2: Keyboard Shortcuts (Prioridad Alta)
 
-        Página de Inicio (/) : Centro de operaciones para cargar nuevos archivos. Contendrá el componente FilePond, las estadísticas anuales por ítem y, tras una carga exitosa, la tabla de transacciones para su revisión.
-
-        Dashboard de Consulta (/dashboard) : Vista para explorar y filtrar todas las transacciones ya guardadas en la base de datos, usando los filtros de trimestre y año.
-
-    Integrar FilePond para Carga de Archivos: Reemplazar el método de carga actual por la librería FilePond en la página de inicio, configurándola para subir archivos Excel/CSV a tu endpoint /api/upload.
-
-    Rediseñar la Interfaz de Usuario: Aplicar un nuevo tema visual "limpio" con Tailwind CSS. Se utilizarán fondos claros, bordes sutiles, tipografía sencilla y espaciado generoso para crear una sensación de área de trabajo ordenada.
-
-    Modificar el Flujo de la Tabla de Transacciones:
-
-        En la página de inicio, la tabla solo aparecerá después de una carga exitosa, mostrará únicamente las transacciones de ese archivo (sin paginación) y permitirá asignar ítems en un modo "borrador".
-
-        En el dashboard de consulta, la tabla mostrará transacciones desde la base de datos con paginación y todos los filtros (trimestre, año, etc.).
-
-    Implementar el Proceso de Confirmación: Añadir un botón de "Confirmar y Guardar" en la página de inicio. Solo al hacer clic en él, se enviarán todas las asignaciones de ítems realizadas en la tabla a tu endpoint PUT /api/transactions/:id para actualizar la base de datos de manera definitiva.
-
-🛠️ Código para los Cambios Clave
-
-A continuación, te proporciono el código esencial para los puntos más importantes del plan.
-1. Dependencias de Paquetes (Usando pnpm)
-
-Primero, instala la librería FilePond y sus plugins necesarios para React.
-bash
-
-pnpm add filepond react-filepond filepond-plugin-file-validate-type
-
-2. Página de Inicio Principal (App.tsx)
-
-Este es el núcleo del nuevo flujo. El componente maneja el estado de carga del archivo y la visualización condicional.
-tsx
-
-// src/App.tsx
-import { useState } from 'react';
-import { FilePond, registerPlugin } from 'react-filepond';
-import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
-import 'filepond/dist/filepond.min.css';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import TransactionReviewTable from './components/dashboard/TransactionReviewTable';
-import ItemsStatsPanel from './components/dashboard/ItemsStatsPanel';
-import { useToast } from '@/components/ui/use-toast';
-import { apiClient } from './lib/api-client';
-
-// Registrar el plugin de validación de tipo de archivo
-registerPlugin(FilePondPluginFileValidateType);
-
-function App() {
-  const [files, setFiles] = useState<any[]>([]);
-  const [uploadedTransactions, setUploadedTransactions] = useState<any[]>([]);
-  const [isReviewMode, setIsReviewMode] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
-
-  // 1. Manejar la carga exitosa del archivo
-  const handleFileUpload = async (fileItems: any[]) => {
-    if (fileItems.length > 0) {
-      const file = fileItems[0].file;
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        const response = await apiClient.uploadExcel(formData);
-        // Suponiendo que tu API responde con las transacciones procesadas
-        setUploadedTransactions(response.data.transactions || []);
-        setIsReviewMode(true);
-        toast({
-          title: "Archivo cargado",
-          description: `Se procesaron ${response.data.totalRows} transacciones.`,
-        });
-      } catch (error) {
-        toast({
-          title: "Error en la carga",
-          description: "No se pudo procesar el archivo. Verifica el formato.",
-          variant: "destructive",
-        });
-      }
+// En HomePage.tsx
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // Ctrl+S / Cmd+S para guardar
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      handleSavePartial();
+      return;
+    }
+    
+    // Ctrl+Enter / Cmd+Enter para finalizar
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      if (canFinalize) handleFinalize();
+      return;
+    }
+    
+    // Escape para cancelar selección múltiple
+    if (e.key === 'Escape' && bulkMode) {
+      setBulkMode(false);
     }
   };
+  
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, [handleSavePartial, handleFinalize, canFinalize, bulkMode]);
 
-  // 2. Confirmar y guardar asignaciones en la BD
-  const handleConfirmAssignments = async () => {
-    setIsSaving(true);
-    try {
-      // Filtrar transacciones que tengan un ítem asignado
-      const transactionsToUpdate = uploadedTransactions.filter(t => t.itemAsignadoId);
-      
-      // Enviar cada actualización a la API
-      await Promise.all(
-        transactionsToUpdate.map(t =>
-          apiClient.updateTransaction(t.id, { itemAsignadoId: t.itemAsignadoId })
-        )
-      );
-      
-      toast({
-        title: "Guardado exitoso",
-        description: `Se actualizaron ${transactionsToUpdate.length} transacciones en la base de datos.`,
-      });
-      
-      // Resetear el estado para una nueva carga
-      setUploadedTransactions([]);
-      setIsReviewMode(false);
-      setFiles([]);
-      
-    } catch (error) {
-      toast({
-        title: "Error al guardar",
-        description: "No se pudieron confirmar los cambios. Intenta de nuevo.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
+
+Paso 3: Exportar Estado (Prioridad Media)
+
+// En useFileUploadFlow.ts
+const exportReviewState = () => {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    fileInfo: {
+      originalName: currentFileName,
+      uploadDate: uploadDate,
+      totalTransactions: uploadedTransactions.length,
+    },
+    transactions: uploadedTransactions.map(t => ({
+      descripcion: t.descripcion,
+      importe: t.importe,
+      categoria: t.categoria,
+      itemAsignado: t.itemAsignadoId 
+        ? items.find(i => i.id === t.itemAsignadoId)?.nombre 
+        : null,
+      estado: t.state,
+      sincronizado: t.dbId ? true : false,
+    })),
+    estadisticas: {
+      asignadas: assignedCount,
+      sincronizadas: syncedCount,
+      pendientes: uploadedTransactions.length - assignedCount,
     }
   };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], {
+    type: 'application/json'
+  });
+  
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+  URL.revokeObjectURL(url);
+  
+  toast({
+    title: "📤 Backup exportado",
+    description: `Se descargó un archivo con ${uploadedTransactions.length} transacciones`,
+  });
+};
 
-  // 3. Actualizar una transacción en el estado local (modo borrador)
-  const handleUpdateTransaction = (transactionId: string, itemId: string | null) => {
-    setUploadedTransactions(prev =>
-      prev.map(t =>
-        t.id === transactionId ? { ...t, itemAsignadoId: itemId } : t
-      )
-    );
+Paso 4: Batch Operations IMPORTANTE AQUI PRESTAR ATENCION
+
+ADVERTENCIA SOBRE BATCH OPERATIONS
+
+Problema potencial: Tu plan dice "re-introduces the bulk assignment logic you previously cancelled". Si antes decidiste NO hacer bulk operations, reconsideremos si realmente las necesitas.
+Análisis Costo/Beneficio:
+
+COSTOS:
+
+    Complejidad UI adicional (checkboxes, estados de selección)
+
+    Nuevos edge cases (¿qué pasa si seleccionas draft + synced?)
+
+    Posible confusión para el usuario (dos formas de asignar)
+
+    Más código para mantener
+
+BENEFICIOS:
+
+    Ahorro de clicks para asignar mismo item a muchas transacciones
+
+    Flexibilidad para operaciones masivas
+
+MI RECOMENDACIÓN: VERSIÓN LIGERA
+
+Si decides proceder, sugiro esta implementación ultra minimalista:
+
+// En TransactionReviewTable.tsx
+const [bulkMode, setBulkMode] = useState(false);
+
+// Botón para activar modo bulk
+<Button variant="outline" onClick={() => setBulkMode(!bulkMode)}>
+  {bulkMode ? "Cancelar selección" : "Selección múltiple"}
+</Button>
+
+// Cuando bulkMode está activo:
+// - Checkboxes aparecen
+// - Barra de acciones aparece (asignar a todas, limpiar selección)
+// - Click fuera de tabla desactiva bulkMode
+
+El código sería este más o menos
+
+// Implementación minimalista
+const useBatchOperations = () => {
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isBatchMode, setIsBatchMode] = useState(false);
+  
+  const toggleBatchMode = () => {
+    setIsBatchMode(!isBatchMode);
+    if (isBatchMode) setSelectedIds([]); // Limpiar al salir
   };
-
-  return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-8">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Panel de Control Financiero</h1>
-        <p className="text-gray-600">Carga, revisa y organiza tus transacciones</p>
-      </header>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Columna principal: Carga y Revisión */}
-        <div className="lg:col-span-2 space-y-8">
-          {/* Card de Carga de Archivo */}
-          <Card className="border border-gray-200 shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-xl">Cargar Nuevo Extracto</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <FilePond
-                files={files}
-                onupdatefiles={setFiles}
-                onprocessfile={handleFileUpload}
-                allowMultiple={false}
-                maxFiles={1}
-                acceptedFileTypes={['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'text/csv']}
-                labelIdle='<span class="text-blue-600 font-medium">Arrastra tu archivo Excel o CSV aquí</span> <span class="filepond--label-action">o haz clic para buscar</span>'
-                labelFileProcessing="Procesando..."
-                labelFileProcessingComplete="Archivo listo para revisión"
-                instantUpload={true}
-                server="/api/upload" // Tu endpoint de backend
-                name="file"
-              />
-            </CardContent>
-          </Card>
-
-          {/* Tabla de Revisión (solo se muestra después de cargar) */}
-          {isReviewMode && (
-            <Card className="border border-gray-200 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Revisar y Asignar Transacciones</CardTitle>
-                <Button
-                  onClick={handleConfirmAssignments}
-                  disabled={isSaving || uploadedTransactions.every(t => !t.itemAsignadoId)}
-                >
-                  {isSaving ? "Guardando..." : "Confirmar y Guardar en BD"}
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <TransactionReviewTable
-                  transactions={uploadedTransactions}
-                  onUpdateTransaction={handleUpdateTransaction}
-                />
-                <p className="text-sm text-gray-500 mt-4">
-                  Asigna un ítem a cada transacción usando el menú desplegable. Los cambios se guardarán en la base de datos solo al hacer clic en "Confirmar".
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Columna lateral: Estadísticas y Navegación */}
-        <div className="space-y-8">
-          {/* Panel de Estadísticas Anuales por Ítem */}
-          <ItemsStatsPanel period="annual" />
-
-          {/* Card de Navegación Rápida */}
-          <Card className="border border-gray-200 shadow-sm">
-            <CardHeader>
-              <CardTitle>Navegación Rápida</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <a href="/dashboard">
-                  📊 Ver Dashboard Completo
-                </a>
-              </Button>
-              <p className="text-sm text-gray-500 pt-2">
-                En el dashboard puedes explorar y filtrar todas las transacciones históricas guardadas en el sistema.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default App;
-
-3. Componente de Tabla para Revisión (TransactionReviewTable.tsx)
-
-Esta tabla es específica para la página de inicio y trabaja solo con el estado local.
-tsx
-
-// src/components/dashboard/TransactionReviewTable.tsx
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import ItemAssignmentDropdown from './ItemAssignmentDropdown';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-
-interface TransactionReviewTableProps {
-  transactions: any[];
-  onUpdateTransaction: (transactionId: string, itemId: string | null) => void;
-}
-
-export default function TransactionReviewTable({ transactions, onUpdateTransaction }: TransactionReviewTableProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value);
+  
+  const handleBulkAssign = (itemId: string) => {
+    // Aplicar a todas seleccionadas
+    selectedIds.forEach(id => {
+      updateTransactionItem(id, itemId);
+    });
+    
+    // Feedback y auto-exit
+    toast({
+      title: `✅ Asignado a ${selectedIds.length} transacciones`,
+      description: "Item aplicado correctamente",
+    });
+    
+    // Auto-exit después de 2 segundos
+    setTimeout(() => {
+      setIsBatchMode(false);
+      setSelectedIds([]);
+    }, 2000);
   };
-
-  return (
-    <div className="rounded-md border border-gray-200">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-gray-50 hover:bg-gray-50">
-            <TableHead className="w-[120px]">Fecha</TableHead>
-            <TableHead>Descripción</TableHead>
-            <TableHead className="text-right">Importe</TableHead>
-            <TableHead className="w-[180px]">Asignar a Ítem</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transactions.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={4} className="text-center text-gray-500 py-8">
-                No hay transacciones para mostrar.
-              </TableCell>
-            </TableRow>
-          ) : (
-            transactions.map((transaction) => (
-              <TableRow key={transaction.id} className="hover:bg-gray-50/50">
-                <TableCell className="font-medium">
-                  {format(new Date(transaction.fechaValor), 'dd/MM/yyyy', { locale: es })}
-                </TableCell>
-                <TableCell className="max-w-[300px] truncate" title={transaction.descripcion}>
-                  {transaction.descripcion}
-                </TableCell>
-                <TableCell className={`text-right font-medium ${transaction.importe >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(transaction.importe)}
-                </TableCell>
-                <TableCell>
-                  <ItemAssignmentDropdown
-                    transactionId={transaction.id}
-                    currentItemId={transaction.itemAsignadoId}
-                    onSelectItem={(itemId) => onUpdateTransaction(transaction.id, itemId)}
-                  />
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
-4. Actualización del Dashboard de Consulta (DashboardPage.tsx)
-
-Esta es la nueva página/ruta para explorar datos históricos. Se asume que ya tienes un componente PeriodSelector y TransactionsTable (con paginación) que se conectan a tu store de Zustand y a la API de transacciones completas.
-tsx
-
-// src/pages/DashboardPage.tsx
-import DashboardLayout from '@/components/dashboard/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import PeriodSelector from '@/components/dashboard/PeriodSelector';
-import TransactionsTable from '@/components/dashboard/TransactionsTable'; // Esta SÍ tiene paginación y filtros
-import { usePeriodStore } from '@/stores/period-store';
-
-export default function DashboardPage() {
-  const { year, quarter } = usePeriodStore();
-
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard de Transacciones</h1>
-          <p className="text-gray-600">
-            Explora y filtra todas las transacciones guardadas en la base de datos.
-            Período actual: {quarter === 'all' ? 'Todo el año' : `T${quarter}`} {year}
-          </p>
-        </div>
-
-        {/* Selector de Período */}
-        <Card className="border border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle>Filtrar por Período</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <PeriodSelector />
-          </CardContent>
-        </Card>
-
-        {/* Tabla de Transacciones Históricas */}
-        <Card className="border border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle>Transacciones Guardadas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <TransactionsTable />
-          </CardContent>
-        </Card>
-      </div>
-    </DashboardLayout>
-  );
-}
-
-5. Configuración del Enrutamiento (Ejemplo con react-router-dom)
-
-Para separar las dos vistas principales, necesitarás un enrutador. Aquí un ejemplo básico:
-tsx
-
-// src/main.tsx o AppRouter.tsx
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import App from './App';
-import DashboardPage from './pages/DashboardPage';
-
-function AppRouter() {
-  return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        {/* Futuras rutas: /items, /reports */}
-      </Routes>
-    </Router>
-  );
-}
-
-6. Actualización de Estilos Globales (Tailwind CSS)
-
-Para el nuevo look "limpio", actualiza tu archivo CSS principal con directivas que prioricen tonos neutros y espacios.
-css
-
-/* src/index.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  body {
-    @apply bg-gray-50 text-gray-900 antialiased;
-  }
-}
-
-@layer components {
-  .card-hover {
-    @apply transition-all duration-200 hover:shadow-md;
-  }
-}
-
-💡 Próximos Pasos y Consideraciones
-
-Este plan establece una base sólida. Para completarlo, deberías:
-
-    Ajustar tu Backend: Asegúrate de que el endpoint POST /api/upload responda con un objeto que incluya un array de transactions (con un id temporal) para que el frontend pueda mostrarlas y gestionar su estado. El endpoint PUT /api/transactions/:id debe aceptar el campo itemAsignadoId.
-
-    Configurar el Enrutador: Si no usas react-router-dom, deberás configurar el enrutamiento según el framework que estés utilizando (por ejemplo, el sistema de ficheros de Astro).
-
-    Refinar el Diseño: Utiliza las clases de utilidad de Tailwind para refinar los espacios, bordes y colores hasta lograr el aspecto de "área de trabajo" que buscas.
-
-    Gestionar el Estado del Período: El store de Zustand que ya tienes (period-store.ts) se usará principalmente en el DashboardPage. Asegúrate de que el PeriodSelector y el TransactionsTable en esa página se conecten a él.
+  
+  return {
+    isBatchMode,
+    selectedIds,
+    toggleBatchMode,
+    handleBulkAssign,
+    setSelectedIds,
+  };
+};

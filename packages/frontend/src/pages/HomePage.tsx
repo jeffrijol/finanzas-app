@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useFileUploadFlow } from '@/hooks/useFileUploadFlow';
 import { Link } from 'react-router-dom';
-import { XCircle, BarChart3, TrendingUp, Save, CheckCheck } from 'lucide-react';
+import { XCircle, BarChart3, TrendingUp, Save, CheckCheck, Download } from 'lucide-react';
 import { AnnualStatsChart } from '@/components/charts/AnnualStatsChart';
 import {
     AlertDialog,
@@ -31,12 +31,27 @@ export function HomePage() {
         handleFileUpload,
         handleUpdateDraftTransaction,
         handleSavePartial,
+        saveWithFeedback,
+        handleBulkAssign,
+        exportReviewState,
         handleFinalizeQuarter,
         handleCancelReview,
     } = useFileUploadFlow();
 
     // Filtro para mostrar/ocultar sincronizados
     const [hideSynced, setHideSynced] = useState(false);
+
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveWithFeedback();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [saveWithFeedback]);
 
     // Fetch items
     const { data: items = [] } = useQuery({
@@ -105,6 +120,15 @@ export function HomePage() {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    onClick={exportReviewState}
+                                                    title="Exportar respaldo (JSON)"
+                                                >
+                                                    <Download className="w-4 h-4 text-slate-600" />
+                                                </Button>
+
+                                                <Button
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => setHideSynced(!hideSynced)}
@@ -123,7 +147,7 @@ export function HomePage() {
                                                 </Button>
 
                                                 <Button
-                                                    onClick={() => handleSavePartial(false)}
+                                                    onClick={() => saveWithFeedback()}
                                                     disabled={isSaving}
                                                     size="sm"
                                                     variant="secondary"
@@ -207,6 +231,7 @@ export function HomePage() {
                                             transactions={visibleTransactions}
                                             items={items}
                                             onUpdateTransaction={handleUpdateDraftTransaction}
+                                            onBulkAssign={handleBulkAssign}
                                         />
                                     </div>
 
@@ -262,3 +287,4 @@ export function HomePage() {
         </DashboardLayout>
     );
 }
+
