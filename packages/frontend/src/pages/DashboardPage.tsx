@@ -123,7 +123,9 @@ export function DashboardPage() {
             }
 
             const itemName = selectedItemId ? items.find(i => i.id === selectedItemId)?.nombre : 'Todos';
-            const typeName = selectedTipoItem && selectedTipoItem !== 'ALL' ? selectedTipoItem : 'Todos';
+            const typeName = selectedTipoItem && selectedTipoItem !== 'ALL'
+                ? (itemTypes.find(t => t.id === selectedTipoItem)?.name || selectedTipoItem)
+                : 'Todos';
 
             await PdfGeneratorService.generateDashboardReport({
                 title: `Reporte Financiero - ${periodLabel}${quarterLabel}`,
@@ -226,7 +228,7 @@ export function DashboardPage() {
                             <AnnualStatsChart
                                 data={stats.porTipoItem}
                                 year={Number(year)}
-                                title={`Finanzas ${year}${quarter !== 'all' ? ` - Q${quarter}` : ''} ${selectedTipoItem && selectedTipoItem !== 'ALL' ? `(${selectedTipoItem})` : ''}`}
+                                title={`Finanzas ${year}${quarter !== 'all' ? ` - Q${quarter}` : ''} ${selectedTipoItem && selectedTipoItem !== 'ALL' ? `(${itemTypes.find(t => t.id === selectedTipoItem)?.name || selectedTipoItem})` : ''}`}
                                 disableAnimation={isGeneratingPdf}
                             />
                         </div>
