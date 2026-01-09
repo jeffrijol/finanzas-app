@@ -129,6 +129,7 @@ async function main() {
     console.log(`✅ Estructura creada: ${createdItems.length} items y sus tipos/categorías.`);
 
     // 4. Leer Excel de Movimientos
+    /*
     const excelPath = path.resolve(__dirname, '../../../Movimientos_cuenta T1.xlsx');
     if (!fs.existsSync(excelPath)) {
         console.error(`❌ No se encontró Excel: ${excelPath}`);
@@ -233,7 +234,7 @@ async function main() {
 
     // Insertar (usamos loop para validar FKs, o createMany si estamos seguros)
     // createMany es más rápido
-    /* SQLite createMany support is recent/standard now? Yes on prisma. */
+    // SQLite createMany support is recent/standard now? Yes on prisma.
     // Pero si hay error en uno, falla todo. Loop con Promise.allbatches es mejor si son muchos.
     // Son ~1000 items?
     console.log(`Insertando ${transactionsToInsert.length} transacciones...`);
@@ -242,6 +243,7 @@ async function main() {
     for (const t of transactionsToInsert) {
         await prisma.transaction.create({ data: t });
     }
+    */
 
     console.log('🎉 Seed finalizado con éxito.');
 }

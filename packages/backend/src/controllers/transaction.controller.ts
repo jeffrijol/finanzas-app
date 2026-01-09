@@ -58,7 +58,7 @@ export const listTransactions = async (req: Request, res: Response) => {
 };
 
 export const createTransaction = async (req: Request, res: Response) => {
-    const { fechaValor, descripcion, importe, categoria, saldo, itemAsignadoId, metadata } = req.body;
+    const { fechaValor, descripcion, importe, categoria, saldo, itemAsignadoId, categoryId, metadata } = req.body;
 
     // Validación básica
     if (!fechaValor || !descripcion || importe === undefined) {
@@ -74,6 +74,7 @@ export const createTransaction = async (req: Request, res: Response) => {
         categoria: categoria || 'Sin categoría',
         saldo: saldo || 0,
         itemAsignadoId: itemAsignadoId || null,
+        categoryId: categoryId || null,
         metadata: metadata || null,
     });
 

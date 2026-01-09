@@ -118,6 +118,7 @@ export class TransactionsService {
         categoria: string;
         saldo?: number;
         itemAsignadoId?: string | null;
+        categoryId?: string | null;
         metadata?: string | null;
     }) {
         return prisma.transaction.create({
@@ -128,6 +129,7 @@ export class TransactionsService {
                 categoria: data.categoria,
                 saldo: data.saldo || 0,
                 itemAsignadoId: data.itemAsignadoId || null,
+                categoryId: data.categoryId || null,
                 metadata: data.metadata || null,
             },
             include: {
