@@ -1,15 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
-import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { FileUploadPond } from '@/components/dashboard/FileUploadPond';
-import { TransactionReviewTable } from '@/components/dashboard/TransactionReviewTable';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useFileUploadFlow } from '@/hooks/useFileUploadFlow';
-import { Link } from 'react-router-dom';
-import { CheckCircle2, XCircle, BarChart3, TrendingUp } from 'lucide-react';
-import { AnnualStatsChart } from '@/components/charts/AnnualStatsChart';
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
@@ -20,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useFileUploadFlow } from '@/hooks/useFileUploadFlow';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, XCircle, BarChart3, TrendingUp, Save, CheckCheck } from 'lucide-react';
+import { XCircle, BarChart3, TrendingUp, Save, CheckCheck } from 'lucide-react';
 import { AnnualStatsChart } from '@/components/charts/AnnualStatsChart';
 import {
     AlertDialog,
@@ -74,7 +62,6 @@ export function HomePage() {
         ? uploadedTransactions.filter(t => t.state !== 'synced' || t.isDirty)
         : uploadedTransactions;
 
-    const canFinalize = total > 0 && assigned === total && synced === total;
 
     return (
         <DashboardLayout>

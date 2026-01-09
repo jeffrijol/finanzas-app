@@ -18,49 +18,6 @@ import { apiClient } from '@/lib/api-client';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
-
-interface Transaction {
-    tempId?: string;
-    fechaValor: string;
-    descripcion: string;
-    importe: number;
-    categoria: string;
-    itemAsignadoId?: string | null;
-    categoryId?: string | null;
-}
-
-interface Item {
-    id: string;
-    nombre: string;
-    color?: string;
-}
-
-interface TransactionReviewTableProps {
-    transactions: Transaction[];
-    items: Item[];
-    onUpdateTransaction: (transactionId: string, updates: Partial<Transaction>) => void;
-}
-
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, CircleDashed, Clock } from 'lucide-react';
 
