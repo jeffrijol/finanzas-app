@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useToast } from '@/hooks/use-toast';
 
-interface Transaction {
-    tempId?: string;
+export type TransactionState = 'draft' | 'assigned' | 'synced';
+
+export interface ReviewTransaction {
+    tempId: string;
     id?: string;
     fechaValor: string;
     descripcion: string;
@@ -12,31 +14,59 @@ interface Transaction {
     categoria: string;
     itemAsignadoId?: string | null;
     categoryId?: string | null;
+    state: TransactionState;
+    isDirty: boolean;
 }
+
+const STORAGE_KEY = 'finanzas_app_upload_session';
 
 export function useFileUploadFlow() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
-    const [uploadedTransactions, setUploadedTransactions] = useState<Transaction[]>([]);
-    const [isReviewMode, setIsReviewMode] = useState(false);
 
-    // Mutación para procesar el archivo (sin guardar en BD)
+    // Initialize state from localStorage if available
+    const [uploadedTransactions, setUploadedTransactions] = useState<ReviewTransaction[]>(() => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    const [isReviewMode, setIsReviewMode] = useState<boolean>(() => {
+        return uploadedTransactions.length > 0;
+    });
+
+    // Ref to track if user is interacting (for debounce auto-save)
+    const lastInteractionRef = useRef<number>(Date.now());
+
+    // Persist to localStorage whenever transactions change
+    useEffect(() => {
+        if (uploadedTransactions.length > 0) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(uploadedTransactions));
+            setIsReviewMode(true);
+        } else {
+            localStorage.removeItem(STORAGE_KEY);
+            setIsReviewMode(false);
+        }
+    }, [uploadedTransactions]);
+
+    // Cleanup valid/old sessions (optional logic could go here)
+
+    // Mutation to process file
     const uploadMutation = useMutation({
         mutationFn: (file: File) => apiClient.uploadFile(file),
         onSuccess: (data) => {
-            // Agregar tempId a cada transacción
-            const transactionsWithTempId = data.transactions?.map((t: any, index: number) => ({
+            const transactions: ReviewTransaction[] = data.transactions?.map((t: any, index: number) => ({
                 ...t,
                 tempId: `temp-${Date.now()}-${index}`,
                 itemAsignadoId: null,
+                categoryId: null,
+                state: 'draft',
+                isDirty: false,
             })) || [];
 
-            setUploadedTransactions(transactionsWithTempId);
-            setIsReviewMode(true);
-
+            setUploadedTransactions(transactions);
             toast({
                 title: 'Archivo procesado',
-                description: `Se cargaron ${data.totalRows || transactionsWithTempId.length} transacciones. Asigna los items y confirma para guardar.`,
+                description: `Se cargaron ${data.totalRows || transactions.length} transacciones.`,
             });
         },
         onError: (error: Error) => {
@@ -48,43 +78,57 @@ export function useFileUploadFlow() {
         },
     });
 
-    // Mutación para guardar todas las transacciones en BD
-    const confirmMutation = useMutation({
-        mutationFn: async (transactions: Transaction[]) => {
-            // Guardar cada transacción individualmente
-            const promises = transactions.map((t) =>
-                apiClient.createTransaction({
-                    fechaValor: t.fechaValor,
-                    descripcion: t.descripcion,
-                    importe: t.importe,
-                    categoria: t.categoria,
-                    itemAsignadoId: t.itemAsignadoId || null,
-                    categoryId: t.categoryId || null,
-                })
-            );
+    // Mutation to save (upsert)
+    const saveMutation = useMutation({
+        mutationFn: async (transactions: ReviewTransaction[]) => {
+            const promises = transactions.map(async (t) => {
+                if (t.id) {
+                    // Update existing
+                    const updated = await apiClient.updateTransaction(t.id, {
+                        itemAsignadoId: t.itemAsignadoId,
+                        categoryId: t.categoryId,
+                    });
+                    return { ...updated, tempId: t.tempId };
+                } else {
+                    // Create new
+                    const created = await apiClient.createTransaction({
+                        fechaValor: t.fechaValor,
+                        descripcion: t.descripcion,
+                        importe: t.importe,
+                        categoria: t.categoria,
+                        itemAsignadoId: t.itemAsignadoId || null,
+                        categoryId: t.categoryId || null,
+                    });
+                    return { ...created, tempId: t.tempId };
+                }
+            });
             return Promise.all(promises);
         },
-        onSuccess: (_, variables) => {
-            toast({
-                title: 'Transacciones guardadas',
-                description: `Se guardaron ${variables.length} transacciones en la base de datos.`,
-            });
+        onSuccess: (savedTransactions) => {
+            // Update local state: mark synced and clean dirty flag
+            setUploadedTransactions((prev) =>
+                prev.map((t) => {
+                    const saved = savedTransactions.find((st: any) => st.tempId === t.tempId);
+                    if (saved) {
+                        return {
+                            ...t,
+                            id: saved.id,
+                            state: 'synced',
+                            isDirty: false,
+                        };
+                    }
+                    return t;
+                })
+            );
 
-            // Limpiar el estado
-            setUploadedTransactions([]);
-            setIsReviewMode(false);
-
-            // Invalidar queries para actualizar datos
+            // Refresh dashboard data
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             queryClient.invalidateQueries({ queryKey: ['stats'] });
         },
         onError: (error: Error) => {
-            toast({
-                title: 'Error al guardar',
-                description: error.message,
-                variant: 'destructive',
-            });
-        },
+            console.error('Save error', error);
+            // Optional: Toast error
+        }
     });
 
     const handleFileUpload = (file: File) => {
@@ -92,50 +136,117 @@ export function useFileUploadFlow() {
     };
 
     const handleUpdateDraftTransaction = (transactionId: string, updates: any) => {
+        lastInteractionRef.current = Date.now();
+
         setUploadedTransactions((prev) =>
             prev.map((t) => {
                 if (t.tempId !== transactionId) return t;
 
-                // Si 'updates' es un string/null (legacy) lo tratamos como itemId
+                let updatedT = { ...t };
+
+                // Handle updates
                 if (typeof updates === 'string' || updates === null) {
-                    return { ...t, itemAsignadoId: updates };
+                    updatedT.itemAsignadoId = updates;
+                } else {
+                    updatedT = { ...updatedT, ...updates };
                 }
 
-                // Si es objeto, hacemos merge
-                return { ...t, ...updates };
+                // Logic for state transition
+                const hasItem = !!updatedT.itemAsignadoId;
+                // If it was synced and we change it, it becomes assigned/dirty
+                const wasSynced = !t.isDirty && t.state === 'synced';
+
+                if (hasItem) {
+                    // If we are just restoring a value that matches 'synced' state, ideally we check that
+                    // But for now, any manual change marks it as assigned/dirty unless we do deep compare.
+                    // Let's assume manual change = dirty.
+                    updatedT.state = 'assigned';
+                } else {
+                    updatedT.state = 'draft';
+                }
+
+                updatedT.isDirty = true;
+
+                return updatedT;
             })
         );
     };
 
-    const handleConfirmAssignments = () => {
-        // Filtrar transacciones que tengan item asignado
-        const transactionsToSave = uploadedTransactions.filter((t) => t.itemAsignadoId);
+    // Save Partial: Saves all 'assigned' (dirty) transactions
+    const handleSavePartial = useCallback(async (silent = false) => {
+        // We save anything that is dirty and has an item assigned
+        // OR anything that is 'assigned' state (redundant but safe)
+        const transactionsToSave = uploadedTransactions.filter(
+            (t) => (t.isDirty || t.state === 'assigned') && t.itemAsignadoId
+        );
 
         if (transactionsToSave.length === 0) {
-            toast({
-                title: 'Sin transacciones asignadas',
-                description: 'Debes asignar al menos un item antes de confirmar.',
-                variant: 'destructive',
-            });
+            if (!silent) {
+                toast({ title: 'Nada que guardar', description: 'No hay cambios pendientes confirmados.' });
+            }
             return;
         }
 
-        confirmMutation.mutate(transactionsToSave);
+        try {
+            await saveMutation.mutateAsync(transactionsToSave);
+            if (!silent) {
+                toast({ title: 'Cambios guardados', description: `Se sincronizaron ${transactionsToSave.length} transacciones.` });
+            }
+        } catch (e) {
+            // Error handling handled in mutation
+        }
+    }, [uploadedTransactions, toast, saveMutation]);
+
+    // Finalize: Clear everything
+    const handleFinalizeQuarter = async () => {
+        // Ensure everything is saved
+        const unsaved = uploadedTransactions.filter((t) => t.state !== 'synced' && t.itemAsignadoId);
+
+        if (unsaved.length > 0) {
+            await handleSavePartial(true);
+        }
+
+        // Clear storage and state
+        localStorage.removeItem(STORAGE_KEY);
+        setUploadedTransactions([]);
+        setIsReviewMode(false);
+
+        toast({ title: 'Trimestre finalizado', description: 'Todas las transacciones se han procesado exitosamente.' });
     };
 
     const handleCancelReview = () => {
+        localStorage.removeItem(STORAGE_KEY);
         setUploadedTransactions([]);
         setIsReviewMode(false);
     };
+
+    // Auto-Save Effect
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            const timeSinceInteraction = Date.now() - lastInteractionRef.current;
+            // Only auto-save if user hasn't interacted in last 2 seconds (debounce)
+            // and there are dirty items
+            if (timeSinceInteraction > 2000) {
+                const dirtyCount = uploadedTransactions.filter(t => t.isDirty && t.itemAsignadoId).length;
+                if (dirtyCount > 0 && !saveMutation.isPending) {
+                    console.log('Auto-saving...', dirtyCount, 'items');
+                    handleSavePartial(true);
+                }
+            }
+        }, 10000); // Check every 10 seconds for more responsive auto-save
+
+        return () => clearInterval(intervalId);
+    }, [handleSavePartial, uploadedTransactions, saveMutation.isPending]);
 
     return {
         uploadedTransactions,
         isReviewMode,
         isUploading: uploadMutation.isPending,
-        isSaving: confirmMutation.isPending,
+        isSaving: saveMutation.isPending,
         handleFileUpload,
         handleUpdateDraftTransaction,
-        handleConfirmAssignments,
+        handleSavePartial,
+        handleFinalizeQuarter,
         handleCancelReview,
     };
 }
