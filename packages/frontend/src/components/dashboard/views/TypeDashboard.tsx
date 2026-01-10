@@ -77,7 +77,7 @@ export function TypeDashboard({ context, isGeneratingPdf }: TypeDashboardProps) 
                         <CategoryPieChart
                             data={stats.categoryDistribution}
                             type="gastos"
-                            title="Distribución de Gastos"
+                            title="Distribución de Gastos (Categorías Internas)"
                             disableAnimation={isGeneratingPdf}
                         />
                     </div>
@@ -87,7 +87,7 @@ export function TypeDashboard({ context, isGeneratingPdf }: TypeDashboardProps) 
                         <CategoryPieChart
                             data={stats.categoryDistribution}
                             type="ingresos"
-                            title="Distribución de Ingresos"
+                            title="Distribución de Ingresos (Categorías Internas)"
                             disableAnimation={isGeneratingPdf}
                         />
                     </div>

@@ -65,7 +65,8 @@ export class AnalyticsController {
                     fechaValor: true,
                     importe: true,
                     categoria: true,
-                    itemAsignadoId: true
+                    itemAsignadoId: true,
+                    categoryRel: { select: { name: true } }
                 }
             });
 
@@ -77,6 +78,7 @@ export class AnalyticsController {
             }));
 
             // 2. Category Distribution
+            // Using internal Categories (categoryRel)
             const categoriesMap: Record<string, { ingresos: number, gastos: number }> = {};
 
             // 3. Top Items (Re-calc from memory to avoid double DB call if dataset is small enough)
@@ -91,8 +93,9 @@ export class AnalyticsController {
                 if (isIncome) monthlyTrend[month].ingresos += t.importe;
                 else monthlyTrend[month].gastos += absAmount;
 
-                // Categories
-                const cat = t.categoria || 'Sin Categoría';
+                // Categories (Internal)
+                // @ts-ignore
+                const cat = t.categoryRel?.name || 'Sin Asignar';
                 if (!categoriesMap[cat]) categoriesMap[cat] = { ingresos: 0, gastos: 0 };
                 if (isIncome) categoriesMap[cat].ingresos += t.importe;
                 else categoriesMap[cat].gastos += absAmount;
@@ -159,7 +162,8 @@ export class AnalyticsController {
                 select: {
                     fechaValor: true,
                     importe: true,
-                    categoria: true
+                    categoria: true,
+                    categoryRel: { select: { name: true } }
                 },
                 orderBy: { fechaValor: 'asc' }
             });
@@ -176,6 +180,7 @@ export class AnalyticsController {
             let totalGastos = 0;
 
             // 3. Category Distribution (How this item is categorized in bank)
+            // Now using Internal Category
             const categoriesMap: Record<string, { ingresos: number, gastos: number }> = {};
 
             transactions.forEach(t => {
@@ -192,7 +197,8 @@ export class AnalyticsController {
                 else totalGastos += absAmount;
 
                 // Categories
-                const cat = t.categoria || 'Sin Categoría';
+                // @ts-ignore
+                const cat = t.categoryRel?.name || 'Sin Asignar';
                 if (!categoriesMap[cat]) categoriesMap[cat] = { ingresos: 0, gastos: 0 };
                 if (isIncome) categoriesMap[cat].ingresos += t.importe;
                 else categoriesMap[cat].gastos += absAmount;

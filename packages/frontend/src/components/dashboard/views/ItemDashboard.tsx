@@ -91,7 +91,7 @@ export function ItemDashboard({ context, isGeneratingPdf }: ItemDashboardProps) 
                         <CategoryPieChart
                             data={stats.categoryDistribution}
                             type="gastos"
-                            title="Distribución de Gastos (Categorías Bancarias)"
+                            title="Distribución de Gastos (Categorías Internas)"
                             disableAnimation={isGeneratingPdf}
                         />
                     </div>
@@ -101,7 +101,7 @@ export function ItemDashboard({ context, isGeneratingPdf }: ItemDashboardProps) 
                         <CategoryPieChart
                             data={stats.categoryDistribution}
                             type="ingresos"
-                            title="Distribución de Ingresos (Categorías Bancarias)"
+                            title="Distribución de Ingresos (Categorías Internas)"
                             disableAnimation={isGeneratingPdf}
                         />
                     </div>
