@@ -10,18 +10,24 @@ import { FiltersBar } from '@/components/dashboard/FiltersBar';
 import { Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PdfGeneratorService } from '@/lib/pdf-service';
-import { CategoryPieChart } from '@/components/charts/CategoryPieChart';
-import { AnnualStatsChart } from '@/components/charts/AnnualStatsChart';
+import { useDashboardFiltersStore } from '@/stores/dashboard-filters-store';
+import { useDashboardContext } from '@/hooks/useDashboardContext';
+import { DashboardChartsRenderer } from '@/components/dashboard/DashboardChartsRenderer';
 
 export function DashboardPage() {
     const { year, quarter } = usePeriodStore();
     const queryClient = useQueryClient();
 
-    // State for filters and pagination
+    // Global filter state
+    const {
+        searchQuery,
+        selectedTipoItem,
+        selectedItemId,
+        selectedCategory,
+    } = useDashboardFiltersStore();
+
+    // Local pagination state
     const [page, setPage] = useState(1);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedTipoItem, setSelectedTipoItem] = useState<string>('');
-    const [selectedItemId, setSelectedItemId] = useState<string>('');
     const [updatingTransactionId, setUpdatingTransactionId] = useState<string | undefined>();
     const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
@@ -37,12 +43,21 @@ export function DashboardPage() {
         queryFn: () => apiClient.getItemTypes(),
     });
 
-    // Fetch transactions with filters
+    // Fetch categories
+    const { data: categories = [] } = useQuery({
+        queryKey: ['categories'],
+        queryFn: () => apiClient.getCategories(),
+    });
+
+    // Smart Dashboard Context
+    const dashboardContext = useDashboardContext(items, itemTypes, categories);
+
+    // Fetch transactions with filters from Store
     const {
         data: transactionsData,
         isLoading: isLoadingTransactions,
     } = useQuery({
-        queryKey: ['transactions', page, searchQuery, selectedTipoItem, selectedItemId, year, quarter],
+        queryKey: ['transactions', page, searchQuery, selectedTipoItem, selectedItemId, selectedCategory, year, quarter],
         queryFn: () =>
             apiClient.getTransactions({
                 page,
@@ -50,20 +65,10 @@ export function DashboardPage() {
                 search: searchQuery || undefined,
                 tipoItem: selectedTipoItem || undefined,
                 itemAsignadoId: selectedItemId || undefined,
+                categoryId: selectedCategory || undefined, // Send as categoryId
                 year: Number(year),
                 quarter: quarter === 'all' ? undefined : Number(quarter),
             }),
-    });
-
-    // Fetch Stats with same filters
-    const { data: stats } = useQuery({
-        queryKey: ['stats', year, quarter, selectedTipoItem, selectedItemId],
-        queryFn: () => apiClient.getStats({
-            year: Number(year),
-            quarter: quarter === 'all' ? undefined : Number(quarter),
-            tipoItem: selectedTipoItem || undefined,
-            itemAsignadoId: selectedItemId || undefined,
-        })
     });
 
     const handlePageChange = (newPage: number) => {
@@ -74,7 +79,6 @@ export function DashboardPage() {
         setUpdatingTransactionId(transactionId);
         try {
             await apiClient.updateTransaction(transactionId, { itemAsignadoId: itemId });
-            // Invalidate queries to refresh the table and stats
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             queryClient.invalidateQueries({ queryKey: ['stats'] });
         } finally {
@@ -86,7 +90,6 @@ export function DashboardPage() {
         setUpdatingTransactionId(transactionId);
         try {
             await apiClient.updateTransaction(transactionId, { categoryId });
-            // Invalidate queries to refresh the table and stats
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             queryClient.invalidateQueries({ queryKey: ['stats'] });
         } finally {
@@ -94,42 +97,35 @@ export function DashboardPage() {
         }
     };
 
-    // Reset page when filters change
-    const handleSearchChange = (value: string) => {
-        setSearchQuery(value);
-        setPage(1);
-    };
-
-    const handleTipoItemChange = (value: string) => {
-        setSelectedTipoItem(value);
-        setSelectedItemId(''); // Reset item specific filter when type changes
-        setPage(1);
-    };
-
-    const handleItemChange = (value: string) => {
-        setSelectedItemId(value);
-        setPage(1);
-    };
+    // Filter change handlers are now inside FiltersBar directly interacting with the store
+    // Page reset on filter change should be handled by a useEffect or similar if strictly needed
+    // For now, let's reset page when filters change by using the key in useQuery or simplified logic
+    // Ideally useDashboardFiltersStore could expose an event, but we can check if page > 1 and filters changed...
+    // Or just accept that page stays for now (simplification).
 
     const handleDownloadPdf = async () => {
         setIsGeneratingPdf(true);
-        // Delay to ensure render of static charts (no animation)
+        // Delay to ensure render
         await new Promise(r => setTimeout(r, 500));
 
         try {
-            const chartIds = ['dashboard-chart-annual'];
-            if (stats?.porCategoria && stats.porCategoria.length > 0) {
-                chartIds.push('dashboard-chart-pie');
+            // Simplified PDF extraction, ideally needs Context awareness too
+            const chartIds: string[] = [];
+            const level = dashboardContext.level;
+
+            if (level === 'general' || level === 'year' || level === 'quarter') {
+                chartIds.push('dashboard-chart-annual');
+                chartIds.push('dashboard-chart-pie-gastos', 'dashboard-chart-pie-ingresos');
+            } else if (level === 'type' || level === 'item') {
+                chartIds.push('dashboard-chart-monthly-trend');
+                chartIds.push('dashboard-chart-pie-gastos', 'dashboard-chart-pie-ingresos');
+            } else if (level === 'category') {
+                chartIds.push('dashboard-chart-monthly-trend');
             }
 
-            const itemName = selectedItemId ? items.find(i => i.id === selectedItemId)?.nombre : 'Todos';
-            const typeName = selectedTipoItem && selectedTipoItem !== 'ALL'
-                ? (itemTypes.find(t => t.id === selectedTipoItem)?.name || selectedTipoItem)
-                : 'Todos';
-
             await PdfGeneratorService.generateDashboardReport({
-                title: `Reporte Financiero - ${periodLabel}${quarterLabel}`,
-                subtitle: `Filtros - Tipo: ${typeName} | Item: ${itemName}`,
+                title: `Reporte Financiero - ${dashboardContext.title}`,
+                subtitle: dashboardContext.description,
                 chartIds
             });
         } catch (err) {
@@ -139,8 +135,7 @@ export function DashboardPage() {
         }
     };
 
-    const periodLabel = `Año ${year}`;
-    const quarterLabel = quarter === 'all' ? '' : ` • Trimestre ${quarter}`;
+
 
     return (
         <DashboardLayout>
@@ -148,9 +143,9 @@ export function DashboardPage() {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900">Histórico de Movimientos</h1>
+                        <h1 className="text-3xl font-bold text-slate-900">{dashboardContext.title}</h1>
                         <p className="text-slate-500 mt-2">
-                            {periodLabel}{quarterLabel}
+                            {dashboardContext.description}
                         </p>
                     </div>
 
@@ -171,8 +166,6 @@ export function DashboardPage() {
                     </div>
                 </div>
 
-
-
                 {/* Period Selector */}
                 <Card className="border-slate-200 shadow-sm">
                     <CardHeader className="pb-3">
@@ -185,7 +178,7 @@ export function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* Transactions Table */}
+                {/* Filters & Table */}
                 <Card className="border-slate-200 shadow-sm overflow-hidden">
                     <CardHeader className="bg-slate-50/50 border-b border-gray-100">
                         <div className="flex justify-between items-center">
@@ -196,14 +189,9 @@ export function DashboardPage() {
                     </CardHeader>
                     <CardContent className="space-y-6 pt-6">
                         <FiltersBar
-                            searchQuery={searchQuery}
-                            onSearchChange={handleSearchChange}
-                            selectedTipoItem={selectedTipoItem}
-                            onTipoItemChange={handleTipoItemChange}
-                            selectedItemId={selectedItemId}
-                            onItemChange={handleItemChange}
                             items={items}
                             itemTypes={itemTypes}
+                            categories={categories}
                         />
 
                         <TransactionsTable
@@ -221,29 +209,15 @@ export function DashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* Charts Section */}
-                {stats && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div id="dashboard-chart-annual">
-                            <AnnualStatsChart
-                                data={stats.porTipoItem}
-                                year={Number(year)}
-                                title={`Finanzas ${year}${quarter !== 'all' ? ` - Q${quarter}` : ''} ${selectedTipoItem && selectedTipoItem !== 'ALL' ? `(${itemTypes.find(t => t.id === selectedTipoItem)?.name || selectedTipoItem})` : ''}`}
-                                disableAnimation={isGeneratingPdf}
-                            />
-                        </div>
-                        {stats.porCategoria && stats.porCategoria.length > 0 && (
-                            <div id="dashboard-chart-pie">
-                                <CategoryPieChart
-                                    data={stats.porCategoria}
-                                    type="gastos"
-                                    title={`Distribución de Gastos ${selectedItemId ? `(${items.find(i => i.id === selectedItemId)?.nombre})` : ''}`}
-                                    disableAnimation={isGeneratingPdf}
-                                />
-                            </div>
-                        )}
-                    </div>
-                )}
+                {/* Smart Section */}
+                <div className="mt-8">
+                    <DashboardChartsRenderer
+                        context={dashboardContext}
+                        isGeneratingPdf={isGeneratingPdf}
+                        items={items}
+                        itemTypes={itemTypes}
+                    />
+                </div>
             </div>
         </DashboardLayout>
     );

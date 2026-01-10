@@ -42,4 +42,9 @@ router.get('/transactions/stats', transactionController.getStats);
 // Upload
 router.post('/upload', upload.single('file'), uploadController.uploadFile);
 
+// Analytics
+import analyticsRoutes from './analytics.routes';
+router.use('/analytics', analyticsRoutes);
+
 export default router;
+

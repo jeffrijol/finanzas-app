@@ -1,185 +1,548 @@
-MI PLAN MODIFICADO (RECOMENDACIÓN)
-Paso 1: Toast para Auto-Save (Prioridad Alta)
+ANÁLISIS DEL DASHBOARD ACTUAL Y PROBLEMAS IDENTIFICADOS
 
-// En useFileUploadFlow.ts
-const { toast } = useToast();
+He analizado tu flujo actual y entiendo perfectamente el problema. Los gráficos no se corresponden con lo que el usuario selecciona porque:
+🎯 PROBLEMAS PRINCIPALES IDENTIFICADOS
+1. Gráficos Genéricos vs Filtros Específicos
 
-const saveWithFeedback = async () => {
-  const toastId = toast({ 
-    title: "🔄 Guardando cambios...",
-    description: "Por favor espera",
-    duration: 0, // No auto-close
-  });
+    Usuario filtra: "Tipo: Inmuebles", "Categoría: Reparaciones", "Fecha: Q1 2024"
+
+    Gráfico muestra: TODOS los tipos, TODAS las categorías, TODO el año
+
+    Resultado: Confusión total
+
+2. Falta de Jerarquía en la Visualización
+
+No hay diferencia visual entre:
+
+    Vista general (sin filtros)
+
+    Vista por tipo (ej: Inmuebles)
+
+    Vista por item (ej: Casa Playa)
+
+    Vista por categoría (ej: IBI)
+
+3. Combinación Inadecuada de Dimensiones
+
+El AnnualStatsChart siempre muestra Ingresos vs Gastos por Tipo de Item, incluso cuando:
+
+    El usuario selecciona una categoría específica
+
+    El usuario selecciona un item específico
+
+    El usuario selecciona un rango de fechas corto
+
+🔄 NUEVO ENFOQUE: GRÁFICOS CONTEXTUALES INTELIGENTES
+
+Te propongo un sistema jerárquico y contextual donde los gráficos cambian BASADOS EN LO QUE SELECCIONA EL USUARIO.
+Nueva Matriz de Generación de Gráficos
+Nivel de Filtro	Gráfico 1	Gráfico 2	Gráfico 3	Gráfico 4
+Sin filtros (Vista General)	Resumen Anual por Tipo	Distribución Ingresos/Gastos	Tendencia Mensual	Top 5 Items
+Filtro por Año	Resumen Trimestral	Distribución por Tipo	Comparativa Mes a Mes	Top 5 Categorías
+Filtro por Año + Trimestre	Detalle Mensual del Trimestre	Distribución por Categoría	Comparativa vs Mismo Trimestre Año Anterior	Top 5 Items del Trimestre
+Filtro por Tipo de Item	Rendimiento por Item (del tipo seleccionado)	Distribución por Categoría (dentro del tipo)	Tendencia Mensual del Tipo	Comparativa Items vs Promedio
+Filtro por Item Específico	Detalle por Categoría (del item)	Evolución Temporal del Item	Comparativa vs Otros Items	Proyección Anual
+Filtro por Categoría	Distribución por Item (en esa categoría)	Evolución Temporal de la Categoría	Comparativa vs Otras Categorías	Top Subcategorías
+📈 SOLUCIÓN PROPuesta: Dashboard Inteligente por Contexto
+Componentes Nuevos que Necesitas:
+typescript
+
+// 1. Contexto del Dashboard
+type DashboardContext = {
+  level: 'general' | 'year' | 'quarter' | 'type' | 'item' | 'category';
+  filters: AppliedFilters;
+  availableData: DashboardData;
+};
+
+// 2. Sistema de Renderizado Condicional
+const DashboardContent = () => {
+  const context = useDashboardContext();
   
-  try {
-    await handleSavePartial();
-    toast({
-      id: toastId,
-      title: "✅ Guardado",
-      description: "Cambios sincronizados con el servidor",
-      duration: 2000,
-    });
-  } catch (error) {
-    toast({
-      id: toastId,
-      title: "❌ Error al guardar",
-      description: "Intenta guardar manualmente",
-      variant: "destructive",
-    });
+  switch (context.level) {
+    case 'general':
+      return <GeneralDashboard />;
+    case 'year':
+      return <YearDashboard />;
+    case 'quarter':
+      return <QuarterDashboard />;
+    case 'type':
+      return <TypeDashboard />;
+    case 'item':
+      return <ItemDashboard />;
+    case 'category':
+      return <CategoryDashboard />;
   }
 };
 
-Paso 2: Keyboard Shortcuts (Prioridad Alta)
+3. Gráficos Contextuales Específicos:
+A) PARA VISTA GENERAL (sin filtros)
+typescript
 
-// En HomePage.tsx
-useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    // Ctrl+S / Cmd+S para guardar
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-      e.preventDefault();
-      handleSavePartial();
-      return;
-    }
+const GeneralDashboard = () => (
+  <div className="grid grid-cols-2 gap-6">
+    <Card>
+      <CardHeader>
+        <CardTitle>📊 Resumen Anual por Tipo</CardTitle>
+        <CardDescription>Distribución de ingresos y gastos por tipo de activo</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <AnnualStatsChart type="general" />
+      </CardContent>
+    </Card>
     
-    // Ctrl+Enter / Cmd+Enter para finalizar
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-      e.preventDefault();
-      if (canFinalize) handleFinalize();
-      return;
-    }
+    <Card>
+      <CardHeader>
+        <CardTitle>🥧 Distribución Total</CardTitle>
+        <CardDescription>Ingresos vs Gastos por categoría principal</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <IncomeExpensePieChart />
+      </CardContent>
+    </Card>
     
-    // Escape para cancelar selección múltiple
-    if (e.key === 'Escape' && bulkMode) {
-      setBulkMode(false);
-    }
-  };
-  
-  window.addEventListener('keydown', handleKeyDown);
-  return () => window.removeEventListener('keydown', handleKeyDown);
-}, [handleSavePartial, handleFinalize, canFinalize, bulkMode]);
+    <Card className="col-span-2">
+      <CardHeader>
+        <CardTitle>📈 Tendencia Anual</CardTitle>
+        <CardDescription>Evolución mensual de ingresos y gastos</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <MonthlyTrendChart />
+      </CardContent>
+    </Card>
+  </div>
+);
 
+B) PARA FILTRO POR TIPO (ej: "Inmuebles")
+typescript
 
-Paso 3: Exportar Estado (Prioridad Media)
-
-// En useFileUploadFlow.ts
-const exportReviewState = () => {
-  const data = {
-    exportedAt: new Date().toISOString(),
-    fileInfo: {
-      originalName: currentFileName,
-      uploadDate: uploadDate,
-      totalTransactions: uploadedTransactions.length,
-    },
-    transactions: uploadedTransactions.map(t => ({
-      descripcion: t.descripcion,
-      importe: t.importe,
-      categoria: t.categoria,
-      itemAsignado: t.itemAsignadoId 
-        ? items.find(i => i.id === t.itemAsignadoId)?.nombre 
-        : null,
-      estado: t.state,
-      sincronizado: t.dbId ? true : false,
-    })),
-    estadisticas: {
-      asignadas: assignedCount,
-      sincronizadas: syncedCount,
-      pendientes: uploadedTransactions.length - assignedCount,
-    }
-  };
-  
-  const blob = new Blob([JSON.stringify(data, null, 2)], {
-    type: 'application/json'
-  });
-  
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-  
-  toast({
-    title: "📤 Backup exportado",
-    description: `Se descargó un archivo con ${uploadedTransactions.length} transacciones`,
-  });
-};
-
-Paso 4: Batch Operations IMPORTANTE AQUI PRESTAR ATENCION
-
-ADVERTENCIA SOBRE BATCH OPERATIONS
-
-Problema potencial: Tu plan dice "re-introduces the bulk assignment logic you previously cancelled". Si antes decidiste NO hacer bulk operations, reconsideremos si realmente las necesitas.
-Análisis Costo/Beneficio:
-
-COSTOS:
-
-    Complejidad UI adicional (checkboxes, estados de selección)
-
-    Nuevos edge cases (¿qué pasa si seleccionas draft + synced?)
-
-    Posible confusión para el usuario (dos formas de asignar)
-
-    Más código para mantener
-
-BENEFICIOS:
-
-    Ahorro de clicks para asignar mismo item a muchas transacciones
-
-    Flexibilidad para operaciones masivas
-
-MI RECOMENDACIÓN: VERSIÓN LIGERA
-
-Si decides proceder, sugiro esta implementación ultra minimalista:
-
-// En TransactionReviewTable.tsx
-const [bulkMode, setBulkMode] = useState(false);
-
-// Botón para activar modo bulk
-<Button variant="outline" onClick={() => setBulkMode(!bulkMode)}>
-  {bulkMode ? "Cancelar selección" : "Selección múltiple"}
-</Button>
-
-// Cuando bulkMode está activo:
-// - Checkboxes aparecen
-// - Barra de acciones aparece (asignar a todas, limpiar selección)
-// - Click fuera de tabla desactiva bulkMode
-
-El código sería este más o menos
-
-// Implementación minimalista
-const useBatchOperations = () => {
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isBatchMode, setIsBatchMode] = useState(false);
-  
-  const toggleBatchMode = () => {
-    setIsBatchMode(!isBatchMode);
-    if (isBatchMode) setSelectedIds([]); // Limpiar al salir
-  };
-  
-  const handleBulkAssign = (itemId: string) => {
-    // Aplicar a todas seleccionadas
-    selectedIds.forEach(id => {
-      updateTransactionItem(id, itemId);
-    });
+const TypeDashboard = () => (
+  <div className="grid grid-cols-2 gap-6">
+    <Card>
+      <CardHeader>
+        <CardTitle>🏠 Rendimiento por Propiedad</CardTitle>
+        <CardDescription>Comparativa de items del tipo "Inmuebles"</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <TypeItemsComparisonChart />
+        {/* Muestra Casa Playa, Apartamento Centro, etc */}
+      </CardContent>
+    </Card>
     
-    // Feedback y auto-exit
-    toast({
-      title: `✅ Asignado a ${selectedIds.length} transacciones`,
-      description: "Item aplicado correctamente",
-    });
+    <Card>
+      <CardHeader>
+        <CardTitle>📋 Distribución Interna</CardTitle>
+        <CardDescription>Cómo se distribuyen ingresos y gastos dentro de "Inmuebles"</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <InternalDistributionChart />
+        {/* Alquileres, Reparaciones, IBI, Comunidad */}
+      </CardContent>
+    </Card>
     
-    // Auto-exit después de 2 segundos
-    setTimeout(() => {
-      setIsBatchMode(false);
-      setSelectedIds([]);
-    }, 2000);
-  };
+    <Card className="col-span-2">
+      <CardHeader>
+        <CardTitle>📊 Evolución del Tipo</CardTitle>
+        <CardDescription>Tendencia de "Inmuebles" vs Promedio General</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <TypeVsAverageChart />
+      </CardContent>
+    </Card>
+  </div>
+);
+
+C) PARA FILTRO POR ITEM (ej: "Casa Playa")
+typescript
+
+const ItemDashboard = () => (
+  <div className="grid grid-cols-2 gap-6">
+    <Card>
+      <CardHeader>
+        <CardTitle>🏖️ Análisis Detallado - Casa Playa</CardTitle>
+        <CardDescription>Desglose por categoría de este item específico</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ItemCategoryBreakdownChart />
+        {/* Solo categorías de Casa Playa */}
+      </CardContent>
+    </Card>
+    
+    <Card>
+      <CardHeader>
+        <CardTitle>📅 Evolución Temporal</CardTitle>
+        <CardDescription>Rendimiento mensual de Casa Playa</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ItemMonthlyPerformanceChart />
+      </CardContent>
+    </Card>
+    
+    <Card>
+      <CardHeader>
+        <CardTitle>⚖️ Comparativa</CardTitle>
+        <CardDescription>Casa Playa vs Promedio de Inmuebles</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ItemVsTypeAverageChart />
+      </CardContent>
+    </Card>
+    
+    <Card>
+      <CardHeader>
+        <CardTitle>🎯 KPIs Principales</CardTitle>
+        <CardDescription>Métricas clave de este item</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ItemKPICards />
+        {/* ROI, Cash Flow, Gastos Fijos/Variables */}
+      </CardContent>
+    </Card>
+  </div>
+);
+
+🚀 IMPLEMENTACIÓN PRÁCTICA PASO A PASO
+Paso 1: Crear Hook de Contexto del Dashboard
+typescript
+
+// packages/frontend/src/hooks/useDashboardContext.ts
+import { useMemo } from 'react';
+import { useFilters } from './useFilters';
+
+export type DashboardLevel = 
+  | 'general'        // Sin filtros
+  | 'year'           // Solo año seleccionado
+  | 'quarter'        // Año + trimestre
+  | 'type'           // Tipo de item seleccionado
+  | 'item'           // Item específico
+  | 'category';      // Categoría específica
+
+export const useDashboardContext = () => {
+  const filters = useFilters();
+  
+  const level = useMemo<DashboardLevel>(() => {
+    if (filters.itemId) return 'item';
+    if (filters.category) return 'category';
+    if (filters.itemType) return 'type';
+    if (filters.quarter) return 'quarter';
+    if (filters.year) return 'year';
+    return 'general';
+  }, [filters]);
+  
+  const title = useMemo(() => {
+    switch (level) {
+      case 'item': return `Análisis: ${filters.itemName}`;
+      case 'category': return `Categoría: ${filters.category}`;
+      case 'type': return `Tipo: ${filters.itemType}`;
+      case 'quarter': return `Trimestre ${filters.quarter} ${filters.year}`;
+      case 'year': return `Año ${filters.year}`;
+      default: return 'Dashboard General';
+    }
+  }, [level, filters]);
   
   return {
-    isBatchMode,
-    selectedIds,
-    toggleBatchMode,
-    handleBulkAssign,
-    setSelectedIds,
+    level,
+    title,
+    filters,
+    description: getDescription(level, filters),
+    availableCharts: getAvailableCharts(level),
   };
 };
+
+// Función helper para determinar gráficos disponibles
+const getAvailableCharts = (level: DashboardLevel): string[] => {
+  const charts = {
+    general: ['annual-summary', 'category-distribution', 'monthly-trend', 'top-items'],
+    year: ['quarterly-breakdown', 'type-comparison', 'month-over-month', 'category-ranking'],
+    quarter: ['monthly-detail', 'category-breakdown', 'year-over-year', 'quarter-items'],
+    type: ['item-performance', 'internal-distribution', 'type-trend', 'vs-average'],
+    item: ['category-breakdown', 'item-timeline', 'vs-type-average', 'kpi-cards'],
+    category: ['item-distribution', 'category-timeline', 'vs-other-categories', 'subcategory-breakdown'],
+  };
+  return charts[level];
+};
+
+Paso 2: Componente Dashboard Principal Modificado
+typescript
+
+// packages/frontend/src/components/dashboard/DashboardContent.tsx
+import { useDashboardContext } from '@/hooks/useDashboardContext';
+import { GeneralDashboard } from './GeneralDashboard';
+import { YearDashboard } from './YearDashboard';
+import { QuarterDashboard } from './QuarterDashboard';
+import { TypeDashboard } from './TypeDashboard';
+import { ItemDashboard } from './ItemDashboard';
+import { CategoryDashboard } from './CategoryDashboard';
+
+export const DashboardContent = () => {
+  const { level, title, description } = useDashboardContext();
+  
+  const renderContent = () => {
+    switch (level) {
+      case 'general': return <GeneralDashboard />;
+      case 'year': return <YearDashboard />;
+      case 'quarter': return <QuarterDashboard />;
+      case 'type': return <TypeDashboard />;
+      case 'item': return <ItemDashboard />;
+      case 'category': return <CategoryDashboard />;
+      default: return <GeneralDashboard />;
+    }
+  };
+  
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold">{title}</h1>
+        <p className="text-muted-foreground">{description}</p>
+      </div>
+      
+      <div className="flex gap-2 flex-wrap">
+        <Badge variant="outline">
+          {level === 'general' ? '📊 Vista General' : ''}
+          {level === 'year' ? '📅 Vista Anual' : ''}
+          {level === 'quarter' ? '📋 Vista Trimestral' : ''}
+          {level === 'type' ? '🏷️ Vista por Tipo' : ''}
+          {level === 'item' ? '📍 Vista por Item' : ''}
+          {level === 'category' ? '🗂️ Vista por Categoría' : ''}
+        </Badge>
+        
+        {/* Mostrar filtros activos */}
+        <ActiveFilters />
+      </div>
+      
+      {renderContent()}
+    </div>
+  );
+};
+
+Paso 3: Nuevos Componentes de Gráficos Contextuales
+typescript
+
+// packages/frontend/src/components/dashboard/charts/TypeItemsComparisonChart.tsx
+export const TypeItemsComparisonChart = () => {
+  const { filters } = useDashboardContext();
+  const { data, isLoading } = useQuery({
+    queryKey: ['type-items', filters.itemType],
+    queryFn: () => apiClient.getTypeItemsComparison(filters.itemType!),
+    enabled: !!filters.itemType,
+  });
+  
+  if (isLoading) return <LoadingSpinner />;
+  if (!data) return <NoData />;
+  
+  return (
+    <BarChart
+      data={{
+        labels: data.items.map(item => item.nombre),
+        datasets: [
+          {
+            label: 'Ingresos',
+            data: data.items.map(item => item.ingresos),
+            backgroundColor: '#10B981',
+          },
+          {
+            label: 'Gastos',
+            data: data.items.map(item => item.gastos),
+            backgroundColor: '#EF4444',
+          },
+        ],
+      }}
+      options={{
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: `Comparativa de Items - ${filters.itemType}`,
+          },
+        },
+      }}
+    />
+  );
+};
+
+Paso 4: Extender API del Backend
+typescript
+
+// packages/backend/src/routes/analytics.routes.ts
+import { Router } from 'express';
+import { AnalyticsController } from '../controllers/analytics.controller';
+
+const router = Router();
+
+// Rutas específicas por contexto
+router.get('/general', AnalyticsController.getGeneralStats);
+router.get('/year/:year', AnalyticsController.getYearStats);
+router.get('/quarter/:year/:quarter', AnalyticsController.getQuarterStats);
+router.get('/type/:typeId', AnalyticsController.getTypeStats);
+router.get('/item/:itemId', AnalyticsController.getItemStats);
+router.get('/category/:category', AnalyticsController.getCategoryStats);
+
+export default router;
+
+Paso 5: Controller de Analytics Mejorado
+typescript
+
+// packages/backend/src/controllers/analytics.controller.ts
+export class AnalyticsController {
+  static async getTypeStats(req: Request, res: Response) {
+    const { typeId } = req.params;
+    const { startDate, endDate } = req.query;
+    
+    // 1. Obtener todos los items de este tipo
+    const items = await prisma.item.findMany({
+      where: {
+        // Aquí necesitas una relación tipo-item (si no la tienes, hay que crearla)
+        // O puedes usar metadata o un campo tipo en Item
+      },
+    });
+    
+    // 2. Para cada item, obtener sus transacciones en el período
+    const itemsWithStats = await Promise.all(
+      items.map(async (item) => {
+        const transactions = await prisma.transaction.findMany({
+          where: {
+            itemAsignadoId: item.id,
+            fechaValor: {
+              gte: startDate ? new Date(startDate) : undefined,
+              lte: endDate ? new Date(endDate) : undefined,
+            },
+          },
+        });
+        
+        const ingresos = transactions.filter(t => t.importe > 0)
+          .reduce((sum, t) => sum + t.importe, 0);
+        const gastos = transactions.filter(t => t.importe < 0)
+          .reduce((sum, t) => sum + Math.abs(t.importe), 0);
+        
+        return {
+          itemId: item.id,
+          nombre: item.nombre,
+          ingresos,
+          gastos,
+          neto: ingresos - gastos,
+          transactionCount: transactions.length,
+        };
+      })
+    );
+    
+    // 3. Obtener distribución por categoría dentro de este tipo
+    const categoryDistribution = await prisma.transaction.groupBy({
+      by: ['categoria'],
+      where: {
+        itemAsignadoId: { in: items.map(i => i.id) },
+        fechaValor: {
+          gte: startDate ? new Date(startDate) : undefined,
+          lte: endDate ? new Date(endDate) : undefined,
+        },
+      },
+      _sum: { importe: true },
+      _count: { id: true },
+    });
+    
+    res.json({
+      type: typeId,
+      period: { startDate, endDate },
+      items: itemsWithStats,
+      categoryDistribution: categoryDistribution.map(cat => ({
+        categoria: cat.categoria,
+        total: cat._sum.importe,
+        count: cat._count.id,
+        tipo: cat._sum.importe > 0 ? 'ingreso' : 'gasto',
+      })),
+      summary: {
+        totalIngresos: itemsWithStats.reduce((sum, item) => sum + item.ingresos, 0),
+        totalGastos: itemsWithStats.reduce((sum, item) => sum + item.gastos, 0),
+        totalNeto: itemsWithStats.reduce((sum, item) => sum + item.neto, 0),
+        totalItems: items.length,
+      },
+    });
+  }
+  
+  // Métodos similares para item, category, etc.
+}
+
+📋 PLAN DE MIGRACIÓN GRADUAL
+Fase 1: Sistema de Contexto (2-3 días)
+
+    Crear hook useDashboardContext
+
+    Implementar detección de nivel
+
+    Actualizar componente principal para usar contexto
+
+Fase 2: Nuevos Componentes (3-4 días)
+
+    Crear 6 componentes de dashboard diferentes
+
+    Implementar gráficos específicos para cada nivel
+
+    Añadir transiciones suaves entre niveles
+
+Fase 3: Backend Adaptado (2-3 días)
+
+    Extender API con endpoints específicos
+
+    Optimizar queries para cada contexto
+
+    Añadir caching para mejor performance
+
+Fase 4: UI/UX Mejorada (1-2 días)
+
+    Mejorar indicadores visuales de contexto
+
+    Añadir breadcrumbs de navegación
+
+    Implementar tooltips explicativos
+
+🎨 MEJORAS DE UX ADICIONALES
+1. Breadcrumbs Contextuales
+text
+
+Dashboard General > Tipos de Activo > Inmuebles > Casa Playa
+
+Permite navegar hacia atrás fácilmente.
+2. Tooltips Inteligentes
+jsx
+
+<TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger>
+      <Info className="h-4 w-4" />
+    </TooltipTrigger>
+    <TooltipContent>
+      {level === 'item' && "Viendo datos específicos de este item. Compara con otros del mismo tipo."}
+      {level === 'type' && "Viendo todos los items de este tipo. Haz click en uno para ver detalles."}
+    </TooltipContent>
+  </Tooltip>
+</TooltipProvider>
+
+3. Modo Comparación
+jsx
+
+<Button 
+  variant="outline"
+  onClick={() => setComparisonMode(!comparisonMode)}
+>
+  {comparisonMode ? 'Salir de comparación' : 'Comparar con...'}
+</Button>
+
+🔄 EJEMPLOS CONCRETOS DE LO QUE VERÁ EL USUARIO
+Escenario Actual (Problema):
+text
+
+Usuario selecciona: "Inmuebles" + "Reparaciones" + "Q1 2024"
+
+Gráfico 1: Muestra TODOS los tipos (Bolsa, Inmuebles, Efectivo...)
+Gráfico 2: Muestra TODAS las categorías (Alquiler, IBI, Comunidad...)
+Gráfico 3: Muestra TODO el año
+
+Escenario Nuevo (Solución):
+text
+
+Usuario selecciona: "Inmuebles" + "Reparaciones" + "Q1 2024"
+
+Dashboard cambia a: 🏷️ Vista por Tipo (Inmuebles)
+
+Gráfico 1: "Reparaciones por Propiedad" (Casa Playa: €500, Apt Centro: €300)
+Gráfico 2: "Evolución de Reparaciones" (Ene: €200, Feb: €300, Mar: €300)
+Gráfico 3: "Reparaciones vs Otras Categorías" (Rep: 40%, IBI: 30%, Com: 20%...)
+Gráfico 4: "Top Items con Más Reparaciones" (1. Casa Playa, 2. Apt Centro...)

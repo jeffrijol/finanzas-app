@@ -114,9 +114,11 @@ class ApiClient {
         categoria?: string;
         itemAsignadoId?: string;
         tipoItem?: string;
+        tier?: string;
         search?: string;
         quarter?: number;
         year?: number;
+        categoryId?: string;
     } = {}): Promise<PaginatedResponse<Transaction>> {
         const params = new URLSearchParams();
 
@@ -128,6 +130,7 @@ class ApiClient {
         if (filters.search) params.append('search', filters.search);
         if (filters.quarter) params.append('quarter', filters.quarter.toString());
         if (filters.year) params.append('year', filters.year.toString());
+        if (filters.categoryId) params.append('categoryId', filters.categoryId);
 
         const queryString = params.toString();
         const endpoint = `/transactions${queryString ? `?${queryString}` : ''}`;
@@ -184,6 +187,35 @@ class ApiClient {
 
         const queryString = params.toString();
         const response = await this.request<TransactionStats>(`/transactions/stats${queryString ? `?${queryString}` : ''}`);
+        return response.data;
+    }
+
+    async getTypeStats(typeId: string, year: number): Promise<{
+        monthlyTrend: { month: number; ingresos: number; gastos: number }[];
+        categoryDistribution: { categoria: string; ingresos: number; gastos: number }[];
+        topItems: { name: string; amount: number }[];
+    }> {
+        const response = await this.request<any>(`/analytics/type/${typeId}?year=${year}`);
+        return response.data;
+    }
+
+
+    async getItemStats(itemId: string, year: number): Promise<{
+        monthlyTrend: { month: number; ingresos: number; gastos: number }[];
+        categoryDistribution: { categoria: string; ingresos: number; gastos: number }[];
+        totalIngresos: number;
+        totalGastos: number;
+        averageMonthlyExpense: number;
+    }> {
+        const response = await this.request<any>(`/analytics/item/${itemId}?year=${year}`);
+        return response.data;
+    }
+
+    async getCategoryStats(categoryId: string, year: number): Promise<{
+        monthlyTrend: { month: number; ingresos: number; gastos: number }[];
+        topItems: { name: string; amount: number }[];
+    }> {
+        const response = await this.request<any>(`/analytics/category/${categoryId}?year=${year}`);
         return response.data;
     }
 
