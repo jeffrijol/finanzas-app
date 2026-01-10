@@ -26,8 +26,8 @@ export function GeneralDashboard({ context, isGeneratingPdf, itemTypes }: Genera
 
     if (!stats) return null;
 
-    const hasGastos = stats.porCategoria?.some((c: any) => c.gastos > 0);
-    const hasIngresos = stats.porCategoria?.some((c: any) => c.ingresos > 0);
+    const hasGastos = stats.porCategoryRel?.some((c: any) => c.gastos > 0);
+    const hasIngresos = stats.porCategoryRel?.some((c: any) => c.ingresos > 0);
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -43,7 +43,7 @@ export function GeneralDashboard({ context, isGeneratingPdf, itemTypes }: Genera
             {hasGastos && (
                 <div id="dashboard-chart-pie-gastos">
                     <CategoryPieChart
-                        data={stats.porCategoria}
+                        data={stats.porCategoryRel}
                         type="gastos"
                         title="Gastos por Categoría"
                         disableAnimation={isGeneratingPdf}
@@ -54,7 +54,7 @@ export function GeneralDashboard({ context, isGeneratingPdf, itemTypes }: Genera
             {hasIngresos && (
                 <div id="dashboard-chart-pie-ingresos">
                     <CategoryPieChart
-                        data={stats.porCategoria}
+                        data={stats.porCategoryRel}
                         type="ingresos"
                         title="Ingresos por Categoría"
                         disableAnimation={isGeneratingPdf}

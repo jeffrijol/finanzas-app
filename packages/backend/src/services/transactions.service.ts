@@ -203,7 +203,8 @@ export class TransactionsService {
         const transactions = await prisma.transaction.findMany({
             where,
             include: {
-                itemAsignado: { include: { itemType: true } }
+                itemAsignado: { include: { itemType: true } },
+                categoryRel: true
             }
         });
 
@@ -227,6 +228,7 @@ export class TransactionsService {
         });
 
         const porCategoria: Record<string, { categoria: string; ingresos: number; gastos: number }> = {};
+        const porCategoryRel: Record<string, { categoria: string; ingresos: number; gastos: number }> = {};
 
         items.forEach(item => {
             transaccionesPorItem[item.id] = {
@@ -253,7 +255,7 @@ export class TransactionsService {
                 totalGastos += importeAbs;
             }
 
-            // Agrupar por Categoría
+            // Agrupar por Categoría (String original)
             const catName = t.categoria || 'Sin categoría';
             if (!porCategoria[catName]) {
                 porCategoria[catName] = { categoria: catName, ingresos: 0, gastos: 0 };
@@ -262,6 +264,18 @@ export class TransactionsService {
                 porCategoria[catName].ingresos += t.importe;
             } else {
                 porCategoria[catName].gastos += importeAbs;
+            }
+
+            // Agrupar por CategoryRel (Categoría Interna)
+            // @ts-ignore - categoryRel exists due to include above
+            const relName = t.categoryRel?.name || 'Sin Asignar';
+            if (!porCategoryRel[relName]) {
+                porCategoryRel[relName] = { categoria: relName, ingresos: 0, gastos: 0 };
+            }
+            if (esIngreso) {
+                porCategoryRel[relName].ingresos += t.importe;
+            } else {
+                porCategoryRel[relName].gastos += importeAbs;
             }
 
             // Estadísticas por item y por tipo
@@ -309,6 +323,9 @@ export class TransactionsService {
             porTipoItem: Object.values(porTipoItem), // Retornar array
             porCategoria: Object.values(porCategoria)
                 .sort((a, b) => b.gastos - a.gastos) // Ordenar por gastos mayor a menor
+                .filter(c => c.gastos > 0 || c.ingresos > 0),
+            porCategoryRel: Object.values(porCategoryRel)
+                .sort((a, b) => b.gastos - a.gastos)
                 .filter(c => c.gastos > 0 || c.ingresos > 0),
             sinAsignar,
             totalTransacciones,

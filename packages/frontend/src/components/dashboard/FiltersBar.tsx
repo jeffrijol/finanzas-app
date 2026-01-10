@@ -68,6 +68,7 @@ export function FiltersBar({ items, itemTypes, categories }: FiltersBarProps) {
                 </div>
 
                 {/* Category Filter */}
+                {/* Category Filter - DISABLED
                 <div className="w-full sm:w-[180px]">
                     <Select
                         value={selectedCategory || "ALL"}
@@ -86,6 +87,7 @@ export function FiltersBar({ items, itemTypes, categories }: FiltersBarProps) {
                         </SelectContent>
                     </Select>
                 </div>
+                */}
 
                 {/* Item Filter */}
                 <div className="w-full sm:w-[250px]">
