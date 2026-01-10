@@ -294,20 +294,34 @@ export function useFileUploadFlow() {
 
         if (uploadId) {
             try {
+                console.log('Finalizing upload with ID:', uploadId);
                 await apiClient.finalizeUpload(uploadId);
-            } catch (e) {
+
+                // Clear storage and state ONLY if successful
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem('finanzas_app_upload_id');
+                setUploadedTransactions([]);
+                setUploadId(null);
+                setIsReviewMode(false);
+
+                toast({ title: 'Trimestre finalizado', description: 'Todas las transacciones se han procesado exitosamente.' });
+            } catch (e: any) {
                 console.error('Error finalizing upload', e);
+                toast({
+                    title: 'Error al finalizar',
+                    description: `No se pudo marcar como finalizado: ${e.message || 'Error desconocido'}`,
+                    variant: 'destructive'
+                });
             }
+        } else {
+            console.warn('No uploadId found to finalize.');
+            // Still clear if there's no upload ID? Maybe just warn.
+            // But if we want to reset UI:
+            localStorage.removeItem(STORAGE_KEY);
+            setUploadedTransactions([]);
+            setIsReviewMode(false);
+            toast({ title: 'Trimestre finalizado (Local)', description: 'Se limpiaron los datos locales, pero no se vinculó a una carga.' });
         }
-
-        // Clear storage and state
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem('finanzas_app_upload_id');
-        setUploadedTransactions([]);
-        setUploadId(null);
-        setIsReviewMode(false);
-
-        toast({ title: 'Trimestre finalizado', description: 'Todas las transacciones se han procesado exitosamente.' });
     };
 
     const handleCancelReview = () => {

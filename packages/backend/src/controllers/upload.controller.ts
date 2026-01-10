@@ -59,6 +59,7 @@ export const uploadFile = async (req: Request, res: Response) => {
 
 export const finalizeUpload = async (req: Request, res: Response) => {
     const { id } = req.params;
+    console.log(`[finalizeUpload] Request received for ID: ${id}`);
 
     try {
         const upload = await prisma.excelUpload.update({
