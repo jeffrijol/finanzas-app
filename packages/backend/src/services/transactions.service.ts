@@ -120,6 +120,7 @@ export class TransactionsService {
         itemAsignadoId?: string | null;
         categoryId?: string | null;
         metadata?: string | null;
+        excelUploadId?: string | null;
     }) {
         return prisma.transaction.create({
             data: {
@@ -131,6 +132,7 @@ export class TransactionsService {
                 itemAsignadoId: data.itemAsignadoId || null,
                 categoryId: data.categoryId || null,
                 metadata: data.metadata || null,
+                excelUploadId: data.excelUploadId || null,
             },
             include: {
                 itemAsignado: true,

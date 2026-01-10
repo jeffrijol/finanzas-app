@@ -9,9 +9,30 @@ async function main() {
     // 1. Limpiar datos existentes en el orden correcto (por las relaciones)
     await prisma.transaction.deleteMany({});
     await prisma.excelUpload.deleteMany({});
+    await prisma.transactionCategory.deleteMany({});
     await prisma.item.deleteMany({});
+    await prisma.itemType.deleteMany({});
 
     console.log('🗑️ Datos anteriores eliminados');
+
+    // 1.5 Crear Tipos de Items
+    const itemTypeInmueble = await prisma.itemType.create({
+        data: {
+            name: 'Inmueble',
+            code: 'INMUEBLE',
+            description: 'Propiedades inmobiliarias'
+        }
+    });
+
+    const itemTypeFinanciero = await prisma.itemType.create({
+        data: {
+            name: 'Financiero',
+            code: 'FINANCIERO',
+            description: 'Cuentas, fondos y otros productos financieros'
+        }
+    });
+
+    console.log('✅ Tipos de items creados');
 
     // 2. Crear los ítems
     const itemsData = [
@@ -20,28 +41,32 @@ async function main() {
             descripcion: 'Primera propiedad inmobiliaria',
             color: '#3B82F6',
             icono: '🏠',
-            activo: true
+            activo: true,
+            itemTypeId: itemTypeInmueble.id
         },
         {
             nombre: 'Casa 2',
             descripcion: 'Segunda propiedad inmobiliaria',
             color: '#10B981',
             icono: '🏡',
-            activo: true
+            activo: true,
+            itemTypeId: itemTypeInmueble.id
         },
         {
             nombre: 'Inversión 3',
             descripcion: 'Primera inversión financiera',
             color: '#8B5CF6',
             icono: '📈',
-            activo: true
+            activo: true,
+            itemTypeId: itemTypeFinanciero.id
         },
         {
             nombre: 'Inversión 4',
             descripcion: 'Segunda inversión financiera',
             color: '#F59E0B',
             icono: '💰',
-            activo: true
+            activo: true,
+            itemTypeId: itemTypeFinanciero.id
         }
     ];
 

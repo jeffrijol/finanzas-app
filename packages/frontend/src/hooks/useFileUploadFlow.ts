@@ -30,6 +30,10 @@ export function useFileUploadFlow() {
         return saved ? JSON.parse(saved) : [];
     });
 
+    const [uploadId, setUploadId] = useState<string | null>(() => {
+        return localStorage.getItem('finanzas_app_upload_id');
+    });
+
     const [isReviewMode, setIsReviewMode] = useState<boolean>(() => {
         return uploadedTransactions.length > 0;
     });
@@ -64,6 +68,10 @@ export function useFileUploadFlow() {
             })) || [];
 
             setUploadedTransactions(transactions);
+            if (data.id) {
+                setUploadId(data.id);
+                localStorage.setItem('finanzas_app_upload_id', data.id);
+            }
             toast({
                 title: 'Archivo procesado',
                 description: `Se cargaron ${data.totalRows || transactions.length} transacciones.`,
@@ -98,6 +106,8 @@ export function useFileUploadFlow() {
                         categoria: t.categoria,
                         itemAsignadoId: t.itemAsignadoId || null,
                         categoryId: t.categoryId || null,
+                        // @ts-ignore - Valid prop now
+                        excelUploadId: uploadId,
                     });
                     return { ...created, tempId: t.tempId };
                 }
@@ -282,9 +292,19 @@ export function useFileUploadFlow() {
             await handleSavePartial(true);
         }
 
+        if (uploadId) {
+            try {
+                await apiClient.finalizeUpload(uploadId);
+            } catch (e) {
+                console.error('Error finalizing upload', e);
+            }
+        }
+
         // Clear storage and state
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('finanzas_app_upload_id');
         setUploadedTransactions([]);
+        setUploadId(null);
         setIsReviewMode(false);
 
         toast({ title: 'Trimestre finalizado', description: 'Todas las transacciones se han procesado exitosamente.' });
@@ -292,7 +312,9 @@ export function useFileUploadFlow() {
 
     const handleCancelReview = () => {
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem('finanzas_app_upload_id');
         setUploadedTransactions([]);
+        setUploadId(null);
         setIsReviewMode(false);
     };
 
@@ -309,7 +331,7 @@ export function useFileUploadFlow() {
                     handleSavePartial(true);
                 }
             }
-        }, 10000); // Check every 10 seconds for more responsive auto-save
+        }, 60000); // Check every 60 seconds for more responsive auto-save
 
         return () => clearInterval(intervalId);
     }, [handleSavePartial, uploadedTransactions, saveMutation.isPending]);

@@ -58,7 +58,7 @@ export const listTransactions = async (req: Request, res: Response) => {
 };
 
 export const createTransaction = async (req: Request, res: Response) => {
-    const { fechaValor, descripcion, importe, categoria, saldo, itemAsignadoId, categoryId, metadata } = req.body;
+    const { fechaValor, descripcion, importe, categoria, saldo, itemAsignadoId, categoryId, metadata, excelUploadId } = req.body;
 
     // Validación básica
     if (!fechaValor || !descripcion || importe === undefined) {
@@ -76,6 +76,7 @@ export const createTransaction = async (req: Request, res: Response) => {
         itemAsignadoId: itemAsignadoId || null,
         categoryId: categoryId || null,
         metadata: metadata || null,
+        excelUploadId: excelUploadId || null,
     });
 
     res.status(201).json(ApiResponseHelper.success(newTransaction, 'Transacción creada exitosamente'));

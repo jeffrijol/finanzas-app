@@ -153,6 +153,7 @@ class ApiClient {
         categoria: string;
         itemAsignadoId?: string | null;
         categoryId?: string | null;
+        excelUploadId?: string | null;
     }): Promise<Transaction> {
         const response = await this.request<Transaction>('/transactions', {
             method: 'POST',
@@ -244,6 +245,11 @@ class ApiClient {
             console.error('File upload failed:', error);
             throw error;
         }
+    }
+    async finalizeUpload(id: string): Promise<void> {
+        await this.request<void>(`/upload/${id}/finalize`, {
+            method: 'PUT',
+        });
     }
 }
 

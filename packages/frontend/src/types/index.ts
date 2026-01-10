@@ -41,6 +41,7 @@ export interface Transaction {
     itemAsignado?: Item | null;
     categoryId?: string | null;
     categoryRel?: TransactionCategory | null;
+    excelUploadId?: string | null;
     metadata?: string;
     createdAt: string;
     updatedAt: string;
@@ -60,6 +61,7 @@ export interface Item {
 }
 
 export interface UploadResponse {
+    id: string;
     filename: string;
     fileSize: number;
     totalRows: number;
