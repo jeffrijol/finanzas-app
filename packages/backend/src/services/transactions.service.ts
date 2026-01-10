@@ -27,7 +27,11 @@ export class TransactionsService {
         const skip = (Number(page) - 1) * Number(limit);
 
         // Construir where clause
-        const where: any = {};
+        const where: any = {
+            excelUpload: {
+                processed: true
+            }
+        };
 
         // Filtrar por fecha
         if (startDate || endDate) {
@@ -175,7 +179,11 @@ export class TransactionsService {
             tipoItem,
         } = filters;
 
-        const where: any = {};
+        const where: any = {
+            excelUpload: {
+                processed: true
+            }
+        };
 
         if (startDate || endDate) {
             where.fechaValor = {};

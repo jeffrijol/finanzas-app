@@ -136,19 +136,36 @@ export function HomePage() {
                                                 >
                                                     {hideSynced ? 'Mostrar Todo' : 'Ocultar Sincronizados'}
                                                 </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={handleCancelReview}
-                                                    disabled={isSaving}
-                                                >
-                                                    <XCircle className="w-4 h-4 mr-2" />
-                                                    Cancelar
-                                                </Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            disabled={isSaving}
+                                                        >
+                                                            <XCircle className="w-4 h-4 mr-2" />
+                                                            Cancelar
+                                                        </Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>¿Cancelar revisión?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Si cancelas ahora, cualquier progreso no guardado en esta sesión se perderá. ¿Estás seguro de que deseas salir?
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Continuar Revisando</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={handleCancelReview} className="bg-red-600 hover:bg-red-700">
+                                                                Sí, Cancelar
+                                                            </AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
 
                                                 <Button
                                                     onClick={() => saveWithFeedback()}
-                                                    disabled={isSaving}
+                                                    disabled={isSaving || assigned === total}
                                                     size="sm"
                                                     variant="secondary"
                                                     className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
