@@ -1,7 +1,7 @@
 import { Transaction, Item, ItemType } from '@/types';
 import { TransactionRow } from './TransactionRow';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
 
 interface TransactionsTableProps {
     transactions: Transaction[];
@@ -14,6 +14,8 @@ interface TransactionsTableProps {
     onAssignItem: (transactionId: string, itemId: string | null) => void;
     onAssignCategory: (transactionId: string, categoryId: string | null) => void;
     updatingTransactionId?: string;
+    isTableVisible?: boolean;
+    onToggleVisibility?: () => void;
 }
 
 export function TransactionsTable({
@@ -27,6 +29,8 @@ export function TransactionsTable({
     onAssignItem,
     onAssignCategory,
     updatingTransactionId,
+    isTableVisible = true,
+    onToggleVisibility,
 }: TransactionsTableProps) {
     if (isLoading) {
         return (
@@ -67,29 +71,48 @@ export function TransactionsTable({
                                     Item
                                 </th>
                                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-[200px]">
-                                    Categoría
+                                    <div className="flex items-center justify-between">
+                                        <span>Categoría</span>
+                                        {onToggleVisibility && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-6 w-6 ml-2 text-slate-400 hover:text-slate-600"
+                                                onClick={onToggleVisibility}
+                                                title={isTableVisible ? "Ocultar tabla" : "Mostrar tabla"}
+                                            >
+                                                {isTableVisible ? (
+                                                    <ChevronUp className="h-4 w-4" />
+                                                ) : (
+                                                    <ChevronDown className="h-4 w-4" />
+                                                )}
+                                            </Button>
+                                        )}
+                                    </div>
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-slate-100">
-                            {transactions.map((transaction) => (
-                                <TransactionRow
-                                    key={transaction.id}
-                                    transaction={transaction}
-                                    items={items}
-                                    itemTypes={itemTypes}
-                                    onAssignItem={onAssignItem}
-                                    onAssignCategory={onAssignCategory}
-                                    isUpdating={updatingTransactionId === transaction.id}
-                                />
-                            ))}
-                        </tbody>
+                        {isTableVisible && (
+                            <tbody className="bg-white divide-y divide-slate-100">
+                                {transactions.map((transaction) => (
+                                    <TransactionRow
+                                        key={transaction.id}
+                                        transaction={transaction}
+                                        items={items}
+                                        itemTypes={itemTypes}
+                                        onAssignItem={onAssignItem}
+                                        onAssignCategory={onAssignCategory}
+                                        isUpdating={updatingTransactionId === transaction.id}
+                                    />
+                                ))}
+                            </tbody>
+                        )}
                     </table>
                 </div>
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
+            {isTableVisible && totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4">
                     <div className="text-sm text-slate-500">
                         Página {currentPage} de {totalPages}
