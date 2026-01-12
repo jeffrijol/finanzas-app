@@ -128,6 +128,7 @@ class ApiClient {
         quarter?: number;
         year?: number;
         categoryId?: string;
+        excelUploadId?: string;
     } = {}): Promise<PaginatedResponse<Transaction>> {
         const params = new URLSearchParams();
 
@@ -135,6 +136,7 @@ class ApiClient {
         if (filters.limit) params.append('limit', filters.limit.toString());
         if (filters.categoria) params.append('categoria', filters.categoria);
         if (filters.itemAsignadoId) params.append('itemAsignadoId', filters.itemAsignadoId);
+        if (filters.excelUploadId) params.append('excelUploadId', filters.excelUploadId);
         if (filters.tipoItem) params.append('tipoItem', filters.tipoItem);
         if (filters.search) params.append('search', filters.search);
         if (filters.quarter) params.append('quarter', filters.quarter.toString());
