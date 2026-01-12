@@ -3,6 +3,7 @@ import { HomePage } from '@/pages/HomePage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { MaintenancePage } from '@/pages/MaintenancePage';
 import { ReportsPage } from '@/pages/ReportsPage';
+import { ExcelsPage } from '@/pages/ExcelsPage';
 
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/mantenimiento" element={<MaintenancePage />} />
         <Route path="/reportes" element={<ReportsPage />} />
+        <Route path="/excels" element={<ExcelsPage />} />
       </Routes>
     </Router>
   );

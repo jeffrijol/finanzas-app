@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UploadCloud, PieChart, Wallet, Settings } from 'lucide-react';
+import { LayoutDashboard, UploadCloud, PieChart, Wallet, Settings, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const menuItems = [
     { icon: UploadCloud, label: 'Cargar Datos', path: '/' },
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: FileSpreadsheet, label: 'Excels', path: '/excels' },
     { icon: Wallet, label: 'Mantenimiento', path: '/mantenimiento' },
     { icon: PieChart, label: 'Reportes', path: '/reportes' },
 ];

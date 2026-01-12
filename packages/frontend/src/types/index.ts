@@ -60,13 +60,19 @@ export interface Item {
     updatedAt: string;
 }
 
-export interface UploadResponse {
+export interface ExcelUpload {
     id: string;
     filename: string;
     fileSize: number;
     totalRows: number;
     processed: boolean;
+    createdAt?: string;
     transactions?: Partial<Transaction>[];
+    stats?: {
+        minDate: string;
+        maxDate: string;
+        totalImporte: number;
+    };
 }
 
 export interface TransactionStats {

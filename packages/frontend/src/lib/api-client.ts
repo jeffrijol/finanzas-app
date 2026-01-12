@@ -4,9 +4,9 @@ import type {
     Transaction,
     Item,
     ItemType,
-    UploadResponse,
     TransactionCategory,
     TransactionStats,
+    ExcelUpload,
 } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -230,7 +230,7 @@ class ApiClient {
     }
 
     // Upload endpoint
-    async uploadFile(file: File): Promise<UploadResponse> {
+    async uploadFile(file: File): Promise<ExcelUpload> {
         const formData = new FormData();
         formData.append('file', file);
 
@@ -248,7 +248,7 @@ class ApiClient {
                 throw new Error(errorData.message || `Upload failed with status: ${response.status}`);
             }
 
-            const result: ApiResponse<UploadResponse> = await response.json();
+            const result: ApiResponse<ExcelUpload> = await response.json();
             return result.data;
         } catch (error) {
             console.error('File upload failed:', error);
@@ -259,6 +259,15 @@ class ApiClient {
         await this.request<void>(`/upload/${id}/finalize`, {
             method: 'PUT',
         });
+    }
+    async getExcelUploads(): Promise<ExcelUpload[]> {
+        const response = await this.request<ExcelUpload[]>('/excel-uploads');
+        return response.data;
+    }
+
+    async getExcelUploadDetails(id: string): Promise<ExcelUpload> {
+        const response = await this.request<ExcelUpload>(`/excel-uploads/${id}`);
+        return response.data;
     }
 }
 

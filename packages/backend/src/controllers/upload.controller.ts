@@ -76,3 +76,65 @@ export const finalizeUpload = async (req: Request, res: Response) => {
     }
 };
 
+export const listProcessedUploads = async (req: Request, res: Response) => {
+    try {
+        const uploads = await prisma.excelUpload.findMany({
+            where: { processed: true },
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                filename: true,
+                totalRows: true,
+                createdAt: true
+            }
+        });
+        res.json(ApiResponseHelper.success(uploads));
+    } catch (error: any) {
+        console.error('Error listando archivos procesados:', error);
+        res.status(500).json(
+            ApiResponseHelper.error(`Error al listar archivos: ${error.message}`)
+        );
+    }
+};
+
+export const getUploadDetails = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const upload = await prisma.excelUpload.findUnique({
+            where: { id },
+            include: {
+                _count: {
+                    select: { transactions: true }
+                }
+            }
+        });
+
+        if (!upload) {
+            return res.status(404).json(
+                ApiResponseHelper.error('Archivo no encontrado')
+            );
+        }
+
+        // Obtener rango de fechas de las transacciones asociadas
+        const stats = await prisma.transaction.aggregate({
+            where: { excelUploadId: id },
+            _min: { fechaValor: true },
+            _max: { fechaValor: true },
+            _sum: { importe: true }
+        });
+
+        res.json(ApiResponseHelper.success({
+            ...upload,
+            stats: {
+                minDate: stats._min.fechaValor,
+                maxDate: stats._max.fechaValor,
+                totalImporte: stats._sum.importe || 0
+            }
+        }));
+    } catch (error: any) {
+        console.error('Error obteniendo detalles del archivo:', error);
+        res.status(500).json(
+            ApiResponseHelper.error(`Error al obtener detalles: ${error.message}`)
+        );
+    }
+};

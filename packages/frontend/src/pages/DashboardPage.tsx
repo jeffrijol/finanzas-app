@@ -160,7 +160,7 @@ export function DashboardPage() {
                 blob = new Blob([JSON.stringify(transactions, null, 2)], { type: 'application/json' });
             } else {
                 // CSV Conversion
-                const headers = ['ID', 'Fecha', 'Descripción', 'Referencia', 'Categoría', 'Importe', 'Saldo', 'Item'];
+                const headers = ['ID', 'Fecha', 'Descripción', 'Categoría', 'Importe', 'Saldo', 'Item'];
                 const rows = transactions.map(t => [
                     t.id,
                     new Date(t.fechaValor).toLocaleDateString(),
@@ -176,7 +176,8 @@ export function DashboardPage() {
                     ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
                 ].join('\n');
 
-                blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                // Add UTF-8 BOM for Excel compatibility with special characters
+                blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
             }
 
             const url = URL.createObjectURL(blob);

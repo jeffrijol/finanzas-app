@@ -42,6 +42,8 @@ router.get('/transactions/stats', transactionController.getStats);
 // Upload
 router.post('/upload', upload.single('file'), uploadController.uploadFile);
 router.put('/upload/:id/finalize', uploadController.finalizeUpload);
+router.get('/excel-uploads', uploadController.listProcessedUploads);
+router.get('/excel-uploads/:id', uploadController.getUploadDetails);
 
 // Analytics
 import analyticsRoutes from './analytics.routes';

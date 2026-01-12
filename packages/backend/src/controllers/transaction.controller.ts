@@ -34,6 +34,7 @@ export const listTransactions = async (req: Request, res: Response) => {
         endDate: (req.query.endDate ? new Date(req.query.endDate as string) : undefined) || periodDates.endDate,
         categoria: req.query.categoria as string,
         itemAsignadoId: req.query.itemAsignadoId as string,
+        excelUploadId: req.query.excelUploadId as string,
         tipoItem: req.query.tipoItem as string,
         search: req.query.search as string,
         minAmount: req.query.minAmount ? Number(req.query.minAmount) : undefined,

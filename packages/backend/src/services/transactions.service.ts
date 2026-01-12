@@ -11,6 +11,7 @@ export class TransactionsService {
             endDate,
             categoria,
             itemAsignadoId,
+            excelUploadId,
             tipoItem,
             search,
             minAmount,
@@ -85,6 +86,11 @@ export class TransactionsService {
             if (maxAmount !== undefined) {
                 where.importe.lte = maxAmount;
             }
+        }
+
+        // Filter by Excel Upload ID
+        if (excelUploadId) {
+            where.excelUploadId = excelUploadId;
         }
 
         // Obtener total de transacciones
