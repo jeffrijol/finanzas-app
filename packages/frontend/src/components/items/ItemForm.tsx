@@ -32,6 +32,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from '@/hooks/use-toast';
 
 const itemSchema = z.object({
@@ -40,7 +41,7 @@ const itemSchema = z.object({
     itemTypeId: z.string().min(1, "El tipo de item es requerido"),
     color: z.string().optional(),
     icono: z.string().optional(),
-    activo: z.boolean().default(true),
+    activo: z.boolean(),
 })
 
 type ItemFormValues = z.infer<typeof itemSchema>
@@ -203,19 +204,63 @@ export function ItemForm({ open, onOpenChange, itemToEdit }: ItemFormProps) {
                             )}
                         />
 
-                        <FormField
-                            control={form.control}
-                            name="color"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Color</FormLabel>
-                                    <FormControl>
-                                        <Input type="color" className="h-10 w-full" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="color"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Color</FormLabel>
+                                        <FormControl>
+                                            <Input type="color" className="h-10 w-full" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="activo"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel>
+                                                Activo
+                                            </FormLabel>
+                                            <DialogDescription>
+                                                Visible en selectores
+                                            </DialogDescription>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        {/* Live Preview */}
+                        <div className="rounded-lg border p-4 bg-slate-50">
+                            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-2 block">Vista Previa</label>
+                            <div className="flex items-center gap-3 p-3 bg-white rounded border shadow-sm">
+                                <div
+                                    className="flex items-center justify-center w-10 h-10 rounded-full border text-xl text-white shadow-sm"
+                                    style={{
+                                        backgroundColor: form.watch('color') || '#3B82F6',
+                                    }}
+                                >
+                                    {form.watch('icono') || '💰'}
+                                </div>
+                                <div>
+                                    <p className="font-medium text-slate-900">{form.watch('nombre') || 'Nombre del Item'}</p>
+                                    <p className="text-sm text-slate-500">{itemTypes.find(t => t.id === form.watch('itemTypeId'))?.name || 'Tipo de Item'}</p>
+                                </div>
+                            </div>
+                        </div>
 
                         <div className="flex justify-end gap-2 pt-4">
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

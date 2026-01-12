@@ -1,12 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { TransactionCategoriesService } from '../services/transaction-categories.service';
-import { z } from 'zod';
-
-const categorySchema = z.object({
-    name: z.string().min(1, 'El nombre es requerido'),
-    type: z.enum(['INCOME', 'EXPENSE'], { errorMap: () => ({ message: 'Tipo inválido (INCOME/EXPENSE)' }) }),
-    itemTypeId: z.string().min(1, 'El Tipo de Item es requerido')
-});
+import { categorySchema } from '../utils/validators';
 
 export const getCategories = async (req: Request, res: Response, next: NextFunction) => {
     try {

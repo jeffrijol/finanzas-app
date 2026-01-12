@@ -30,7 +30,6 @@ export function HomePage() {
         isSaving,
         handleFileUpload,
         handleUpdateDraftTransaction,
-        handleSavePartial,
         saveWithFeedback,
         handleBulkAssign,
         exportReviewState,

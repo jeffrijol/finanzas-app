@@ -41,7 +41,7 @@ export function ReportsPage() {
             if (selectedItemId !== 'ALL') return t.itemId === selectedItemId;
             if (selectedTipoItem !== 'ALL') {
                 const item = items.find(i => i.id === t.itemId);
-                return item?.tipo === selectedTipoItem;
+                return item?.itemType?.name === selectedTipoItem;
             }
             return true;
         })
@@ -116,7 +116,7 @@ export function ReportsPage() {
                                         <SelectContent>
                                             <SelectItem value="ALL">Todos los items</SelectItem>
                                             {items
-                                                .filter(i => selectedTipoItem === 'ALL' || i.tipo === selectedTipoItem)
+                                                .filter(i => selectedTipoItem === 'ALL' || i.itemType?.name === selectedTipoItem)
                                                 .map(item => (
                                                     <SelectItem key={item.id} value={item.id}>
                                                         {item.nombre}
@@ -193,7 +193,7 @@ export function ReportsPage() {
                                             cx="50%"
                                             cy="50%"
                                             labelLine={false}
-                                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                            label={({ name, percent }: { name: string; percent?: number }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                                             outerRadius={150}
                                             fill="#8884d8"
                                             dataKey="value"
@@ -202,7 +202,7 @@ export function ReportsPage() {
                                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                             ))}
                                         </Pie>
-                                        <RechartsTooltip formatter={(val: number) => formatCurrency(val)} />
+                                        <RechartsTooltip formatter={(val: any) => formatCurrency(Number(val))} />
                                         <Legend />
                                     </PieChart>
                                 </ResponsiveContainer>

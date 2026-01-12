@@ -38,6 +38,10 @@ class ApiClient {
                 throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
 
+            if (response.status === 204) {
+                return {} as any;
+            }
+
             return await response.json();
         } catch (error) {
             console.error(`API request failed: ${endpoint}`, error);
@@ -51,8 +55,13 @@ class ApiClient {
         return response.data;
     }
 
-    async getItems(): Promise<Item[]> {
-        const response = await this.request<Item[]>('/items');
+    async getItems(params?: { includeInactive?: boolean }): Promise<Item[]> {
+        const queryParams = new URLSearchParams();
+        if (params?.includeInactive) {
+            queryParams.append('includeInactive', 'true');
+        }
+        const endpoint = params ? `/items?${queryParams.toString()}` : '/items';
+        const response = await this.request<Item[]>(endpoint);
         return response.data;
     }
 

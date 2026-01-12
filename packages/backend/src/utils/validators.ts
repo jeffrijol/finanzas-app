@@ -26,10 +26,17 @@ export const itemSchema = z.object({
     descripcion: z.string().optional(),
     color: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
     icono: z.string().optional(),
+    activo: z.boolean().optional(),
 });
 
 export const transactionUpdateSchema = z.object({
     itemAsignadoId: z.string().cuid().nullable().optional(),
     categoria: z.string().min(1).optional(),
     descripcion: z.string().min(1).optional(),
+});
+
+export const categorySchema = z.object({
+    name: z.string().min(1, 'El nombre es requerido'),
+    type: z.enum(['INCOME', 'EXPENSE']),
+    itemTypeId: z.string().min(1, 'El Tipo de Item es requerido')
 });

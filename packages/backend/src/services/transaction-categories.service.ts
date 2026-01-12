@@ -24,6 +24,19 @@ export const TransactionCategoriesService = {
     },
 
     createCategory: async (data: { name: string; type: string; itemTypeId: string }): Promise<TransactionCategory> => {
+        // Check for duplicates
+        const existing = await prisma.transactionCategory.findFirst({
+            where: {
+                name: data.name,
+                type: data.type,
+                itemTypeId: data.itemTypeId
+            }
+        });
+
+        if (existing) {
+            throw new Error('Ya existe una categoría con este nombre y tipo para este item.');
+        }
+
         return await prisma.transactionCategory.create({
             data
         });
@@ -37,6 +50,15 @@ export const TransactionCategoriesService = {
     },
 
     deleteCategory: async (id: string): Promise<void> => {
+        // Check usage
+        const usageCount = await prisma.transaction.count({
+            where: { categoryId: id }
+        });
+
+        if (usageCount > 0) {
+            throw new Error(`Esta categoría se usa en ${usageCount} transacciones. No se puede eliminar directamente.`);
+        }
+
         await prisma.transactionCategory.delete({
             where: { id }
         });

@@ -104,6 +104,7 @@ export class ItemsService {
 
     static async deleteItem(id: string) {
         // Soft delete
+        // We allow soft delete even if it has transactions, as it keeps history.
         return prisma.item.update({
             where: { id },
             data: { activo: false },
