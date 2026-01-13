@@ -18,6 +18,8 @@ interface TransactionsTableProps {
     onToggleVisibility?: () => void;
 }
 
+import { useState } from 'react';
+
 export function TransactionsTable({
     transactions,
     items,
@@ -32,6 +34,18 @@ export function TransactionsTable({
     isTableVisible = true,
     onToggleVisibility,
 }: TransactionsTableProps) {
+    const [openItemId, setOpenItemId] = useState<string | null>(null);
+
+    const handleRowProcessed = (transactionId: string) => {
+        const currentIndex = transactions.findIndex(t => t.id === transactionId);
+        if (currentIndex >= 0 && currentIndex < transactions.length - 1) {
+            const nextTransaction = transactions[currentIndex + 1];
+            setTimeout(() => {
+                setOpenItemId(nextTransaction.id);
+            }, 100);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center py-20">
@@ -103,6 +117,12 @@ export function TransactionsTable({
                                         onAssignItem={onAssignItem}
                                         onAssignCategory={onAssignCategory}
                                         isUpdating={updatingTransactionId === transaction.id}
+                                        isItemOpen={openItemId === transaction.id}
+                                        onItemOpenChange={(open) => {
+                                            if (!open && openItemId === transaction.id) setOpenItemId(null);
+                                            else if (open) setOpenItemId(transaction.id);
+                                        }}
+                                        onProcessed={() => handleRowProcessed(transaction.id)}
                                     />
                                 ))}
                             </tbody>

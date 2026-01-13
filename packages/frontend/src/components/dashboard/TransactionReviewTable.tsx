@@ -61,6 +61,8 @@ export function TransactionReviewTable({
 }: TransactionReviewTableProps) {
     const [isBatchMode, setIsBatchMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [openCategoryForTempId, setOpenCategoryForTempId] = useState<string | null>(null);
+    const [openItemForTempId, setOpenItemForTempId] = useState<string | null>(null);
 
     const { data: itemTypes = [] } = useQuery({
         queryKey: ['itemTypes'],
@@ -213,11 +215,23 @@ export function TransactionReviewTable({
                                         <TableCell>
                                             <Select
                                                 value={transaction.itemAsignadoId || 'sin-asignar'}
+                                                open={openItemForTempId === transaction.tempId}
+                                                onOpenChange={(open) => {
+                                                    if (!open && openItemForTempId === transaction.tempId) {
+                                                        setOpenItemForTempId(null);
+                                                    } else if (open) {
+                                                        setOpenItemForTempId(transaction.tempId);
+                                                    }
+                                                }}
                                                 onValueChange={(value) => {
                                                     const itemId = value === 'sin-asignar' ? null : value;
                                                     onUpdateTransaction(transaction.tempId!, { itemAsignadoId: itemId, categoryId: null });
+                                                    if (itemId) {
+                                                        // Ensure the state update settles before opening next dropdown
+                                                        setTimeout(() => setOpenCategoryForTempId(transaction.tempId), 50);
+                                                    }
                                                 }}
-                                                disabled={isBatchMode} // Disable individual edit in batch mode to prevent confusion? Or allow both? Let's allow but maybe visually deemphasize. Actually better to disable to encourage logic separation.
+                                                disabled={isBatchMode}
                                             >
                                                 <SelectTrigger className={`w-full bg-white ${isBatchMode ? 'opacity-50' : ''}`}>
                                                     <SelectValue placeholder="Seleccionar..." />
@@ -258,9 +272,29 @@ export function TransactionReviewTable({
                                         <TableCell>
                                             <Select
                                                 value={transaction.categoryId || 'sin-categoria'}
+                                                open={openCategoryForTempId === transaction.tempId}
+                                                onOpenChange={(open) => {
+                                                    if (!open && openCategoryForTempId === transaction.tempId) {
+                                                        setOpenCategoryForTempId(null);
+                                                    } else if (open) {
+                                                        setOpenCategoryForTempId(transaction.tempId);
+                                                    }
+                                                }}
                                                 onValueChange={(value) => {
                                                     const categoryId = value === 'sin-categoria' ? null : value;
                                                     onUpdateTransaction(transaction.tempId!, { categoryId });
+
+                                                    // Chain navigation: focus next transaction's item dropdown
+                                                    if (categoryId) {
+                                                        const currentIndex = transactions.findIndex(t => t.tempId === transaction.tempId);
+                                                        if (currentIndex >= 0 && currentIndex < transactions.length - 1) {
+                                                            const nextTransaction = transactions[currentIndex + 1];
+                                                            setTimeout(() => {
+                                                                setOpenCategoryForTempId(null);
+                                                                setOpenItemForTempId(nextTransaction.tempId);
+                                                            }, 100);
+                                                        }
+                                                    }
                                                 }}
                                                 disabled={!transaction.itemAsignadoId || isBatchMode}
                                             >

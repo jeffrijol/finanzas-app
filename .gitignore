@@ -40,3 +40,8 @@ Thumbs.db
 
 # Prisma
 packages/backend/prisma/migrations
+
+# Data and Logs
+*.xlsx
+*.sql
+*.log

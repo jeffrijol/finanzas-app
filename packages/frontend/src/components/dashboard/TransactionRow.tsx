@@ -33,6 +33,9 @@ interface TransactionRowProps {
     onAssignItem: (transactionId: string, itemId: string | null) => void;
     onAssignCategory: (transactionId: string, categoryId: string | null) => void;
     isUpdating?: boolean;
+    isItemOpen?: boolean;
+    onItemOpenChange?: (open: boolean) => void;
+    onProcessed?: () => void;
 }
 
 export function TransactionRow({
@@ -42,6 +45,9 @@ export function TransactionRow({
     onAssignItem,
     onAssignCategory,
     isUpdating = false,
+    isItemOpen,
+    onItemOpenChange,
+    onProcessed,
 }: TransactionRowProps) {
     const assignedItem = items.find((item) => item.id === transaction.itemAsignadoId);
     const [openCategory, setOpenCategory] = useState(false);
@@ -98,7 +104,7 @@ export function TransactionRow({
 
             {/* Item Column */}
             <td className="px-4 py-3 align-top">
-                <DropdownMenu>
+                <DropdownMenu open={isItemOpen} onOpenChange={onItemOpenChange}>
                     <DropdownMenuTrigger asChild>
                         <Button
                             variant="outline"
@@ -140,7 +146,15 @@ export function TransactionRow({
                                         <DropdownMenuSeparator />
                                         <DropdownMenuLabel className="text-xs font-semibold text-slate-400 py-1">{type.name}</DropdownMenuLabel>
                                         {typeItems.map((item) => (
-                                            <DropdownMenuItem key={item.id} onClick={() => onAssignItem(transaction.id, item.id)} className="cursor-pointer pl-6">
+                                            <DropdownMenuItem
+                                                key={item.id}
+                                                onClick={() => {
+                                                    onAssignItem(transaction.id, item.id);
+                                                    // Auto-open category dropdown after a small delay to ensure item state update
+                                                    setTimeout(() => setOpenCategory(true), 100);
+                                                }}
+                                                className="cursor-pointer pl-6"
+                                            >
                                                 <div className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: item.color || '#64748b' }} />
                                                 {item.icono && <span className="mr-1">{item.icono}</span>}
                                                 {item.nombre}
@@ -203,6 +217,7 @@ export function TransactionRow({
                                             onSelect={() => {
                                                 onAssignCategory(transaction.id, category.id);
                                                 setOpenCategory(false);
+                                                if (onProcessed) onProcessed();
                                             }}
                                             className="cursor-pointer"
                                         >

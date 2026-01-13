@@ -5,10 +5,10 @@ Backing up ExcelUpload...
 Backing up Transaction...
 
 Backup completed successfully!
-File: D:\desarrollo\finanzas-app\packages\backend\backups\backup-2026-01-12T13-03-52-015Z.sql
+File: D:\desarrollo\finanzas-app\packages\backend\backups\backup-2026-01-13T10-17-56-486Z.sql
 Total sizes:
 - ItemType: 3
 - Item: 10
 - TransactionCategory: 23
-- ExcelUpload: 2
-- Transaction: 69
+- ExcelUpload: 4
+- Transaction: 208
