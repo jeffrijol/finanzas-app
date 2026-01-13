@@ -13,6 +13,9 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
+    SelectGroup,
+    SelectLabel,
+    SelectSeparator,
 } from '@/components/ui/select';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
@@ -223,19 +226,32 @@ export function TransactionReviewTable({
                                                     <SelectItem value="sin-asignar">
                                                         <span className="text-gray-400 italic">Sin asignar</span>
                                                     </SelectItem>
-                                                    {items.map((item) => (
-                                                        <SelectItem key={item.id} value={item.id}>
-                                                            <div className="flex items-center gap-2">
-                                                                {item.color && (
-                                                                    <div
-                                                                        className="w-3 h-3 rounded-full"
-                                                                        style={{ backgroundColor: item.color }}
-                                                                    />
-                                                                )}
-                                                                <span>{item.nombre}</span>
+                                                    {itemTypes.map((type: any) => {
+                                                        const typeItems = items.filter((item) => (item as any).itemTypeId === type.id);
+                                                        if (typeItems.length === 0) return null;
+
+                                                        return (
+                                                            <div key={type.id}>
+                                                                <SelectGroup>
+                                                                    <SelectLabel className="text-xs font-semibold text-slate-400 py-1 pl-2">{type.name}</SelectLabel>
+                                                                    {typeItems.map((item) => (
+                                                                        <SelectItem key={item.id} value={item.id} className="pl-6">
+                                                                            <div className="flex items-center gap-2">
+                                                                                {item.color && (
+                                                                                    <div
+                                                                                        className="w-3 h-3 rounded-full shrink-0"
+                                                                                        style={{ backgroundColor: item.color }}
+                                                                                    />
+                                                                                )}
+                                                                                <span>{item.nombre}</span>
+                                                                            </div>
+                                                                        </SelectItem>
+                                                                    ))}
+                                                                </SelectGroup>
+                                                                <SelectSeparator />
                                                             </div>
-                                                        </SelectItem>
-                                                    ))}
+                                                        );
+                                                    })}
                                                 </SelectContent>
                                             </Select>
                                         </TableCell>
@@ -306,11 +322,24 @@ export function TransactionReviewTable({
                                 <SelectValue placeholder="Asignar Item a todas..." />
                             </SelectTrigger>
                             <SelectContent className="dark">
-                                {items.map((item) => (
-                                    <SelectItem key={item.id} value={item.id}>
-                                        {item.nombre}
-                                    </SelectItem>
-                                ))}
+                                {itemTypes.map((type: any) => {
+                                    const typeItems = items.filter((item) => (item as any).itemTypeId === type.id);
+                                    if (typeItems.length === 0) return null;
+
+                                    return (
+                                        <div key={type.id}>
+                                            <SelectGroup>
+                                                <SelectLabel className="text-xs font-semibold text-slate-400 py-1 pl-2">{type.name}</SelectLabel>
+                                                {typeItems.map((item) => (
+                                                    <SelectItem key={item.id} value={item.id} className="pl-6">
+                                                        {item.nombre}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                            <SelectSeparator className="bg-slate-700" />
+                                        </div>
+                                    );
+                                })}
                             </SelectContent>
                         </Select>
                     </div>

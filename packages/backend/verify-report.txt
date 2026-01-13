@@ -1,0 +1,21 @@
+Reading Master File: d:\desarrollo\finanzas-app\Movimientos_cuenta T1.xlsx
+Master Rows: 104
+Sample Master Row Keys (Raw): ["FECHA CONTABLE","FECHA VALOR","CLAVE","REFERENCIA","CATEGORÍA","DESCRIPCIÓN","REF. 16","DEBE","HABER","IMPORTE","SALDO"]
+Sample Master Row Keys (Normalized): ["fecha contable","fecha valor","clave","referencia","categoría","descripción","ref. 16","debe","haber","importe","saldo"]
+Reading Split File: d:\desarrollo\finanzas-app\Movimientos_cuenta_T1_Enero.xlsx
+- Rows: 37
+Sample Split Row Keys (Movimientos_cuenta_T1_Enero.xlsx): ["fecha contable","fecha valor","clave","referencia","categoría","descripción","ref. 16","debe","haber","importe","saldo"]
+Reading Split File: d:\desarrollo\finanzas-app\Movimientos_cuenta_T1_Febrero.xlsx
+- Rows: 32
+Sample Split Row Keys (Movimientos_cuenta_T1_Febrero.xlsx): ["fecha contable","fecha valor","clave","referencia","categoría","descripción","ref. 16","debe","haber","importe","saldo"]
+Reading Split File: d:\desarrollo\finanzas-app\Movimientos_cuenta_T1_Marzo.xlsx
+- Rows: 35
+Sample Split Row Keys (Movimientos_cuenta_T1_Marzo.xlsx): ["fecha contable","fecha valor","clave","referencia","categoría","descripción","ref. 16","debe","haber","importe","saldo"]
+Total Split Rows: 104
+
+--- Summary ---
+Master File Rows: 104
+Total Split Rows: 104
+✅ Row count matches.
+
+🎉 SUCCESS: The content of the 3 split files EXACTLY matches the master file.

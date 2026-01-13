@@ -130,14 +130,25 @@ export function TransactionRow({
                                 <div className="w-2 h-2 rounded-full bg-slate-300 mr-2" />
                                 Sin asignar
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {items.filter((item) => item.activo).map((item) => (
-                                <DropdownMenuItem key={item.id} onClick={() => onAssignItem(transaction.id, item.id)} className="cursor-pointer">
-                                    <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: item.color || '#64748b' }} />
-                                    {item.icono && <span className="mr-1">{item.icono}</span>}
-                                    {item.nombre}
-                                </DropdownMenuItem>
-                            ))}
+
+                            {itemTypes.map((type) => {
+                                const typeItems = items.filter((item) => item.activo && item.itemTypeId === type.id);
+                                if (typeItems.length === 0) return null;
+
+                                return (
+                                    <div key={type.id}>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuLabel className="text-xs font-semibold text-slate-400 py-1">{type.name}</DropdownMenuLabel>
+                                        {typeItems.map((item) => (
+                                            <DropdownMenuItem key={item.id} onClick={() => onAssignItem(transaction.id, item.id)} className="cursor-pointer pl-6">
+                                                <div className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: item.color || '#64748b' }} />
+                                                {item.icono && <span className="mr-1">{item.icono}</span>}
+                                                {item.nombre}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </div>
+                                );
+                            })}
                         </div>
                     </DropdownMenuContent>
                 </DropdownMenu>

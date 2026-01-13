@@ -68,7 +68,7 @@ async function main() {
             icono: '💼',
             categories: {
                 INCOME: ['Otros Ingresos'],
-                EXPENSE: ['Factura espacio', 'Gestoría', 'Gastos extras', 'IVA', 'Retención', 'Sociedad', 'Otros Gastos']
+                EXPENSE: ['Recibos espacio', 'Gestoría', 'Gastos extras', 'IVA', 'Retención', 'Sociedades', 'Otros Gastos']
             }
         }
     };

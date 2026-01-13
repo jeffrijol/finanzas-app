@@ -28,7 +28,7 @@
         "express-async-errors": "latest",
         "helmet": "latest",
         "multer": "latest",
-        "xlsx": "latest",
+        "xlsx": "^0.18.5",
         "zod": "latest"
     },
     "devDependencies": {
