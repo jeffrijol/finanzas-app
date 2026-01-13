@@ -14,4 +14,12 @@ export default defineConfig({
   server: {
     port: 4321,
   },
+  build: {
+    rollupOptions: {
+      external: ['jsdom'],
+    },
+  },
+  optimizeDeps: {
+    exclude: ['jsdom'],
+  },
 })

@@ -14,6 +14,8 @@ import { useDashboardFiltersStore } from '@/stores/dashboard-filters-store';
 import { useDashboardContext } from '@/hooks/useDashboardContext';
 import { DashboardChartsRenderer } from '@/components/dashboard/DashboardChartsRenderer';
 import { toast } from '@/hooks/use-toast';
+import { DownloadReportButton } from '@/components/dashboard/DownloadReportButton';
+
 
 export function DashboardPage() {
     const { year, quarter } = usePeriodStore();
@@ -219,19 +221,10 @@ export function DashboardPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <Button
+                        <DownloadReportButton
                             variant="outline"
                             className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                            onClick={handleDownloadPdf}
-                            disabled={isGeneratingPdf || isLoadingTransactions}
-                        >
-                            {isGeneratingPdf ? (
-                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                                <Download className="h-4 w-4 mr-2" />
-                            )}
-                            Descargar Reporte
-                        </Button>
+                        />
                     </div>
                 </div>
 
