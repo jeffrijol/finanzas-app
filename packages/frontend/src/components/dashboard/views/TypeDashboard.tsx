@@ -11,11 +11,11 @@ interface TypeDashboardProps {
 }
 
 export function TypeDashboard({ context, isGeneratingPdf }: TypeDashboardProps) {
-    const { year, tipoItem } = context.filters;
+    const { year, tipoItem, quarter } = context.filters;
 
     const { data: stats, isLoading } = useQuery({
-        queryKey: ['typeStats', tipoItem, year],
-        queryFn: () => apiClient.getTypeStats(tipoItem, Number(year)),
+        queryKey: ['typeStats', tipoItem, year, quarter],
+        queryFn: () => apiClient.getTypeStats(tipoItem, Number(year), quarter),
         enabled: !!tipoItem && tipoItem !== 'ALL'
     });
 

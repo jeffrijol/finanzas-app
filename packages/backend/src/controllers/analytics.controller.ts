@@ -5,6 +5,33 @@ import prisma from '../lib/prisma';
 
 export class AnalyticsController {
 
+    // Helper to get date range
+    private static getRange(year: number, quarter?: any) {
+        let start = new Date(year, 0, 1);
+        let end = new Date(year, 11, 31, 23, 59, 59);
+        let monthsInRange: number[] = Array.from({ length: 12 }, (_, i) => i + 1);
+
+        if (quarter && quarter !== 'all') {
+            const q = Number(quarter);
+            if (!isNaN(q)) {
+                const startMonth = (q - 1) * 3;
+                start = new Date(year, startMonth, 1);
+                end = new Date(year, startMonth + 3, 0, 23, 59, 59);
+                monthsInRange = [startMonth + 1, startMonth + 2, startMonth + 3];
+            }
+        }
+        return { start, end, monthsInRange };
+    }
+
+    // Helper to initialize trend based on months in range
+    private static initTrend(months: number[]) {
+        return months.map(m => ({
+            month: m,
+            ingresos: 0,
+            gastos: 0
+        }));
+    }
+
     // Wrapper for the existing powerful getStats
     static async getGeneralStats(req: Request, res: Response) {
         try {
@@ -15,20 +42,9 @@ export class AnalyticsController {
             const yearNum = Number(year);
 
             if (year && !isNaN(yearNum)) {
-                if (quarter && quarter !== 'all') {
-                    const quarterNum = Number(quarter);
-                    // Native JS Quarter Logic
-                    // Q1 (1) -> Month 0
-                    // Q2 (2) -> Month 3
-                    const startMonth = (quarterNum - 1) * 3;
-                    const endMonth = startMonth + 3; // 3 for Q1 -> April (Index 3). Day 0 of April is March 31.
-
-                    startDate = new Date(yearNum, startMonth, 1);
-                    endDate = new Date(yearNum, endMonth, 0, 23, 59, 59, 999);
-                } else {
-                    startDate = new Date(yearNum, 0, 1);
-                    endDate = new Date(yearNum, 11, 31, 23, 59, 59, 999);
-                }
+                const { start, end } = AnalyticsController.getRange(yearNum, quarter);
+                startDate = start;
+                endDate = end;
             }
 
             const stats = await TransactionsService.getStats({
@@ -49,16 +65,17 @@ export class AnalyticsController {
     static async getTypeStats(req: Request, res: Response) {
         try {
             const { typeId } = req.params;
-            const { year } = req.query;
+            const { year, quarter } = req.query;
             const yearNum = Number(year);
+            const { start, end, monthsInRange } = AnalyticsController.getRange(yearNum, quarter);
 
             // Fetch raw transactions for aggregation
             const transactions = await prisma.transaction.findMany({
                 where: {
                     itemAsignado: { itemTypeId: typeId },
                     fechaValor: {
-                        gte: new Date(yearNum, 0, 1),
-                        lte: new Date(yearNum, 11, 31, 23, 59, 59)
+                        gte: start,
+                        lte: end
                     }
                 },
                 select: {
@@ -71,11 +88,7 @@ export class AnalyticsController {
             });
 
             // 1. Monthly Trend
-            const monthlyTrend = Array.from({ length: 12 }, (_, i) => ({
-                month: i + 1,
-                ingresos: 0,
-                gastos: 0
-            }));
+            const monthlyTrend = AnalyticsController.initTrend(monthsInRange);
 
             // 2. Category Distribution
             // Using internal Categories (categoryRel)
@@ -90,8 +103,11 @@ export class AnalyticsController {
                 const absAmount = Math.abs(t.importe);
 
                 // Trend
-                if (isIncome) monthlyTrend[month].ingresos += t.importe;
-                else monthlyTrend[month].gastos += absAmount;
+                const trendEntry = monthlyTrend.find(mt => mt.month === month + 1);
+                if (trendEntry) {
+                    if (isIncome) trendEntry.ingresos += t.importe;
+                    else trendEntry.gastos += absAmount;
+                }
 
                 // Categories (Internal)
                 // @ts-ignore
@@ -147,16 +163,17 @@ export class AnalyticsController {
     static async getItemStats(req: Request, res: Response) {
         try {
             const { itemId } = req.params;
-            const { year } = req.query;
+            const { year, quarter } = req.query;
             const yearNum = Number(year);
+            const { start, end, monthsInRange } = AnalyticsController.getRange(yearNum, quarter);
 
             // Fetch transactions
             const transactions = await prisma.transaction.findMany({
                 where: {
                     itemAsignadoId: itemId,
                     fechaValor: {
-                        gte: new Date(yearNum, 0, 1),
-                        lte: new Date(yearNum, 11, 31, 23, 59, 59)
+                        gte: start,
+                        lte: end
                     }
                 },
                 select: {
@@ -169,11 +186,7 @@ export class AnalyticsController {
             });
 
             // 1. Monthly Trend
-            const monthlyTrend = Array.from({ length: 12 }, (_, i) => ({
-                month: i + 1,
-                ingresos: 0,
-                gastos: 0
-            }));
+            const monthlyTrend = AnalyticsController.initTrend(monthsInRange);
 
             // 2. Totals
             let totalIngresos = 0;
@@ -189,8 +202,11 @@ export class AnalyticsController {
                 const absAmount = Math.abs(t.importe);
 
                 // Trend
-                if (isIncome) monthlyTrend[month].ingresos += t.importe;
-                else monthlyTrend[month].gastos += absAmount;
+                const trendEntry = monthlyTrend.find(mt => mt.month === month + 1);
+                if (trendEntry) {
+                    if (isIncome) trendEntry.ingresos += t.importe;
+                    else trendEntry.gastos += absAmount;
+                }
 
                 // Totals
                 if (isIncome) totalIngresos += t.importe;
@@ -214,7 +230,7 @@ export class AnalyticsController {
                 categoryDistribution,
                 totalIngresos,
                 totalGastos,
-                averageMonthlyExpense: totalGastos / 12 // Simple avg
+                averageMonthlyExpense: totalGastos / monthsInRange.length // Dynamic avg
             }));
 
         } catch (error) {
@@ -227,8 +243,9 @@ export class AnalyticsController {
     static async getCategoryStats(req: Request, res: Response) {
         try {
             const { categoryId } = req.params;
-            const { year } = req.query;
+            const { year, quarter } = req.query;
             const yearNum = Number(year);
+            const { start, end, monthsInRange } = AnalyticsController.getRange(yearNum, quarter);
 
             // Fetch transactions
             // Note: We filter by the RELATION categoryId, not the raw string 'categoria'
@@ -236,8 +253,8 @@ export class AnalyticsController {
                 where: {
                     categoryId: categoryId,
                     fechaValor: {
-                        gte: new Date(yearNum, 0, 1),
-                        lte: new Date(yearNum, 11, 31, 23, 59, 59)
+                        gte: start,
+                        lte: end
                     }
                 },
                 select: {
@@ -249,11 +266,7 @@ export class AnalyticsController {
             });
 
             // 1. Monthly Trend
-            const monthlyTrend = Array.from({ length: 12 }, (_, i) => ({
-                month: i + 1,
-                ingresos: 0,
-                gastos: 0
-            }));
+            const monthlyTrend = AnalyticsController.initTrend(monthsInRange);
 
             // 2. Top Items in this Category
             const itemsMap: Record<string, number> = {};
@@ -263,8 +276,13 @@ export class AnalyticsController {
                 const isIncome = t.importe > 0;
                 const absAmount = Math.abs(t.importe);
 
-                if (isIncome) monthlyTrend[month].ingresos += t.importe;
-                else monthlyTrend[month].gastos += absAmount;
+                if (isIncome) {
+                    const trendEntry = monthlyTrend.find(mt => mt.month === month + 1);
+                    if (trendEntry) trendEntry.ingresos += t.importe;
+                } else {
+                    const trendEntry = monthlyTrend.find(mt => mt.month === month + 1);
+                    if (trendEntry) trendEntry.gastos += absAmount;
+                }
 
                 if (t.itemAsignadoId && !isIncome) {
                     itemsMap[t.itemAsignadoId] = (itemsMap[t.itemAsignadoId] || 0) + absAmount;
@@ -298,6 +316,123 @@ export class AnalyticsController {
         } catch (error) {
             console.error('Error in getCategoryStats:', error);
             res.status(500).json(ApiResponseHelper.error('Error fetching category stats'));
+        }
+    }
+
+    // New Endpoint: Quarterly Report
+    static async getQuarterlyReport(req: Request, res: Response) {
+        try {
+            const { year } = req.params;
+            const yearNum = Number(year);
+
+            if (isNaN(yearNum)) {
+                return res.status(400).json(ApiResponseHelper.error('Invalid year'));
+            }
+
+            const qs = [
+                { q: 1, start: new Date(yearNum, 0, 1), end: new Date(yearNum, 2, 31, 23, 59, 59) },
+                { q: 2, start: new Date(yearNum, 3, 1), end: new Date(yearNum, 5, 30, 23, 59, 59) },
+                { q: 3, start: new Date(yearNum, 6, 1), end: new Date(yearNum, 8, 30, 23, 59, 59) },
+                { q: 4, start: new Date(yearNum, 9, 1), end: new Date(yearNum, 11, 31, 23, 59, 59) },
+            ];
+
+            const quartersData = [];
+
+            for (const quarter of qs) {
+                const txs = await prisma.transaction.findMany({
+                    where: {
+                        fechaValor: { gte: quarter.start, lte: quarter.end }
+                    }
+                });
+
+                let ingresos = 0;
+                let gastos = 0;
+                txs.forEach(t => {
+                    if (t.importe > 0) ingresos += t.importe;
+                    else gastos += Math.abs(t.importe);
+                });
+
+                quartersData.push({
+                    quarter: quarter.q,
+                    ingresos,
+                    gastos,
+                    neto: ingresos - gastos,
+                    count: txs.length
+                });
+            }
+
+            res.json(ApiResponseHelper.success(quartersData));
+        } catch (error) {
+            console.error('Error in getQuarterlyReport:', error);
+            res.status(500).json(ApiResponseHelper.error('Error fetching quarterly report'));
+        }
+    }
+
+    // New Endpoint: Stacked Trend
+    static async getStackedTrend(req: Request, res: Response) {
+        try {
+            const { year } = req.params;
+            const yearNum = Number(year);
+
+            if (isNaN(yearNum)) {
+                return res.status(400).json(ApiResponseHelper.error('Invalid year'));
+            }
+
+            // 1. Get all expenses for year
+            const expenses = await prisma.transaction.findMany({
+                where: {
+                    fechaValor: {
+                        gte: new Date(yearNum, 0, 1),
+                        lte: new Date(yearNum, 11, 31, 23, 59, 59)
+                    },
+                    importe: { lt: 0 }
+                },
+                include: { categoryRel: true }
+            });
+
+            // 2. Identify Top 5 Categories Overall
+            const catTotals: Record<string, number> = {};
+            expenses.forEach(t => {
+                // @ts-ignore
+                const cat = t.categoryRel?.name || t.categoria || 'Otros';
+                catTotals[cat] = (catTotals[cat] || 0) + Math.abs(t.importe);
+            });
+
+            const topCategories = Object.entries(catTotals)
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 5) // Top 5
+                .map(([name]) => name);
+
+            // 3. Build Month Buckets
+            const buckets: any[] = Array.from({ length: 12 }, (_, i) => ({
+                month: i + 1,
+                // Initialize top cats to 0
+                ...topCategories.reduce((acc, curr) => ({ ...acc, [curr]: 0 }), {}),
+                Otros: 0
+            }));
+
+            // 4. Fill Buckets
+            expenses.forEach(t => {
+                const m = t.fechaValor.getMonth(); // 0-11
+                // @ts-ignore
+                const cat = t.categoryRel?.name || t.categoria || 'Otros';
+                const absAmount = Math.abs(t.importe);
+
+                if (topCategories.includes(cat)) {
+                    buckets[m][cat] += absAmount;
+                } else {
+                    buckets[m]['Otros'] += absAmount;
+                }
+            });
+
+            res.json(ApiResponseHelper.success({
+                data: buckets,
+                keys: [...topCategories, 'Otros']
+            }));
+
+        } catch (e) {
+            console.error('Error in getStackedTrend:', e);
+            res.status(500).json(ApiResponseHelper.error('Error fetching stacked trend'));
         }
     }
 }

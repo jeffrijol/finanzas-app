@@ -202,32 +202,51 @@ class ApiClient {
         return response.data;
     }
 
-    async getTypeStats(typeId: string, year: number): Promise<{
+    async getTypeStats(typeId: string, year: number, quarter?: number | 'all'): Promise<{
         monthlyTrend: { month: number; ingresos: number; gastos: number }[];
         categoryDistribution: { categoria: string; ingresos: number; gastos: number }[];
         topItems: { name: string; amount: number }[];
     }> {
-        const response = await this.request<any>(`/analytics/type/${typeId}?year=${year}`);
+        const response = await this.request<any>(`/analytics/type/${typeId}?year=${year}&quarter=${quarter || 'all'}`);
         return response.data;
     }
 
 
-    async getItemStats(itemId: string, year: number): Promise<{
+    async getItemStats(itemId: string, year: number, quarter?: number | 'all'): Promise<{
         monthlyTrend: { month: number; ingresos: number; gastos: number }[];
         categoryDistribution: { categoria: string; ingresos: number; gastos: number }[];
         totalIngresos: number;
         totalGastos: number;
         averageMonthlyExpense: number;
     }> {
-        const response = await this.request<any>(`/analytics/item/${itemId}?year=${year}`);
+        const response = await this.request<any>(`/analytics/item/${itemId}?year=${year}&quarter=${quarter || 'all'}`);
         return response.data;
     }
 
-    async getCategoryStats(categoryId: string, year: number): Promise<{
+    async getCategoryStats(categoryId: string, year: number, quarter?: number | 'all'): Promise<{
         monthlyTrend: { month: number; ingresos: number; gastos: number }[];
         topItems: { name: string; amount: number }[];
     }> {
-        const response = await this.request<any>(`/analytics/category/${categoryId}?year=${year}`);
+        const response = await this.request<any>(`/analytics/category/${categoryId}?year=${year}&quarter=${quarter || 'all'}`);
+        return response.data;
+    }
+
+    async getQuarterlyReport(year: number): Promise<{
+        quarter: number;
+        ingresos: number;
+        gastos: number;
+        neto: number;
+        count: number;
+    }[]> {
+        const response = await this.request<any>(`/analytics/quarterly/${year}`);
+        return response.data;
+    }
+
+    async getStackedTrend(year: number): Promise<{
+        data: any[];
+        keys: string[];
+    }> {
+        const response = await this.request<any>(`/analytics/stacked-trend/${year}`);
         return response.data;
     }
 

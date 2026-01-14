@@ -113,12 +113,7 @@ export const usePDFExport = () => {
                 color: incomeColors[i % incomeColors.length]
             }));
 
-            // Mapear datos de barras con colores
-            const barChartDataWithColors = barChartData.map((d: any) => ({
-                label: d.name,
-                value: d.ingresos, // Simplificación: solo ingresos por ahora en barras simples, o podríamos hacer stacked
-                color: '#3b82f6'
-            }));
+
             // Nota: El componente de barras actual es simple. Si queremos doble barra (Ingreso/Gasto) habría que adaptar PdfBarChart.
             // Por ahora, para mantener paridad visual simple, pasamos un array combinado o adaptamos el componente.
             // Vamos a adaptar PdfBarChart para recibir ingresos/gastos si es necesario, pero el componente creado antes era simple.
@@ -136,6 +131,11 @@ export const usePDFExport = () => {
             // 4. Calcular totales para resumen
             const totalIncome = barChartData.reduce((sum: number, item: any) => sum + (item.ingresos || 0), 0);
             const totalExpenses = barChartData.reduce((sum: number, item: any) => sum + (item.gastos || 0), 0);
+
+            // Fetch quarterly report
+            const quarterlyReport = await apiClient.getQuarterlyReport(Number(year));
+
+            // ... (existing processing code)
 
             // 5. Construir el objeto de datos completo para el PDF
             const reportData = {
@@ -165,56 +165,49 @@ export const usePDFExport = () => {
                     netBalance: totalIncome - totalExpenses
                 },
                 charts: {
-                    // Pasamos datos estructurados para componentes nativos
-                    barData: netBalanceData, // Usamos balance neto por mes/tipo
+                    barData: netBalanceData,
                     expensesPieData: expensesPieDataWithColors,
                     incomePieData: incomePieDataWithColors
                 },
                 topExpenses: statsData.topExpenses || [],
-                sampleTransactions: transactionsData.items || []
+                sampleTransactions: transactionsData.items || [],
+                quarterlyReport // Add quarterly report
             };
 
             // 5b. CAPTURA DE GRÁFICOS (SNAPSHOTS)
-            // Intentamos capturar los gráficos del DOM actual
-            let chartImages: { monthlyTrend?: string, distributionGastos?: string, distributionIngresos?: string } = {};
+            let chartImages: { monthlyTrend?: string, distributionGastos?: string, distributionIngresos?: string, stackedTrend?: string } = {};
 
             try {
-                // Import dinámico para no cargar html2canvas si no se usa
                 const { captureChart } = await import('@/lib/pdf-generator/snapshot-utils');
 
-                // IDs de los gráficos en el DOM (Deben coincidir con los componentes)
                 const trendId = 'dashboard-chart-annual';
-                // Detectar cuál gráfico circular está presente (ingresos o gastos)
-                // Priorizamos gastos si hay ambos, o capturamos ambos y componemos (por ahora simple)
                 const gastosId = 'dashboard-chart-pie-gastos';
                 const ingresosId = 'dashboard-chart-pie-ingresos';
+                const stackedId = 'dashboard-chart-stacked'; // Add Stacked ID
 
-                // Captura secuencial para no sobrecargar el navegador
-                // 1. Tendencia Mensual
-                toast({ title: 'Generando PDF', description: 'Capturando gráfico de tendencia...' });
-                const trendImg = await captureChart(trendId);
+                toast({ title: 'Generando PDF', description: 'Capturando gráficos...' });
 
-                // 2. Distribución Gastos
-                let distGastosImg = undefined;
-                if (document.getElementById(gastosId)) {
-                    toast({ title: 'Generando PDF', description: 'Capturando gastos...' });
-                    const res = await captureChart(gastosId);
-                    distGastosImg = res || undefined;
-                }
+                // Helper for optional capture
+                const safeCapture = async (id: string) => {
+                    if (document.getElementById(id)) {
+                        return await captureChart(id);
+                    }
+                    return undefined;
+                };
 
-                // 3. Distribución Ingresos
-                let distIngresosImg = undefined;
-                if (document.getElementById(ingresosId)) {
-                    toast({ title: 'Generando PDF', description: 'Capturando ingresos...' });
-                    const res = await captureChart(ingresosId);
-                    distIngresosImg = res || undefined;
-                }
+                const [trendImg, distGastosImg, distIngresosImg, stackedImg] = await Promise.all([
+                    safeCapture(trendId),
+                    safeCapture(gastosId),
+                    safeCapture(ingresosId),
+                    safeCapture(stackedId)
+                ]);
 
                 // @ts-ignore
                 chartImages = {
-                    monthlyTrend: trendImg || undefined,
+                    monthlyTrend: trendImg,
                     distributionGastos: distGastosImg,
-                    distributionIngresos: distIngresosImg
+                    distributionIngresos: distIngresosImg,
+                    stackedTrend: stackedImg
                 };
 
             } catch (captureError) {

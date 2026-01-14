@@ -11,11 +11,11 @@ interface ItemDashboardProps {
 }
 
 export function ItemDashboard({ context, isGeneratingPdf }: ItemDashboardProps) {
-    const { year, itemId } = context.filters;
+    const { year, itemId, quarter } = context.filters;
 
     const { data: stats, isLoading } = useQuery({
-        queryKey: ['itemStats', itemId, year],
-        queryFn: () => apiClient.getItemStats(itemId, Number(year)),
+        queryKey: ['itemStats', itemId, year, quarter],
+        queryFn: () => apiClient.getItemStats(itemId, Number(year), quarter),
         enabled: !!itemId
     });
 

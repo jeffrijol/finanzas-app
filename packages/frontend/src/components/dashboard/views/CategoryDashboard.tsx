@@ -10,11 +10,11 @@ interface CategoryDashboardProps {
 }
 
 export function CategoryDashboard({ context, isGeneratingPdf }: CategoryDashboardProps) {
-    const { year, categoryId } = context.filters;
+    const { year, categoryId, quarter } = context.filters;
 
     const { data: stats, isLoading } = useQuery({
-        queryKey: ['categoryStats', categoryId, year],
-        queryFn: () => apiClient.getCategoryStats(categoryId, Number(year)),
+        queryKey: ['categoryStats', categoryId, year, quarter],
+        queryFn: () => apiClient.getCategoryStats(categoryId, Number(year), quarter),
         enabled: !!categoryId && categoryId !== 'ALL'
     });
 

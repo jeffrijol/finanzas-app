@@ -11,6 +11,10 @@ router.get('/type/:typeId', AnalyticsController.getTypeStats);
 router.get('/item/:itemId', AnalyticsController.getItemStats);
 router.get('/category/:categoryId', AnalyticsController.getCategoryStats);
 
+// Phase 4: Advanced Analytics
+router.get('/quarterly/:year', AnalyticsController.getQuarterlyReport);
+router.get('/stacked-trend/:year', AnalyticsController.getStackedTrend);
+
 export default router;
 
 

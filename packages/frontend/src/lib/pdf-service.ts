@@ -1,68 +1,80 @@
-import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { buildDashboardPDF } from './pdf-generator/pdf-builder';
 
 interface ReportOptions {
     title: string;
     subtitle: string;
-    chartIds: string[]; // IDs de los elementos DOM de gráficos a capturar
+    chartIds: string[];
+    data: any; // Data for the report content
+    stackedChartId?: string; // Specific ID for the stacked chart if present
 }
 
 export const PdfGeneratorService = {
-    async generateDashboardReport({ title, subtitle, chartIds }: ReportOptions) {
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.width;
-        let currentY = 20;
+    async generateDashboardReport({ title, subtitle, chartIds, data, stackedChartId }: ReportOptions) {
+        const chartImages: any = {};
 
-        // --- Header ---
-        doc.setFontSize(22);
-        doc.text('Finanzas App', 14, currentY);
-
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(`Generado: ${new Date().toLocaleDateString()}`, pageWidth - 14, currentY, { align: 'right' });
-
-        currentY += 15;
-
-        // --- Title & Subtitle ---
-        doc.setFontSize(16);
-        doc.setTextColor(0);
-        doc.text(title, 14, currentY);
-
-        currentY += 7;
-        doc.setFontSize(12);
-        doc.setTextColor(100);
-        doc.text(subtitle, 14, currentY);
-
-        currentY += 15;
-
-        // --- Charts Capture ---
-        // Iteramos los gráficos y los añadimos como imágenes
+        // 1. Capture Standard Charts
         for (const id of chartIds) {
             const element = document.getElementById(id);
             if (element) {
                 try {
-                    const canvas = await html2canvas(element, { scale: 2 });
+                    const canvas = await html2canvas(element, {
+                        scale: 2,
+                        backgroundColor: '#ffffff'
+                    });
                     const imgData = canvas.toDataURL('image/png');
 
-                    // Ajustar tamaño imagen al ancho PDF (con margen)
-                    const imgWidth = pageWidth - 28;
-                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                    // Si no cabe, nueva página
-                    if (currentY + imgHeight > doc.internal.pageSize.height - 20) {
-                        doc.addPage();
-                        currentY = 20;
+                    // Map IDs to specific keys expected by the PDF Template
+                    if (id.includes('annual') || id.includes('monthly-trend')) {
+                        chartImages.monthlyTrend = imgData;
+                    } else if (id.includes('pie-gastos')) {
+                        chartImages.distributionGastos = imgData;
+                    } else if (id.includes('pie-ingresos')) {
+                        chartImages.distributionIngresos = imgData;
                     }
-
-                    doc.addImage(imgData, 'PNG', 14, currentY, imgWidth, imgHeight);
-                    currentY += imgHeight + 10;
                 } catch (err) {
                     console.error(`Error capturing chart ${id}`, err);
                 }
             }
         }
 
-        // Save
-        doc.save(`reporte_financiero_${new Date().getTime()}.pdf`);
+        // 2. Capture Stacked Trend if requested
+        if (stackedChartId) {
+            const element = document.getElementById(stackedChartId);
+            if (element) {
+                try {
+                    const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#ffffff' });
+                    chartImages.stackedTrend = canvas.toDataURL('image/png');
+                } catch (err) {
+                    console.error(`Error capturing stacked chart`, err);
+                }
+            }
+        }
+
+        // 3. Generate PDF Blob
+        try {
+            // Ensure metadata exists
+            data.metadata = {
+                title,
+                generatedAt: new Date().toLocaleDateString(),
+                filters: { periodLabel: subtitle }
+            };
+
+            const blob = await buildDashboardPDF(data, chartImages);
+
+            // 4. Download
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `reporte_financiero_${new Date().getTime()}.pdf`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+        } catch (error) {
+            console.error('Error generating PDF document:', error);
+            throw error;
+        }
     }
 };

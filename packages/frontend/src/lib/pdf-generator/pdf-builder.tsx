@@ -146,7 +146,15 @@ const styles = StyleSheet.create({
 /**
  * Componente React para el PDF
  */
-const DashboardPDF = ({ data, chartImages }: { data: any, chartImages?: { monthlyTrend?: string, distributionGastos?: string, distributionIngresos?: string } }) => (
+const DashboardPDF = ({ data, chartImages }: {
+    data: any,
+    chartImages?: {
+        monthlyTrend?: string;
+        distributionGastos?: string;
+        distributionIngresos?: string;
+        stackedTrend?: string; // New
+    }
+}) => (
     <Document>
         <Page size="A4" style={styles.page} >
             {/* Encabezado */}
@@ -267,55 +275,44 @@ const DashboardPDF = ({ data, chartImages }: { data: any, chartImages?: { monthl
                 )
             }
 
-            {/* Tabla de transacciones de muestra */}
-            {
-                (data.sampleTransactions && data.sampleTransactions.length > 0) ? (
-                    <View style={[styles.section, { marginTop: 20 }]} >
-                        <Text style={styles.sectionTitle}>
-                            Transacciones Recientes
-                        </Text>
+            {/* Resumen Ejecutivo Trimestral */}
+            {data.quarterlyReport && (
+                <View style={styles.section} break>
+                    <Text style={styles.sectionTitle}>Resumen Ejecutivo Trimestral</Text>
 
-                        < View style={styles.table} >
-                            {/* Encabezado de tabla */}
-                            < View style={styles.tableHeader} >
-                                <Text style={[styles.tableCell, { width: '15%' }]}> Fecha </Text>
-                                < Text style={[styles.tableCell, { width: '40%' }]} > Descripción </Text>
-                                < Text style={[styles.tableCell, { width: '20%' }]} > Categoría </Text>
-                                < Text style={[styles.tableCell, { width: '25%' }]} > Monto </Text>
-                            </View>
-
-                            {/* Filas de transacciones */}
-                            {
-                                data.sampleTransactions.map((tx: any, index: number) => (
-                                    <View key={index} style={styles.tableRow} >
-                                        <Text style={[styles.tableCell, { width: '15%' }]} >
-                                            {new Date(tx.fechaValor).toLocaleDateString('es-ES')}
-                                        </Text>
-                                        < Text style={[styles.tableCell, { width: '40%' }]} >
-                                            {tx.descripcion ? (tx.descripcion.length > 35 ? tx.descripcion.substring(0, 32) + '...' : tx.descripcion) : ''}
-                                        </Text>
-                                        < Text style={[styles.tableCell, { width: '20%' }]} >
-                                            {tx.categoria}
-                                        </Text>
-                                        < Text style={
-                                            [
-                                                styles.tableCell,
-                                                { width: '25%' },
-                                                tx.importe >= 0 ? styles.positiveValue : styles.negativeValue
-                                            ]} >
-                                            €{Math.abs(tx.importe).toLocaleString('es-ES')}
-                                        </Text>
-                                    </View>
-                                ))
-                            }
+                    <View style={styles.table}>
+                        <View style={styles.tableHeader}>
+                            <Text style={[styles.tableCell, { width: '20%' }]}>Trimestre</Text>
+                            <Text style={[styles.tableCell, { width: '25%' }]}>Ingresos</Text>
+                            <Text style={[styles.tableCell, { width: '25%' }]}>Gastos</Text>
+                            <Text style={[styles.tableCell, { width: '30%' }]}>Neto</Text>
                         </View>
-
-                        < Text style={{ fontSize: 9, color: '#6b7280', marginTop: 10, textAlign: 'center' }
-                        }>
-                            * Se muestran las primeras 15 transacciones para referencia.
-                        </Text>
+                        {data.quarterlyReport.map((q: any) => (
+                            <View key={q.quarter} style={styles.tableRow}>
+                                <Text style={[styles.tableCell, { width: '20%' }]}>Q{q.quarter}</Text>
+                                <Text style={[styles.tableCell, { width: '25%', color: '#10b981' }]}>
+                                    €{q.ingresos.toLocaleString('es-ES')}
+                                </Text>
+                                <Text style={[styles.tableCell, { width: '25%', color: '#ef4444' }]}>
+                                    €{q.gastos.toLocaleString('es-ES')}
+                                </Text>
+                                <Text style={[styles.tableCell, { width: '30%', fontWeight: 'bold', color: q.neto >= 0 ? '#10b981' : '#ef4444' }]}>
+                                    €{q.neto.toLocaleString('es-ES')}
+                                </Text>
+                            </View>
+                        ))}
                     </View>
-                ) : null}
+
+                    {chartImages?.stackedTrend && (
+                        <View style={{ marginTop: 20 }}>
+                            <Text style={[styles.subtitle, { marginBottom: 10 }]}>Composición Mensual del Gasto</Text>
+                            <Image src={chartImages.stackedTrend} style={{ width: '100%', height: 250, objectFit: 'contain' }} />
+                        </View>
+                    )}
+                </View>
+            )}
+
+            {/* Footer */}
 
             {/* Pie de página */}
             <Text style={styles.footer} fixed >
