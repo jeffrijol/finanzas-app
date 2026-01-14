@@ -139,8 +139,7 @@ const styles = StyleSheet.create({
 /**
  * Componente React para el PDF
  */
-import { PdfBarChart } from '../pdf-components/PdfBarChart';
-import { PdfPieChart } from '../pdf-components/PdfPieChart';
+
 
 // ... (estilos existentes)
 
@@ -196,46 +195,12 @@ const DashboardPDF = ({ data }: { data: any }) => (
                 </View>
             </View>
 
-            {/* Gráficos Nativos */}
-            <View style={styles.section} wrap={false}>
+            {/* Gráficos (pendiente de snapshot) */}
+            <View style={styles.section}>
                 <Text style={styles.sectionTitle}> Análisis Gráfico </Text>
-
-                {/* Gráfico de barras */}
-                {data.charts?.barData && data.charts.barData.length > 0 && (
-                    <View style={styles.chartWrapper}>
-                        <PdfBarChart
-                            data={data.charts.barData}
-                            title="Tendencia Mensual"
-                            width={480}
-                            height={200}
-                        />
-                    </View>
-                )}
-
-                {/* Gráficos de torta lado a lado */}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 20 }}>
-                    {data.charts?.expensesPieData && data.charts.expensesPieData.length > 0 && (
-                        <View style={{ width: '48%' }}>
-                            <PdfPieChart
-                                data={data.charts.expensesPieData}
-                                title="Distribución de Gastos"
-                                width={200}
-                                height={200}
-                            />
-                        </View>
-                    )}
-
-                    {data.charts?.incomePieData && data.charts.incomePieData.length > 0 && (
-                        <View style={{ width: '48%' }}>
-                            <PdfPieChart
-                                data={data.charts.incomePieData}
-                                title="Distribución de Ingresos"
-                                width={200}
-                                height={200}
-                            />
-                        </View>
-                    )}
-                </View>
+                <Text style={{ fontSize: 10, color: '#6b7280', fontStyle: 'italic' }}>
+                    Los gráficos se han eliminado temporalmente mientras se migra a la nueva arquitectura visual.
+                </Text>
             </View>
 
             {/* Tabla de transacciones de muestra */}
