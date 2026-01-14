@@ -1,5 +1,4 @@
-import React from 'react';
-import { Document, Page, View, Text, Image, StyleSheet, Font, pdf } from '@react-pdf/renderer';
+import { Document, Page, View, Text, StyleSheet, Font, pdf } from '@react-pdf/renderer';
 
 // Registrar fuentes
 try {
@@ -140,162 +139,168 @@ const styles = StyleSheet.create({
 /**
  * Componente React para el PDF
  */
+import { PdfBarChart } from '../pdf-components/PdfBarChart';
+import { PdfPieChart } from '../pdf-components/PdfPieChart';
+
+// ... (estilos existentes)
+
+/**
+ * Componente React para el PDF
+ */
 const DashboardPDF = ({ data }: { data: any }) => (
     <Document>
-    <Page size= "A4" style = { styles.page } >
-        {/* Encabezado */ }
-        < View style = { styles.header } >
-            <Text style={ styles.title }> { data.metadata?.title || 'Reporte Financiero' } </Text>
-                < Text style = { styles.subtitle } >
-                    Generado: { data.metadata?.generatedAt }
-</Text>
-    < Text style = { styles.subtitle } >
-        Período: { data.metadata?.filters?.periodLabel }
-</Text>
-    </View>
+        <Page size="A4" style={styles.page} >
+            {/* Encabezado */}
+            < View style={styles.header} >
+                <Text style={styles.title}> {data.metadata?.title || 'Reporte Financiero'} </Text>
+                < Text style={styles.subtitle} >
+                    Generado: {data.metadata?.generatedAt}
+                </Text>
+                < Text style={styles.subtitle} >
+                    Período: {data.metadata?.filters?.periodLabel}
+                </Text>
+            </View>
 
-{/* Resumen ejecutivo */ }
-<View style={ styles.section }>
-    <Text style={ styles.sectionTitle }> Resumen Ejecutivo </Text>
-        < View style = { styles.summaryGrid } >
-            <View style={ styles.summaryItem }>
-                <Text style={ styles.summaryLabel }> Total Transacciones </Text>
-                    < Text style = { styles.summaryValue } >
-                        { data.summaries?.totalTransactions || 0 }
+            {/* Resumen ejecutivo */}
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}> Resumen Ejecutivo </Text>
+                < View style={styles.summaryGrid} >
+                    <View style={styles.summaryItem}>
+                        <Text style={styles.summaryLabel}> Total Transacciones </Text>
+                        < Text style={styles.summaryValue} >
+                            {data.summaries?.totalTransactions || 0}
                         </Text>
-                        </View>
-                        < View style = { styles.summaryItem } >
-                            <Text style={ styles.summaryLabel }> Total Ingresos </Text>
-                                < Text style = { [styles.summaryValue, styles.positiveValue]} >
-                            €{ data.summaries?.totalIncome?.toLocaleString('es-ES') || '0' }
-</Text>
-    </View>
-    < View style = { styles.summaryItem } >
-        <Text style={ styles.summaryLabel }> Total Gastos </Text>
-            < Text style = { [styles.summaryValue, styles.negativeValue]} >
-                            €{ data.summaries?.totalExpenses?.toLocaleString('es-ES') || '0' }
-</Text>
-    </View>
-    < View style = { styles.summaryItem } >
-        <Text style={ styles.summaryLabel }> Balance Neto </Text>
-            < Text style = {
-                [
-                styles.summaryValue,
-                (data.summaries?.netBalance || 0) >= 0 ? styles.positiveValue : styles.negativeValue
-                ]} >
-                            €{ data.summaries?.netBalance?.toLocaleString('es-ES') || '0' }
-</Text>
-    </View>
-    </View>
-    </View>
+                    </View>
+                    < View style={styles.summaryItem} >
+                        <Text style={styles.summaryLabel}> Total Ingresos </Text>
+                        < Text style={[styles.summaryValue, styles.positiveValue]} >
+                            €{data.summaries?.totalIncome?.toLocaleString('es-ES') || '0'}
+                        </Text>
+                    </View>
+                    < View style={styles.summaryItem} >
+                        <Text style={styles.summaryLabel}> Total Gastos </Text>
+                        < Text style={[styles.summaryValue, styles.negativeValue]} >
+                            €{data.summaries?.totalExpenses?.toLocaleString('es-ES') || '0'}
+                        </Text>
+                    </View>
+                    < View style={styles.summaryItem} >
+                        <Text style={styles.summaryLabel}> Balance Neto </Text>
+                        < Text style={
+                            [
+                                styles.summaryValue,
+                                (data.summaries?.netBalance || 0) >= 0 ? styles.positiveValue : styles.negativeValue
+                            ]} >
+                            €{data.summaries?.netBalance?.toLocaleString('es-ES') || '0'}
+                        </Text>
+                    </View>
+                </View>
+            </View>
 
-{/* Gráficos */ }
-<View style={ styles.section }>
-    <Text style={ styles.sectionTitle }> Análisis Gráfico </Text>
+            {/* Gráficos Nativos */}
+            <View style={styles.section} wrap={false}>
+                <Text style={styles.sectionTitle}> Análisis Gráfico </Text>
 
-{/* Gráfico de barras */ }
-{
-    data.charts?.barChartSVG ? (
-        <View style= { styles.chartWrapper } >
-        <Text style={ styles.chartTitle }> Tendencia Mensual </Text>
-            < Image
-    src = {`data:image/svg+xml;base64,${btoa(data.charts.barChartSVG)}`
-}
-style = {{ width: 500, height: 250 }}
+                {/* Gráfico de barras */}
+                {data.charts?.barData && data.charts.barData.length > 0 && (
+                    <View style={styles.chartWrapper}>
+                        <PdfBarChart
+                            data={data.charts.barData}
+                            title="Tendencia Mensual"
+                            width={480}
+                            height={200}
                         />
-    </View>
+                    </View>
+                )}
+
+                {/* Gráficos de torta lado a lado */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 20 }}>
+                    {data.charts?.expensesPieData && data.charts.expensesPieData.length > 0 && (
+                        <View style={{ width: '48%' }}>
+                            <PdfPieChart
+                                data={data.charts.expensesPieData}
+                                title="Distribución de Gastos"
+                                width={200}
+                                height={200}
+                            />
+                        </View>
+                    )}
+
+                    {data.charts?.incomePieData && data.charts.incomePieData.length > 0 && (
+                        <View style={{ width: '48%' }}>
+                            <PdfPieChart
+                                data={data.charts.incomePieData}
+                                title="Distribución de Ingresos"
+                                width={200}
+                                height={200}
+                            />
+                        </View>
+                    )}
+                </View>
+            </View>
+
+            {/* Tabla de transacciones de muestra */}
+            {
+                (data.sampleTransactions && data.sampleTransactions.length > 0) ? (
+                    <View style={[styles.section, { marginTop: 20 }]} >
+                        <Text style={styles.sectionTitle}>
+                            Transacciones Recientes
+                        </Text>
+
+                        < View style={styles.table} >
+                            {/* Encabezado de tabla */}
+                            < View style={styles.tableHeader} >
+                                <Text style={[styles.tableCell, { width: '15%' }]}> Fecha </Text>
+                                < Text style={[styles.tableCell, { width: '40%' }]} > Descripción </Text>
+                                < Text style={[styles.tableCell, { width: '20%' }]} > Categoría </Text>
+                                < Text style={[styles.tableCell, { width: '25%' }]} > Monto </Text>
+                            </View>
+
+                            {/* Filas de transacciones */}
+                            {
+                                data.sampleTransactions.map((tx: any, index: number) => (
+                                    <View key={index} style={styles.tableRow} >
+                                        <Text style={[styles.tableCell, { width: '15%' }]} >
+                                            {new Date(tx.fechaValor).toLocaleDateString('es-ES')}
+                                        </Text>
+                                        < Text style={[styles.tableCell, { width: '40%' }]} >
+                                            {tx.descripcion ? (tx.descripcion.length > 35 ? tx.descripcion.substring(0, 32) + '...' : tx.descripcion) : ''}
+                                        </Text>
+                                        < Text style={[styles.tableCell, { width: '20%' }]} >
+                                            {tx.categoria}
+                                        </Text>
+                                        < Text style={
+                                            [
+                                                styles.tableCell,
+                                                { width: '25%' },
+                                                tx.importe >= 0 ? styles.positiveValue : styles.negativeValue
+                                            ]} >
+                                            €{Math.abs(tx.importe).toLocaleString('es-ES')}
+                                        </Text>
+                                    </View>
+                                ))
+                            }
+                        </View>
+
+                        < Text style={{ fontSize: 9, color: '#6b7280', marginTop: 10, textAlign: 'center' }
+                        }>
+                            * Se muestran las primeras 15 transacciones para referencia.
+                        </Text>
+                    </View>
                 ) : null}
 
-{/* Gráficos de torta lado a lado */ }
-<View style={ { flexDirection: 'row', justifyContent: 'space-between', width: '100%' } }>
-{
-    data.charts?.expensesPieSVG ? (
-        <View style= {{ width: '48%', alignItems: 'center' }}>
-            <Text style={ styles.chartTitle }> Gastos </Text>
-                < Image
-src = {`data:image/svg+xml;base64,${btoa(data.charts.expensesPieSVG)}`}
-style = {{ width: 250, height: 200 }}
-                            />
-    </View>
-                    ) : null}
-
-{
-    data.charts?.incomePieSVG ? (
-        <View style= {{ width: '48%', alignItems: 'center' }
-}>
-    <Text style={ styles.chartTitle }> Ingresos </Text>
-        < Image
-src = {`data:image/svg+xml;base64,${btoa(data.charts.incomePieSVG)}`}
-style = {{ width: 250, height: 200 }}
-                            />
-    </View>
-                    ) : null}
-</View>
-    </View>
-
-{/* Tabla de transacciones de muestra */ }
-{
-    (data.sampleTransactions && data.sampleTransactions.length > 0) ? (
-        <View style= { [styles.section, { marginTop: 20 }]} >
-        <Text style={ styles.sectionTitle }>
-            Transacciones Recientes
-                </Text>
-
-                < View style = { styles.table } >
-                    {/* Encabezado de tabla */ }
-                    < View style = { styles.tableHeader } >
-                        <Text style={ [styles.tableCell, { width: '15%' }] }> Fecha </Text>
-                            < Text style = { [styles.tableCell, { width: '40%' }]} > Descripción </Text>
-                                < Text style = { [styles.tableCell, { width: '20%' }]} > Categoría </Text>
-                                    < Text style = { [styles.tableCell, { width: '25%' }]} > Monto </Text>
-                                        </View>
-
-    {/* Filas de transacciones */ }
-    {
-        data.sampleTransactions.map((tx: any, index: number) => (
-            <View key= { index } style = { styles.tableRow } >
-            <Text style={ [styles.tableCell, { width: '15%' }]} >
-            { new Date(tx.fechaValor).toLocaleDateString('es-ES') }
+            {/* Pie de página */}
+            <Text style={styles.footer} fixed >
+                Reporte generado por Finanzas App • Documento confidencial • Página 1 de 1
             </Text>
-        < Text style = { [styles.tableCell, { width: '40%' }]} >
-        { tx.descripcion ? (tx.descripcion.length > 35 ? tx.descripcion.substring(0, 32) + '...' : tx.descripcion) : '' }
-        </Text>
-        < Text style = { [styles.tableCell, { width: '20%' }]} >
-        { tx.categoria }
-        </Text>
-        < Text style = {
-            [
-            styles.tableCell,
-            { width: '25%' },
-            tx.importe >= 0 ? styles.positiveValue : styles.negativeValue
-            ]} >
-                                    €{ Math.abs(tx.importe).toLocaleString('es-ES') }
-            </Text>
-            </View>
-        ))
-    }
-    </View>
-
-        < Text style = {{ fontSize: 9, color: '#6b7280', marginTop: 10, textAlign: 'center' }
-}>
-                         * Se muestran las primeras 15 transacciones para referencia.
-                    </Text>
-    </View>
-            ) : null}
-
-{/* Pie de página */ }
-<Text style={ styles.footer } fixed >
-    Reporte generado por Finanzas App • Documento confidencial • Página 1 de 1
-        </Text>
         </Page>
-        </Document>
+    </Document>
 );
 
 /**
  * Función principal que genera el PDF como Blob
  */
 export const buildDashboardPDF = async (data: any): Promise<Blob> => {
-    const pdfElement = <DashboardPDF data={ data } />;
+    const pdfElement = <DashboardPDF data={data} />;
     const blob = await pdf(pdfElement).toBlob();
     return blob;
 };

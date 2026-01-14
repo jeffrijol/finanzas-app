@@ -1,0 +1,163 @@
+import React from 'react';
+import { renderToString } from 'react-dom/server';
+import {
+    BarChart,
+    Bar,
+    PieChart,
+    Pie,
+    Cell,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Legend,
+} from 'recharts';
+
+/**
+ * Limpia y normaliza el SVG para asegurar compatibilidad con React-PDF
+ */
+const cleanSVG = (svgString: string, width: number, height: number): string => {
+    if (!svgString) return '';
+
+    // Asegurar viewBox y dimensiones
+    let cleaned = svgString;
+
+    // Si no tiene viewBox, agregarlo (asumiendo que los gráficos empiezan en 0,0)
+    if (!cleaned.includes('viewBox')) {
+        cleaned = cleaned.replace(/<svg/, `<svg viewBox="0 0 ${width} ${height}"`);
+    }
+
+    return cleaned
+        // Eliminar estilos en línea que pueden causar conflictos o ser ignorados
+        .replace(/style="[^"]*"/g, '')
+        // Asegurar ancho y alto explícitos
+        .replace(/width="[^"]*"/g, `width="${width}"`)
+        .replace(/height="[^"]*"/g, `height="${height}"`)
+        // Eliminar clases
+        .replace(/class="[^"]*"/g, '')
+        // Eliminar manejadores de eventos
+        .replace(/on\w+="[^"]*"/g, '');
+};
+
+/**
+ * Renderiza un gráfico de barras a SVG string
+ */
+export const renderBarChartToSVG = (
+    data: Array<{ name: string; ingresos: number; gastos: number }>,
+    dimensions: { width: number; height: number } = { width: 600, height: 300 }
+): string => {
+    console.log('📊 Generando Bar Chart SVG', { dataLength: data.length, dimensions });
+
+    try {
+        const chart = (
+            <BarChart
+                width={dimensions.width}
+                height={dimensions.height}
+                data={data}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+            >
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis
+                    dataKey="name"
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                />
+                <YAxis
+                    stroke="#6b7280"
+                    fontSize={12}
+                    tickLine={false}
+                    tickFormatter={(value) => `€${Number(value).toLocaleString()}`}
+                />
+                <Legend />
+                <Bar
+                    dataKey="ingresos"
+                    name="Ingresos"
+                    fill="#10b981"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={40}
+                    isAnimationActive={false}
+                />
+                <Bar
+                    dataKey="gastos"
+                    name="Gastos"
+                    fill="#ef4444"
+                    radius={[4, 4, 0, 0]}
+                    maxBarSize={40}
+                    isAnimationActive={false}
+                />
+            </BarChart>
+        );
+
+        const html = renderToString(chart);
+        const match = html.match(/<svg[\s\S]*?<\/svg>/);
+        const svg = match ? match[0] : '';
+
+        if (svg) {
+            console.log('✅ Bar SVG generado correctamente (longitud: ' + svg.length + ')');
+            return cleanSVG(svg, dimensions.width, dimensions.height);
+        } else {
+            console.error('❌ Error: No se pudo extraer SVG del renderizado de barras');
+            return '';
+        }
+    } catch (e) {
+        console.error('❌ Error al renderizar Bar Chart:', e);
+        return '';
+    }
+};
+
+/**
+ * Renderiza un gráfico de torta a SVG string
+ */
+export const renderPieChartToSVG = (
+    data: Array<{ name: string; value: number }>,
+    colors: string[] = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'],
+    dimensions: { width: number; height: number } = { width: 400, height: 300 }
+): string => {
+    console.log('📊 Generando Pie Chart SVG', { dataLength: data.length, dimensions });
+
+    try {
+        const chart = (
+            <PieChart width={dimensions.width} height={dimensions.height}>
+                <Pie
+                    data={data}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ percent }: { percent?: number }) => `${((percent || 0) * 100).toFixed(0)}%`}
+                    outerRadius={Math.min(dimensions.width, dimensions.height) / 2 - 20}
+                    fill="#8884d8"
+                    dataKey="value"
+                    isAnimationActive={false}
+                >
+                    {data.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                    ))}
+                </Pie>
+                <Legend />
+            </PieChart>
+        );
+
+        const html = renderToString(chart);
+        const match = html.match(/<svg[\s\S]*?<\/svg>/);
+        const svg = match ? match[0] : '';
+
+        if (svg) {
+            console.log('✅ Pie SVG generado correctamente (longitud: ' + svg.length + ')');
+            return cleanSVG(svg, dimensions.width, dimensions.height);
+        } else {
+            console.error('❌ Error: No se pudo extraer SVG del renderizado de torta');
+            return '';
+        }
+    } catch (e) {
+        console.error('❌ Error al renderizar Pie Chart:', e);
+        return '';
+    }
+};
+
+/**
+ * Extrae solo el SVG del string renderizado
+ */
+export const extractSVGFromRender = (htmlString: string): string => {
+    const match = htmlString.match(/<svg[\s\S]*?<\/svg>/);
+    return match ? match[0] : '';
+};
