@@ -1,4 +1,4 @@
-import { Document, Page, View, Text, StyleSheet, Font, pdf } from '@react-pdf/renderer';
+import { Document, Page, View, Text, StyleSheet, Font, pdf, Image } from '@react-pdf/renderer';
 
 // Registrar fuentes
 try {
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
 /**
  * Componente React para el PDF
  */
-const DashboardPDF = ({ data }: { data: any }) => (
+const DashboardPDF = ({ data, chartImages }: { data: any, chartImages?: { monthlyTrend?: string, distributionGastos?: string, distributionIngresos?: string } }) => (
     <Document>
         <Page size="A4" style={styles.page} >
             {/* Encabezado */}
@@ -195,13 +195,77 @@ const DashboardPDF = ({ data }: { data: any }) => (
                 </View>
             </View>
 
-            {/* Gráficos (pendiente de snapshot) */}
+            {/* Gráficos (Snapshot de UI) */}
             <View style={styles.section}>
-                <Text style={styles.sectionTitle}> Análisis Gráfico </Text>
-                <Text style={{ fontSize: 10, color: '#6b7280', fontStyle: 'italic' }}>
-                    Los gráficos se han eliminado temporalmente mientras se migra a la nueva arquitectura visual.
-                </Text>
+                <Text style={styles.sectionTitle}> Análisis Gráfico Visual </Text>
+
+                {/* Gráfico de Tendencia */}
+                {chartImages?.monthlyTrend && (
+                    <View style={{ marginBottom: 20 }}>
+                        <Text style={styles.chartTitle}>Evolución Financiera (Vista UI)</Text>
+                        {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                        <Image
+                            src={chartImages.monthlyTrend}
+                            style={{ width: '100%', height: 250, objectFit: 'contain' }}
+                        />
+                    </View>
+                )}
+
+                {/* Gráficos de Distribución (Ingresos) */}
+                {chartImages?.distributionIngresos && (
+                    <View style={{ marginBottom: 20 }}>
+                        <Text style={styles.chartTitle}>Distribución de Ingresos</Text>
+                        {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                        <Image
+                            src={chartImages.distributionIngresos}
+                            style={{ width: '100%', height: 250, objectFit: 'contain' }}
+                        />
+                    </View>
+                )}
+
+                {/* Gráficos de Distribución (Gastos) */}
+                {chartImages?.distributionGastos && (
+                    <View>
+                        <Text style={styles.chartTitle}>Distribución de Gastos</Text>
+                        {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                        <Image
+                            src={chartImages.distributionGastos}
+                            style={{ width: '100%', height: 250, objectFit: 'contain' }}
+                        />
+                    </View>
+                )}
+
+                {!chartImages?.monthlyTrend && !chartImages?.distributionGastos && !chartImages?.distributionIngresos && (
+                    <Text style={{ fontSize: 10, color: '#6b7280', fontStyle: 'italic' }}>
+                        No se pudieron capturar las imágenes de los gráficos.
+                    </Text>
+                )}
             </View>
+
+            {/* Top Gastos (Items) */}
+            {
+                (data.topExpenses && data.topExpenses.length > 0) && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}> Top Gastos (Items) </Text>
+                        <View style={styles.table}>
+                            <View style={styles.tableHeader}>
+                                <Text style={[styles.tableCell, { width: '50%' }]}>Item / Concepto</Text>
+                                <Text style={[styles.tableCell, { width: '25%' }]}>Categoría</Text>
+                                <Text style={[styles.tableCell, { width: '25%' }]}>Total</Text>
+                            </View>
+                            {data.topExpenses.slice(0, 5).map((item: any, index: number) => (
+                                <View key={index} style={styles.tableRow}>
+                                    <Text style={[styles.tableCell, { width: '50%' }]}>{item.nombre}</Text>
+                                    <Text style={[styles.tableCell, { width: '25%' }]}>{item.categoria}</Text>
+                                    <Text style={[styles.tableCell, { width: '25%', color: '#ef4444' }]}>
+                                        €{Math.abs(item.total).toLocaleString('es-ES')}
+                                    </Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                )
+            }
 
             {/* Tabla de transacciones de muestra */}
             {
@@ -264,8 +328,8 @@ const DashboardPDF = ({ data }: { data: any }) => (
 /**
  * Función principal que genera el PDF como Blob
  */
-export const buildDashboardPDF = async (data: any): Promise<Blob> => {
-    const pdfElement = <DashboardPDF data={data} />;
+export const buildDashboardPDF = async (data: any, chartImages?: { monthlyTrend?: string, distributionGastos?: string, distributionIngresos?: string }): Promise<Blob> => {
+    const pdfElement = <DashboardPDF data={data} chartImages={chartImages} />;
     const blob = await pdf(pdfElement).toBlob();
     return blob;
 };

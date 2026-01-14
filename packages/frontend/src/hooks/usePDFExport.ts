@@ -170,11 +170,65 @@ export const usePDFExport = () => {
                     expensesPieData: expensesPieDataWithColors,
                     incomePieData: incomePieDataWithColors
                 },
+                topExpenses: statsData.topExpenses || [],
                 sampleTransactions: transactionsData.items || []
             };
 
+            // 5b. CAPTURA DE GRÁFICOS (SNAPSHOTS)
+            // Intentamos capturar los gráficos del DOM actual
+            let chartImages: { monthlyTrend?: string, distributionGastos?: string, distributionIngresos?: string } = {};
+
+            try {
+                // Import dinámico para no cargar html2canvas si no se usa
+                const { captureChart } = await import('@/lib/pdf-generator/snapshot-utils');
+
+                // IDs de los gráficos en el DOM (Deben coincidir con los componentes)
+                const trendId = 'dashboard-chart-annual';
+                // Detectar cuál gráfico circular está presente (ingresos o gastos)
+                // Priorizamos gastos si hay ambos, o capturamos ambos y componemos (por ahora simple)
+                const gastosId = 'dashboard-chart-pie-gastos';
+                const ingresosId = 'dashboard-chart-pie-ingresos';
+
+                // Captura secuencial para no sobrecargar el navegador
+                // 1. Tendencia Mensual
+                toast({ title: 'Generando PDF', description: 'Capturando gráfico de tendencia...' });
+                const trendImg = await captureChart(trendId);
+
+                // 2. Distribución Gastos
+                let distGastosImg = undefined;
+                if (document.getElementById(gastosId)) {
+                    toast({ title: 'Generando PDF', description: 'Capturando gastos...' });
+                    const res = await captureChart(gastosId);
+                    distGastosImg = res || undefined;
+                }
+
+                // 3. Distribución Ingresos
+                let distIngresosImg = undefined;
+                if (document.getElementById(ingresosId)) {
+                    toast({ title: 'Generando PDF', description: 'Capturando ingresos...' });
+                    const res = await captureChart(ingresosId);
+                    distIngresosImg = res || undefined;
+                }
+
+                // @ts-ignore
+                chartImages = {
+                    monthlyTrend: trendImg || undefined,
+                    distributionGastos: distGastosImg,
+                    distributionIngresos: distIngresosImg
+                };
+
+            } catch (captureError) {
+                console.error('Error capturando gráficos:', captureError);
+                toast({
+                    title: 'Advertencia',
+                    description: 'No se pudieron incluir los gráficos visuales en el reporte.',
+                    variant: 'destructive'
+                });
+            }
+
             // 6. Generar Blob
-            const pdfBlob = await buildDashboardPDF(reportData);
+            toast({ title: 'Generando PDF', description: 'Compilando documento final...' });
+            const pdfBlob = await buildDashboardPDF(reportData, chartImages);
 
             // 7. Descargar
             const filename = `reporte-financiero-${year}-${quarter === 'all' ? 'anual' : `q${quarter}`}-${Date.now()}.pdf`;

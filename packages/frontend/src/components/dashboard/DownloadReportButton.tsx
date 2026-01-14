@@ -68,10 +68,37 @@ export const DownloadReportButton: React.FC<DownloadReportButtonProps> = ({
 
                 <DropdownMenuSeparator />
 
+                {/* Technical Validation: Test Snapshot */}
+                <DropdownMenuItem
+                    onClick={async (e) => {
+                        e.preventDefault();
+                        const { captureChart } = await import('@/lib/pdf-generator/snapshot-utils');
+                        // Try capturing the Monthly Trend Chart
+                        const base64 = await captureChart('dashboard-chart-annual');
+                        if (base64) {
+                            const link = document.createElement('a');
+                            link.href = base64;
+                            link.download = 'chart-snapshot-test.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        } else {
+                            alert('Fallo la captura. Revisa la consola.');
+                        }
+                    }}
+                    className="cursor-pointer py-2 text-amber-600 bg-amber-50"
+                >
+                    <div className="flex flex-col gap-1">
+                        <span className="font-medium text-xs">🛠️ Test Snapshot (Dev)</span>
+                    </div>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
                 <div className="px-2 py-1.5 text-xs text-gray-400 italic">
                     El PDF respetará todos los filtros activos (Año, Trimestre, Búsqueda, etc.)
                 </div>
             </DropdownMenuContent>
-        </DropdownMenu>
+        </DropdownMenu >
     );
 };

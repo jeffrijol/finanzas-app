@@ -142,3 +142,70 @@
     background-color: hsl(var(--primary)) !important;
   }
 }
+
+/* PDF Snapshot Print Mode */
+.print-mode,
+.print-mode * {
+  /* AGGRESSIVE RESET: Force legacy colors everywhere */
+  --color-background: #ffffff !important;
+  --color-foreground: #020617 !important;
+  --color-card: #ffffff !important;
+  --color-card-foreground: #020617 !important;
+  --color-muted: #f1f5f9 !important;
+  --color-muted-foreground: #64748b !important;
+  --color-primary: #0f172a !important;
+  --color-primary-foreground: #f8fafc !important;
+  --color-secondary: #f1f5f9 !important;
+  --color-secondary-foreground: #0f172a !important;
+  --color-destructive: #ef4444 !important;
+  --color-destructive-foreground: #f8fafc !important;
+  --color-border: #e2e8f0 !important;
+  --color-input: #e2e8f0 !important;
+  --color-ring: #0f172a !important;
+
+  /* Custom App Colors */
+  --color-primary-green: #10b981 !important;
+  --color-accent-green: #ecfdf5 !important;
+  --color-ingresos: #10b981 !important;
+  --color-gastos: #ef4444 !important;
+
+  /* Force override property values that might still hold oklch references */
+  border-color: #e2e8f0 !important;
+  color: #020617 !important;
+  outline-color: #0f172a !important;
+  text-decoration-color: #020617 !important;
+}
+
+/* Container Specifics */
+.print-mode {
+  background-color: white !important;
+  color: #020617 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transition: none !important;
+  transform: none !important;
+}
+
+/* Recharts Specific Overrides */
+.print-mode .recharts-cartesian-grid line {
+  stroke: #e2e8f0 !important;
+}
+
+.print-mode .recharts-text {
+  fill: #64748b !important;
+}
+
+/* Hide interactive elements */
+.print-mode .recharts-tooltip-cursor,
+.print-mode .recharts-tooltip-wrapper,
+.print-mode .recharts-active-dot {
+  display: none !important;
+}
+
+/* Fallback for complicated gradients if html2canvas fails */
+/* 
+.print-mode path[fill^="url(#"] {
+   fill: var(--color-primary-green) !important;
+} 
+*/
