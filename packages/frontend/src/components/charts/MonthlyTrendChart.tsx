@@ -1,5 +1,14 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import * as React from "react";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    ChartConfig,
+    ChartContainer,
+    ChartLegend,
+    ChartLegendContent,
+    ChartTooltip,
+    ChartTooltipContent,
+} from "@/components/ui/chart";
 
 interface MonthlyTrendData {
     month: number;
@@ -13,59 +22,115 @@ interface MonthlyTrendChartProps {
     year: number;
 }
 
+const chartConfig = {
+    ingresos: {
+        label: "Ingresos",
+        color: "hsl(var(--primary-green))",
+    },
+    gastos: {
+        label: "Gastos",
+        color: "hsl(var(--destructive))",
+    },
+} satisfies ChartConfig;
+
 const MONTH_NAMES = [
-    'En', 'Fb', 'Mz', 'Ab', 'My', 'Jn', 'Jl', 'Ag', 'Sp', 'Oc', 'Nv', 'Dc'
+    'Ener', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
 ];
 
 export function MonthlyTrendChart({ data, title, year }: MonthlyTrendChartProps) {
-    const formattedData = data.map(d => ({
-        ...d,
-        name: MONTH_NAMES[d.month - 1] || d.month
-    }));
-
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
-    };
+    const chartData = React.useMemo(() => {
+        return data.map(d => ({
+            month: MONTH_NAMES[d.month - 1] || d.month,
+            ingresos: d.ingresos,
+            gastos: d.gastos,
+        }));
+    }, [data]);
 
     return (
-        <Card className="shadow-sm border-slate-200">
-            <CardHeader>
-                <CardTitle className="text-xl font-bold text-slate-900">{title}</CardTitle>
-                <CardDescription>Evolución mensual durante {year}</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="h-[300px] w-full mt-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                            data={formattedData}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                            <XAxis
-                                dataKey="name"
-                                stroke="#64748b"
-                                fontSize={12}
-                                tickLine={false}
-                                axisLine={false}
-                            />
-                            <YAxis
-                                stroke="#64748b"
-                                fontSize={12}
-                                tickLine={false}
-                                axisLine={false}
-                                tickFormatter={(value) => `€${value / 1000}k`}
-                            />
-                            <Tooltip
-                                formatter={(value: any) => formatCurrency(Number(value))}
-                                cursor={{ fill: '#f1f5f9' }}
-                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                            />
-                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                            <Bar dataKey="ingresos" name="Ingresos" fill="#10B981" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                            <Bar dataKey="gastos" name="Gastos" fill="#EF4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                        </BarChart>
-                    </ResponsiveContainer>
+        <Card className="shadow-sm border-slate-200" id="monthly-trend-chart">
+            <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+                <div className="grid flex-1 gap-1 text-center sm:text-left">
+                    <CardTitle className="text-xl font-bold text-slate-900">{title}</CardTitle>
+                    <CardDescription>Evolución mensual durante {year}</CardDescription>
                 </div>
+            </CardHeader>
+            <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+                <ChartContainer
+                    config={chartConfig}
+                    className="aspect-auto h-[300px] w-full"
+                >
+                    <AreaChart data={chartData} margin={{ top: 20, right: 20, left: 10, bottom: 5 }}>
+                        <defs>
+                            <linearGradient id="fillIngresos" x1="0" y1="0" x2="0" y2="1">
+                                <stop
+                                    offset="5%"
+                                    stopColor="var(--color-ingresos)"
+                                    stopOpacity={0.8}
+                                />
+                                <stop
+                                    offset="95%"
+                                    stopColor="var(--color-ingresos)"
+                                    stopOpacity={0.1}
+                                />
+                            </linearGradient>
+                            <linearGradient id="fillGastos" x1="0" y1="0" x2="0" y2="1">
+                                <stop
+                                    offset="5%"
+                                    stopColor="var(--color-gastos)"
+                                    stopOpacity={0.8}
+                                />
+                                <stop
+                                    offset="95%"
+                                    stopColor="var(--color-gastos)"
+                                    stopOpacity={0.1}
+                                />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                        <XAxis
+                            dataKey="month"
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                            minTickGap={32}
+                            tickFormatter={(value) => value.slice(0, 3)}
+                        />
+                        <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={8}
+                            tickFormatter={(value) => `€${value / 1000}k`}
+                        />
+                        <ChartTooltip
+                            cursor={false}
+                            content={
+                                <ChartTooltipContent
+                                    indicator="dot"
+                                    formatter={(value) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(Number(value))}
+                                />
+                            }
+                        />
+                        <Area
+                            dataKey="ingresos"
+                            type="monotone"
+                            fill="url(#fillIngresos)"
+                            stroke="var(--color-ingresos)"
+                            strokeWidth={2}
+                            stackId="1" // Stacking might be cleaner for total volume, but user might want comparison. "Net" is separate. 
+                        // If I stack, I can't compare G vs I easily.
+                        // But usually I > G. 
+                        // Let's avoid stackId for pure comparison.
+                        />
+                        <Area
+                            dataKey="gastos"
+                            type="monotone"
+                            fill="url(#fillGastos)"
+                            stroke="var(--color-gastos)"
+                            strokeWidth={2}
+                        />
+                        <ChartLegend content={<ChartLegendContent />} />
+                    </AreaChart>
+                </ChartContainer>
             </CardContent>
         </Card>
     );
