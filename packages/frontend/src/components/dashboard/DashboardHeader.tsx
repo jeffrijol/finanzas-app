@@ -85,8 +85,8 @@ export function DashboardHeader({
             {/* Top Row: Period & Main Actions */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
-                    <div className="hidden md:block h-6 w-px bg-slate-200 mx-2"></div>
+                    {/* <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Dashboard</h1>
+                    <div className="hidden md:block h-6 w-px bg-slate-200 mx-2"></div> */}
                     <PeriodSelector />
                 </div>
 

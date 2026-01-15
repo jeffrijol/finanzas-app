@@ -1,34 +1,40 @@
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
-import { StackedCategoryChart } from '@/components/charts/StackedCategoryChart';
+import { MonthlyFinancialChart } from '@/components/charts/MonthlyFinancialChart'; // New chart
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useDashboardFiltersStore } from '@/stores/dashboard-filters-store';
+import { usePeriodStore } from '@/stores/period-store'; // Import period store
 
 interface AnalyticsViewProps {
-    year: number;
+    year: number; // Keep this prop if parent passes it, though we can use store directly too
 }
 
 export function AnalyticsView({ year }: AnalyticsViewProps) {
     // Global filters
-    const { selectedTipoItem, selectedCategory } = useDashboardFiltersStore();
+    const { selectedTipoItem, selectedCategory, selectedItemId } = useDashboardFiltersStore();
+    const { quarter } = usePeriodStore(); // Get quarter
+
+    // Construct unified filters object
     const filters = {
         tipoItem: selectedTipoItem || undefined,
-        categoryId: selectedCategory || undefined
+        categoryId: selectedCategory || undefined,
+        itemAsignadoId: selectedItemId || undefined,
+        quarter: quarter === 'all' ? undefined : Number(quarter)
     };
 
-    // 1. Fetch Stacked Trend
+    // 1. Fetch Stacked Trend (Now Mixed Chart)
     const { data: stackedData, isLoading: isLoadingStacked } = useQuery({
-        queryKey: ['stackedTrend', year, selectedTipoItem, selectedCategory],
+        queryKey: ['stackedTrend', year, quarter, selectedTipoItem, selectedCategory, selectedItemId],
         queryFn: () => apiClient.getStackedTrend(year, filters),
-        staleTime: 5 * 60 * 1000, // 5 minutes cache
+        staleTime: 5 * 60 * 1000,
     });
 
     // 2. Fetch Quarterly Report
     const { data: quarterlyReport, isLoading: isLoadingQuarterly } = useQuery({
-        queryKey: ['quarterlyReport', year, selectedTipoItem, selectedCategory],
+        queryKey: ['quarterlyReport', year, selectedTipoItem, selectedCategory, selectedItemId], // Add missingdeps
         queryFn: () => apiClient.getQuarterlyReport(year, filters),
-        staleTime: 5 * 60 * 1000, // 5 minutes cache
+        staleTime: 5 * 60 * 1000,
     });
 
     if (isLoadingStacked || isLoadingQuarterly) {
@@ -39,14 +45,14 @@ export function AnalyticsView({ year }: AnalyticsViewProps) {
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {/* Sección 1: Composición del Gasto (Stacked) */}
+            {/* Sección 1: Evolución Financiera (New Mixed Chart) */}
             <div className="space-y-4" id="dashboard-chart-stacked">
-                <h2 className="text-xl font-bold text-slate-900">Composición del Gasto Mensual</h2>
-                <StackedCategoryChart
+                <h2 className="text-xl font-bold text-slate-900">Evolución Financiera Mensual</h2>
+                <MonthlyFinancialChart
                     data={stackedData.data}
                     keys={stackedData.keys}
-                    title={`Evolución de Categorías - ${year}`}
-                    description="Desglose de gastos por categorías principales versus el resto."
+                    title={`Ingresos y Gastos - ${year}`}
+                    description="Comparativa de Ingresos vs Desglose de Gastos por Categoría."
                 />
             </div>
 
@@ -54,10 +60,10 @@ export function AnalyticsView({ year }: AnalyticsViewProps) {
             <div className="space-y-4">
                 <h2 className="text-xl font-bold text-slate-900">Rendimiento Trimestral</h2>
 
-                {/* KPIs Comparativos */}
+                {/* KPIs Comparativos - Only show quarters related to selected filter or all if 'all' */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     {quarterlyReport.map((q) => (
-                        <Card key={q.quarter} className="border-slate-200 shadow-sm">
+                        <Card key={q.quarter} className={`border-slate-200 shadow-sm ${quarter !== 'all' && Number(quarter) !== q.quarter ? 'opacity-50' : ''}`}>
                             <CardHeader className="pb-2">
                                 <CardTitle className="text-sm font-medium text-slate-500 uppercase">Trimestre {q.quarter}</CardTitle>
                             </CardHeader>
@@ -94,7 +100,7 @@ export function AnalyticsView({ year }: AnalyticsViewProps) {
                                     cursor={{ fill: '#f8fafc' }}
                                 />
                                 <Legend />
-                                <Bar dataKey="ingresos" name="Ingresos" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="ingresos" name="Ingresos" fill="#16a34a" radius={[4, 4, 0, 0]} />
                                 <Bar dataKey="gastos" name="Gastos" fill="#ef4444" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>

@@ -233,7 +233,7 @@ class ApiClient {
         return response.data;
     }
 
-    async getQuarterlyReport(year: number, filters?: { tipoItem?: string; categoryId?: string }): Promise<{
+    async getQuarterlyReport(year: number, filters?: { tipoItem?: string; categoryId?: string; itemAsignadoId?: string; quarter?: number }): Promise<{
         quarter: number;
         ingresos: number;
         gastos: number;
@@ -243,18 +243,24 @@ class ApiClient {
         const params = new URLSearchParams();
         if (filters?.tipoItem) params.append('tipoItem', filters.tipoItem);
         if (filters?.categoryId) params.append('categoryId', filters.categoryId);
+        if (filters?.itemAsignadoId) params.append('itemAsignadoId', filters.itemAsignadoId);
+        // Quarter logic usually means we filter *within* the year, but quarterly report usually returns all 4 quarters? 
+        // If we filter by Q1, it will just return Q1 data.
+        if (filters?.quarter) params.append('quarter', filters.quarter.toString());
 
         const response = await this.request<any>(`/analytics/quarterly/${year}?${params.toString()}`);
         return response.data;
     }
 
-    async getStackedTrend(year: number, filters?: { tipoItem?: string; categoryId?: string }): Promise<{
+    async getStackedTrend(year: number, filters?: { tipoItem?: string; categoryId?: string; itemAsignadoId?: string; quarter?: number }): Promise<{
         data: any[];
         keys: string[];
     }> {
         const params = new URLSearchParams();
         if (filters?.tipoItem) params.append('tipoItem', filters.tipoItem);
         if (filters?.categoryId) params.append('categoryId', filters.categoryId);
+        if (filters?.itemAsignadoId) params.append('itemAsignadoId', filters.itemAsignadoId);
+        if (filters?.quarter) params.append('quarter', filters.quarter.toString());
 
         const response = await this.request<any>(`/analytics/stacked-trend/${year}?${params.toString()}`);
         return response.data;

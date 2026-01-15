@@ -355,9 +355,13 @@ export class AnalyticsController {
                     where.categoryId = String(categoryId);
                 }
 
+                if (req.query.itemAsignadoId) {
+                    where.itemAsignadoId = String(req.query.itemAsignadoId);
+                }
+
                 const txs = await prisma.transaction.findMany({
                     where,
-                    include: { itemAsignado: true } // Need to include if filtering by deep relation? No, where clause handles it.
+                    include: { itemAsignado: true }
                 });
 
                 let ingresos = 0;
@@ -383,74 +387,81 @@ export class AnalyticsController {
         }
     }
 
-    // New Endpoint: Stacked Trend
+    // New Endpoint: Stacked Trend (Mixed Chart: Stacked Expense + Income Line)
     static async getStackedTrend(req: Request, res: Response) {
         try {
             const { year } = req.params;
-            const { tipoItem, categoryId } = req.query; // Filters
+            const { tipoItem, categoryId, itemAsignadoId, quarter } = req.query; // Filters
             const yearNum = Number(year);
 
             if (isNaN(yearNum)) {
                 return res.status(400).json(ApiResponseHelper.error('Invalid year'));
             }
 
+            // Determine date range using existing helper
+            const { start, end, monthsInRange } = AnalyticsController.getRange(yearNum, quarter);
+
             // Build dynamic filters
             const where: any = {
                 fechaValor: {
-                    gte: new Date(yearNum, 0, 1),
-                    lte: new Date(yearNum, 11, 31, 23, 59, 59)
-                },
-                importe: { lt: 0 } // Only expenses for stacked chart
+                    gte: start,
+                    lte: end
+                }
             };
 
-            if (tipoItem) {
-                where.itemAsignado = {
-                    itemTypeId: String(tipoItem)
-                };
-            }
+            if (tipoItem) where.itemAsignado = { itemTypeId: String(tipoItem) };
+            if (categoryId) where.categoryId = String(categoryId);
+            if (itemAsignadoId) where.itemAsignadoId = String(itemAsignadoId);
 
-            if (categoryId) {
-                where.categoryId = String(categoryId);
-            }
-
-            // 1. Get all expenses for year
-            const expenses = await prisma.transaction.findMany({
+            // 1. Get all transactions for range
+            const transactions = await prisma.transaction.findMany({
                 where,
-                include: { categoryRel: true }
+                include: { categoryRel: true, itemAsignado: { include: { itemType: true } } }
             });
 
-            // 2. Identify Top 5 Categories Overall
-            const catTotals: Record<string, number> = {};
-            expenses.forEach(t => {
-                // @ts-ignore
-                const cat = t.categoryRel?.name || t.categoria || 'Otros';
-                catTotals[cat] = (catTotals[cat] || 0) + Math.abs(t.importe);
+            // 2. Identify Top 5 Expense Categories Overall
+            const expenseCatTotals: Record<string, number> = {};
+            transactions.forEach(t => {
+                if (t.importe < 0) {
+                    // @ts-ignore
+                    const cat = t.categoryRel?.name || t.categoria || 'Otros';
+                    expenseCatTotals[cat] = (expenseCatTotals[cat] || 0) + Math.abs(t.importe);
+                }
             });
 
-            const topCategories = Object.entries(catTotals)
+            const topCategories = Object.entries(expenseCatTotals)
                 .sort(([, a], [, b]) => b - a)
                 .slice(0, 5) // Top 5
                 .map(([name]) => name);
 
-            // 3. Build Month Buckets
-            const buckets: any[] = Array.from({ length: 12 }, (_, i) => ({
-                month: i + 1,
-                // Initialize top cats to 0
+            // 3. Build Buckets based on monthsInRange
+            const buckets = monthsInRange.map(m => ({
+                month: m,
+                ingresos: 0,
                 ...topCategories.reduce((acc, curr) => ({ ...acc, [curr]: 0 }), {}),
                 Otros: 0
             }));
 
             // 4. Fill Buckets
-            expenses.forEach(t => {
-                const m = t.fechaValor.getMonth(); // 0-11
-                // @ts-ignore
-                const cat = t.categoryRel?.name || t.categoria || 'Otros';
-                const absAmount = Math.abs(t.importe);
+            transactions.forEach(t => {
+                const m = t.fechaValor.getMonth() + 1; // 1-12
+                const bucket = buckets.find(b => b.month === m);
 
-                if (topCategories.includes(cat)) {
-                    buckets[m][cat] += absAmount;
-                } else {
-                    buckets[m]['Otros'] += absAmount;
+                if (bucket) {
+                    if (t.importe > 0) {
+                        bucket.ingresos += t.importe;
+                    } else {
+                        // @ts-ignore
+                        const cat = t.categoryRel?.name || t.categoria || 'Otros';
+                        const absAmount = Math.abs(t.importe);
+
+                        if (topCategories.includes(cat)) {
+                            // @ts-ignore
+                            bucket[cat] += absAmount;
+                        } else {
+                            bucket['Otros'] += absAmount;
+                        }
+                    }
                 }
             });
 
