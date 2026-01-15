@@ -104,6 +104,7 @@ export const getStats = async (req: Request, res: Response) => {
         startDate: (req.query.startDate ? new Date(req.query.startDate as string) : undefined) || periodDates.startDate,
         endDate: (req.query.endDate ? new Date(req.query.endDate as string) : undefined) || periodDates.endDate,
         categoria: req.query.categoria as string,
+        categoryId: req.query.categoryId as string,
         itemAsignadoId: req.query.itemAsignadoId as string,
         tipoItem: req.query.tipoItem as string,
     };

@@ -16,6 +16,7 @@ export class TransactionsService {
             search,
             minAmount,
             maxAmount,
+            categoryId, // Add this
         } = filters;
 
         const {
@@ -45,12 +46,16 @@ export class TransactionsService {
             }
         }
 
-        // Filtrar por categoría
+        // Filtrar por categoría (String match - old logic)
         if (categoria) {
             where.categoria = {
                 contains: categoria,
-                // mode: 'insensitive' as const, // Not supported in simple SQLite prisma strings unless mapped? Actually typically ok, but simple contains is better for compatibility
             };
+        }
+
+        // Filtrar por categoryId (Relation)
+        if (categoryId && categoryId !== 'ALL') {
+            where.categoryId = categoryId;
         }
 
         // Filtrar por item asignado
@@ -183,6 +188,7 @@ export class TransactionsService {
             categoria,
             itemAsignadoId,
             tipoItem,
+            categoryId, // Add this
         } = filters;
 
         const where: any = {
@@ -207,6 +213,10 @@ export class TransactionsService {
 
         if (itemAsignadoId && itemAsignadoId !== 'ALL') {
             where.itemAsignadoId = itemAsignadoId;
+        }
+
+        if (categoryId && categoryId !== 'ALL') {
+            where.categoryId = categoryId;
         }
 
         if (tipoItem && tipoItem !== 'ALL') {

@@ -1,25 +1,34 @@
-
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { StackedCategoryChart } from '@/components/charts/StackedCategoryChart';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useDashboardFiltersStore } from '@/stores/dashboard-filters-store';
 
 interface AnalyticsViewProps {
     year: number;
 }
 
 export function AnalyticsView({ year }: AnalyticsViewProps) {
+    // Global filters
+    const { selectedTipoItem, selectedCategory } = useDashboardFiltersStore();
+    const filters = {
+        tipoItem: selectedTipoItem || undefined,
+        categoryId: selectedCategory || undefined
+    };
+
     // 1. Fetch Stacked Trend
     const { data: stackedData, isLoading: isLoadingStacked } = useQuery({
-        queryKey: ['stackedTrend', year],
-        queryFn: () => apiClient.getStackedTrend(year),
+        queryKey: ['stackedTrend', year, selectedTipoItem, selectedCategory],
+        queryFn: () => apiClient.getStackedTrend(year, filters),
+        staleTime: 5 * 60 * 1000, // 5 minutes cache
     });
 
     // 2. Fetch Quarterly Report
     const { data: quarterlyReport, isLoading: isLoadingQuarterly } = useQuery({
-        queryKey: ['quarterlyReport', year],
-        queryFn: () => apiClient.getQuarterlyReport(year),
+        queryKey: ['quarterlyReport', year, selectedTipoItem, selectedCategory],
+        queryFn: () => apiClient.getQuarterlyReport(year, filters),
+        staleTime: 5 * 60 * 1000, // 5 minutes cache
     });
 
     if (isLoadingStacked || isLoadingQuarterly) {

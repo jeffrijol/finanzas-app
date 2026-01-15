@@ -1,26 +1,28 @@
-import { useState } from 'react';
+import { useState, Suspense, lazy } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
-import { PeriodSelector } from '@/components/dashboard/PeriodSelector';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { TransactionsTable } from '@/components/dashboard/TransactionsTable';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { usePeriodStore } from '@/stores/period-store';
-import { FiltersBar } from '@/components/dashboard/FiltersBar';
-import { FileJson, FileSpreadsheet } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useDashboardFiltersStore } from '@/stores/dashboard-filters-store';
 import { useDashboardContext } from '@/hooks/useDashboardContext';
 import { DashboardChartsRenderer } from '@/components/dashboard/DashboardChartsRenderer';
+import { AnalyticsSkeleton } from '@/components/dashboard/views/AnalyticsSkeleton';
+import { FileJson, FileSpreadsheet } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { DownloadReportButton } from '@/components/dashboard/DownloadReportButton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AnalyticsView } from '@/components/dashboard/views/AnalyticsView';
 
+// Lazy load Analytics View
+const AnalyticsView = lazy(() => import('@/components/dashboard/views/AnalyticsView').then(module => ({ default: module.AnalyticsView })));
 
 export function DashboardPage() {
     const { year, quarter } = usePeriodStore();
     const queryClient = useQueryClient();
+
+    // View State
+    const [currentView, setCurrentView] = useState<'management' | 'analytics'>('management');
 
     // Global filter state
     const {
@@ -70,11 +72,25 @@ export function DashboardPage() {
                 search: searchQuery || undefined,
                 tipoItem: selectedTipoItem || undefined,
                 itemAsignadoId: selectedItemId || undefined,
-                categoryId: selectedCategory || undefined, // Send as categoryId
+                categoryId: selectedCategory || undefined,
                 year: Number(year),
                 quarter: quarter === 'all' ? undefined : Number(quarter),
             }),
     });
+
+    // Fetch Stats
+    const { data: stats } = useQuery({
+        queryKey: ['stats', year, quarter, selectedTipoItem, selectedItemId, selectedCategory],
+        queryFn: () => apiClient.getStats({
+            year: Number(year),
+            quarter: quarter === 'all' ? undefined : Number(quarter),
+            tipoItem: selectedTipoItem || undefined,
+            itemAsignadoId: selectedItemId || undefined,
+            categoryId: selectedCategory || undefined,
+        })
+    });
+
+    const fullContext = { ...dashboardContext, stats };
 
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
@@ -101,12 +117,6 @@ export function DashboardPage() {
             setUpdatingTransactionId(undefined);
         }
     };
-
-    // Filter change handlers are now inside FiltersBar directly interacting with the store
-    // Page reset on filter change should be handled by a useEffect or similar if strictly needed
-    // For now, let's reset page when filters change by using the key in useQuery or simplified logic
-    // Ideally useDashboardFiltersStore could expose an event, but we can check if page > 1 and filters changed...
-    // Or just accept that page stays for now (simplification).
 
     const handleExport = async (format: 'json' | 'csv') => {
         setIsExporting(true);
@@ -174,121 +184,157 @@ export function DashboardPage() {
         }
     };
 
-
-
     return (
         <DashboardLayout>
-            <div className="space-y-6">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 pb-6">
-                    <div>
-                        <h1 className="text-3xl font-bold text-slate-900">{dashboardContext.title}</h1>
-                        <p className="text-slate-500 mt-2">
-                            {dashboardContext.description}
-                        </p>
-                    </div>
+            <div className="container mx-auto p-4 max-w-7xl">
 
-                    <div className="flex items-center gap-2">
-                        <DownloadReportButton
-                            variant="outline"
-                            className="bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
-                        />
-                    </div>
-                </div>
+                {/* Unified Header */}
+                <DashboardHeader
+                    items={items}
+                    itemTypes={itemTypes}
+                    categories={categories}
+                    currentView={currentView}
+                    onViewChange={setCurrentView}
+                    onExport={handleExport}
+                />
 
-                {/* Period Selector */}
-                <Card className="border-slate-200 shadow-sm">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-                            Rango de Fechas
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <PeriodSelector />
-                    </CardContent>
-                </Card>
+                {/* Content Area */}
+                <div className="mt-4">
+                    {currentView === 'management' ? (
+                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
 
-                {/* Tabs Interface */}
-                <Tabs defaultValue="management" className="w-full">
-                    <TabsList className="bg-slate-100 mb-4">
-                        <TabsTrigger value="management">Gestión Diario</TabsTrigger>
-                        <TabsTrigger value="analytics">Analítica Avanzada</TabsTrigger>
-                    </TabsList>
+                            {/* Summary Cards */}
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">
+                                            Ingresos Totales
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold text-emerald-600">
+                                            €{stats?.totalIngresos?.toLocaleString('es-ES') || '0'}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">
+                                            Gastos Totales
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold text-red-600">
+                                            €{stats?.totalGastos?.toLocaleString('es-ES') || '0'}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">
+                                            Balance
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className={`text-2xl font-bold ${(stats?.balance || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'
+                                            }`}>
+                                            €{stats?.balance?.toLocaleString('es-ES') || '0'}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                        <CardTitle className="text-sm font-medium">
+                                            Transacciones
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="text-2xl font-bold">
+                                            {stats?.totalTransacciones || 0}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            {stats?.transaccionesConItem || 0} asignadas
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </div>
 
-                    <TabsContent value="management" className="space-y-6">
-                        {/* Filters & Table */}
-                        <Card className="border-slate-200 shadow-sm overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 border-b border-gray-100 py-3">
-                                <div className="flex justify-between items-center">
-                                    <CardTitle className="text-lg font-semibold text-slate-800">
-                                        Transacciones ({transactionsData?.total || 0})
-                                    </CardTitle>
-
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleExport('json')}
-                                            disabled={isExporting || isLoadingTransactions}
-                                            className="text-slate-600 hover:text-emerald-600 h-8 px-2"
-                                            title="Descargar JSON"
-                                        >
-                                            <FileJson className="h-4 w-4 mr-1" />
-                                            JSON
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleExport('csv')}
-                                            disabled={isExporting || isLoadingTransactions}
-                                            className="text-slate-600 hover:text-emerald-600 h-8 px-2"
-                                            title="Descargar CSV"
-                                        >
-                                            <FileSpreadsheet className="h-4 w-4 mr-1" />
-                                            CSV
-                                        </Button>
+                            {/* Main Transaction Table */}
+                            <Card className="border-slate-200 shadow-sm overflow-hidden">
+                                <CardHeader className="bg-slate-50/50 border-b border-gray-100 py-3">
+                                    <div className="flex justify-between items-center">
+                                        <CardTitle className="text-lg font-semibold text-slate-800">
+                                            Transacciones ({transactionsData?.total || 0})
+                                        </CardTitle>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleExport('json')}
+                                                disabled={isExporting || isLoadingTransactions}
+                                                className="text-slate-600 hover:text-emerald-600 h-8 px-2"
+                                                title="Descargar JSON"
+                                            >
+                                                <FileJson className="h-4 w-4 mr-1" />
+                                                JSON
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleExport('csv')}
+                                                disabled={isExporting || isLoadingTransactions}
+                                                className="text-slate-600 hover:text-emerald-600 h-8 px-2"
+                                                title="Descargar CSV"
+                                            >
+                                                <FileSpreadsheet className="h-4 w-4 mr-1" />
+                                                CSV
+                                            </Button>
+                                            <button
+                                                onClick={() => setIsTableVisible(!isTableVisible)}
+                                                className="text-sm text-slate-500 hover:text-emerald-600 ml-2"
+                                            >
+                                                {isTableVisible ? 'Ocultar' : 'Mostrar'}
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="space-y-6 pt-6">
-                                <FiltersBar
+                                </CardHeader>
+                                {isTableVisible && (
+                                    <CardContent className="space-y-6 pt-6 transition-all">
+                                        <TransactionsTable
+                                            transactions={transactionsData?.items || []}
+                                            items={items}
+                                            itemTypes={itemTypes}
+                                            isLoading={isLoadingTransactions}
+                                            currentPage={page}
+                                            totalPages={transactionsData?.totalPages || 1}
+                                            onPageChange={handlePageChange}
+                                            onAssignItem={handleAssignItem}
+                                            categories={categories}
+                                            onAssignCategory={handleAssignCategory}
+                                            updatingTransactionId={updatingTransactionId}
+                                            isTableVisible={isTableVisible}
+                                            onToggleVisibility={() => setIsTableVisible(!isTableVisible)}
+                                        />
+                                    </CardContent>
+                                )}
+                            </Card>
+
+                            {/* Smart Charts Section */}
+                            <div className="mt-8">
+                                <DashboardChartsRenderer
+                                    context={dashboardContext}
+                                    isGeneratingPdf={false}
                                     items={items}
                                     itemTypes={itemTypes}
-                                    categories={categories}
                                 />
-
-                                <TransactionsTable
-                                    transactions={transactionsData?.items || []}
-                                    items={items}
-                                    itemTypes={itemTypes}
-                                    isLoading={isLoadingTransactions}
-                                    currentPage={page}
-                                    totalPages={transactionsData?.totalPages || 1}
-                                    onPageChange={handlePageChange}
-                                    onAssignItem={handleAssignItem}
-                                    onAssignCategory={handleAssignCategory}
-                                    updatingTransactionId={updatingTransactionId}
-                                    isTableVisible={isTableVisible}
-                                    onToggleVisibility={() => setIsTableVisible(!isTableVisible)}
-                                />
-                            </CardContent>
-                        </Card>
-
-                        {/* Smart Section (Standard Charts) */}
-                        <div className="mt-8">
-                            <DashboardChartsRenderer
-                                context={dashboardContext}
-                                isGeneratingPdf={false}
-                                items={items}
-                                itemTypes={itemTypes}
-                            />
+                            </div>
                         </div>
-                    </TabsContent>
-
-                    <TabsContent value="analytics">
-                        <AnalyticsView year={Number(year)} />
-                    </TabsContent>
-                </Tabs>
+                    ) : (
+                        <Suspense fallback={<AnalyticsSkeleton />}>
+                            <AnalyticsView year={Number(year)} />
+                        </Suspense>
+                    )}
+                </div>
             </div>
         </DashboardLayout>
     );

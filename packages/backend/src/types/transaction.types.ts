@@ -33,6 +33,7 @@ export interface TransactionFilters {
     endDate?: Date;
     categoria?: string;
     itemAsignadoId?: string;
+    categoryId?: string;
     excelUploadId?: string;
     tipoItem?: string;
     search?: string;

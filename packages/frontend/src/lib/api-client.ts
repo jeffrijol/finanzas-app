@@ -188,6 +188,7 @@ class ApiClient {
         quarter?: number;
         tipoItem?: string;
         itemAsignadoId?: string;
+        categoryId?: string;
     } = {}): Promise<TransactionStats> {
         const params = new URLSearchParams();
         if (filters.startDate) params.append('startDate', filters.startDate);
@@ -196,6 +197,7 @@ class ApiClient {
         if (filters.quarter) params.append('quarter', filters.quarter.toString());
         if (filters.tipoItem) params.append('tipoItem', filters.tipoItem);
         if (filters.itemAsignadoId) params.append('itemAsignadoId', filters.itemAsignadoId);
+        if (filters.categoryId) params.append('categoryId', filters.categoryId);
 
         const queryString = params.toString();
         const response = await this.request<TransactionStats>(`/transactions/stats${queryString ? `?${queryString}` : ''}`);
@@ -231,22 +233,30 @@ class ApiClient {
         return response.data;
     }
 
-    async getQuarterlyReport(year: number): Promise<{
+    async getQuarterlyReport(year: number, filters?: { tipoItem?: string; categoryId?: string }): Promise<{
         quarter: number;
         ingresos: number;
         gastos: number;
         neto: number;
         count: number;
     }[]> {
-        const response = await this.request<any>(`/analytics/quarterly/${year}`);
+        const params = new URLSearchParams();
+        if (filters?.tipoItem) params.append('tipoItem', filters.tipoItem);
+        if (filters?.categoryId) params.append('categoryId', filters.categoryId);
+
+        const response = await this.request<any>(`/analytics/quarterly/${year}?${params.toString()}`);
         return response.data;
     }
 
-    async getStackedTrend(year: number): Promise<{
+    async getStackedTrend(year: number, filters?: { tipoItem?: string; categoryId?: string }): Promise<{
         data: any[];
         keys: string[];
     }> {
-        const response = await this.request<any>(`/analytics/stacked-trend/${year}`);
+        const params = new URLSearchParams();
+        if (filters?.tipoItem) params.append('tipoItem', filters.tipoItem);
+        if (filters?.categoryId) params.append('categoryId', filters.categoryId);
+
+        const response = await this.request<any>(`/analytics/stacked-trend/${year}?${params.toString()}`);
         return response.data;
     }
 

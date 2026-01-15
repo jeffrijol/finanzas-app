@@ -323,6 +323,7 @@ export class AnalyticsController {
     static async getQuarterlyReport(req: Request, res: Response) {
         try {
             const { year } = req.params;
+            const { tipoItem, categoryId } = req.query; // Filters
             const yearNum = Number(year);
 
             if (isNaN(yearNum)) {
@@ -339,10 +340,24 @@ export class AnalyticsController {
             const quartersData = [];
 
             for (const quarter of qs) {
+                // Build dynamic filters
+                const where: any = {
+                    fechaValor: { gte: quarter.start, lte: quarter.end }
+                };
+
+                if (tipoItem) {
+                    where.itemAsignado = {
+                        itemTypeId: String(tipoItem)
+                    };
+                }
+
+                if (categoryId) {
+                    where.categoryId = String(categoryId);
+                }
+
                 const txs = await prisma.transaction.findMany({
-                    where: {
-                        fechaValor: { gte: quarter.start, lte: quarter.end }
-                    }
+                    where,
+                    include: { itemAsignado: true } // Need to include if filtering by deep relation? No, where clause handles it.
                 });
 
                 let ingresos = 0;
@@ -372,21 +387,35 @@ export class AnalyticsController {
     static async getStackedTrend(req: Request, res: Response) {
         try {
             const { year } = req.params;
+            const { tipoItem, categoryId } = req.query; // Filters
             const yearNum = Number(year);
 
             if (isNaN(yearNum)) {
                 return res.status(400).json(ApiResponseHelper.error('Invalid year'));
             }
 
+            // Build dynamic filters
+            const where: any = {
+                fechaValor: {
+                    gte: new Date(yearNum, 0, 1),
+                    lte: new Date(yearNum, 11, 31, 23, 59, 59)
+                },
+                importe: { lt: 0 } // Only expenses for stacked chart
+            };
+
+            if (tipoItem) {
+                where.itemAsignado = {
+                    itemTypeId: String(tipoItem)
+                };
+            }
+
+            if (categoryId) {
+                where.categoryId = String(categoryId);
+            }
+
             // 1. Get all expenses for year
             const expenses = await prisma.transaction.findMany({
-                where: {
-                    fechaValor: {
-                        gte: new Date(yearNum, 0, 1),
-                        lte: new Date(yearNum, 11, 31, 23, 59, 59)
-                    },
-                    importe: { lt: 0 }
-                },
+                where,
                 include: { categoryRel: true }
             });
 

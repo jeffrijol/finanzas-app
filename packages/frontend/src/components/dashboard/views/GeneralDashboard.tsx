@@ -11,16 +11,17 @@ interface GeneralDashboardProps {
 }
 
 export function GeneralDashboard({ context, isGeneratingPdf, itemTypes }: GeneralDashboardProps) {
-    const { year, quarter, tipoItem, itemId } = context.filters;
+    const { year, quarter, tipoItem, itemId, categoryId } = context.filters;
 
     // Fetch Stats using existing logic for now
     const { data: stats } = useQuery({
-        queryKey: ['stats', year, quarter, tipoItem, itemId],
+        queryKey: ['stats', year, quarter, tipoItem, itemId, categoryId],
         queryFn: () => apiClient.getStats({
             year: Number(year),
             quarter: quarter === 'all' ? undefined : Number(quarter),
             tipoItem: tipoItem || undefined,
             itemAsignadoId: itemId || undefined,
+            categoryId: categoryId || undefined,
         })
     });
 
