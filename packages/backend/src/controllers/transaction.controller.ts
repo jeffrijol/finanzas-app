@@ -39,6 +39,7 @@ export const listTransactions = async (req: Request, res: Response) => {
         search: req.query.search as string,
         minAmount: req.query.minAmount ? Number(req.query.minAmount) : undefined,
         maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : undefined,
+        categoryId: req.query.categoryId as string,
     };
 
     const pagination = {

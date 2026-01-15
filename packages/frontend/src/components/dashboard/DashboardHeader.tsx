@@ -138,7 +138,13 @@ export function DashboardHeader({
                     {/* Type Filter */}
                     <Select
                         value={selectedTipoItem || "ALL"}
-                        onValueChange={(val) => setSelectedTipoItem(val === "ALL" ? "" : val)}
+                        onValueChange={(val) => {
+                            const newValue = val === "ALL" ? "" : val;
+                            setSelectedTipoItem(newValue);
+                            // Reset dependent filters to maintain integrity
+                            setSelectedItemId("");
+                            setSelectedCategory("");
+                        }}
                     >
                         <SelectTrigger className={`w-full sm:w-[160px] h-10 ${selectedTipoItem ? 'border-emerald-500 bg-emerald-50/50 text-emerald-700' : 'bg-slate-50 border-slate-200'}`}>
                             <SelectValue placeholder="Tipo" />
