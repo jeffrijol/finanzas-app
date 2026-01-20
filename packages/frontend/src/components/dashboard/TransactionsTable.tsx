@@ -1,4 +1,4 @@
-import { Transaction, Item, ItemType } from '@/types';
+import { Transaction, Item, ItemType, TransactionCategory } from '@/types';
 import { TransactionRow } from './TransactionRow';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
@@ -7,6 +7,7 @@ interface TransactionsTableProps {
     transactions: Transaction[];
     items: Item[];
     itemTypes: ItemType[];
+    categories: TransactionCategory[];
     isLoading: boolean;
     currentPage: number;
     totalPages: number;
@@ -24,6 +25,7 @@ export function TransactionsTable({
     transactions,
     items,
     itemTypes,
+    categories,
     isLoading,
     currentPage,
     totalPages,

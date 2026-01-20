@@ -27,9 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const categorySchema = z.object({
     name: z.string().min(1, 'El nombre es requerido'),
-    type: z.enum(['INCOME', 'EXPENSE'], {
-        required_error: 'El tipo es requerido',
-    }),
+    type: z.enum(['INCOME', 'EXPENSE']),
     itemTypeId: z.string().min(1, 'El tipo de item asociado es requerido'),
 });
 

@@ -1,34 +1,57 @@
 {
-    "$schema": "https://turbo.build/schema.json",
-    "globalDependencies": [
-        "**/.env.*local"
-    ],
-    "pipeline": {
-        "dev": {
-            "cache": false,
-            "persistent": true
-        },
-        "build": {
-            "outputs": [
-                "dist/**",
-                ".next/**",
-                ".astro/**"
-            ],
-            "dependsOn": ["^build"]
-        },
-        "lint": {
-            "outputs": [],
-            "cache": true
-        },
-        "test": {
-            "outputs": [],
-            "cache": true
-        },
-        "clean": {
-            "cache": false
-        },
-        "//#db": {
-            "cache": false
-        }
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": [
+    "**/.env.*local",
+    "tsconfig.base.json"
+  ],
+  "globalEnv": [
+    "NODE_ENV",
+    "DATABASE_URL"
+  ],
+  "pipeline": {
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "build": {
+      "outputs": [
+        "dist/**",
+        ".vite/**"
+      ],
+      "dependsOn": ["^build"],
+      "inputs": [
+        "src/**",
+        "package.json",
+        "tsconfig*.json",
+        "vite.config.ts",
+        "!**/*.test.ts",
+        "!**/*.spec.ts"
+      ]
+    },
+    "lint": {
+      "outputs": [],
+      "cache": true,
+      "inputs": [
+        "src/**",
+        "eslint.config.js",
+        ".eslintrc*"
+      ]
+    },
+    "test": {
+      "outputs": ["coverage/**"],
+      "cache": true,
+      "inputs": [
+        "src/**",
+        "**/*.test.ts",
+        "**/*.spec.ts"
+      ],
+      "dependsOn": ["^build"]
+    },
+    "clean": {
+      "cache": false
+    },
+    "//#db": {
+      "cache": false
     }
+  }
 }

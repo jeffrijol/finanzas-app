@@ -43,3 +43,16 @@ packages/backend/prisma/migrations
 *.xlsx
 *.sql
 *.log
+
+# TypeScript
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Testing
+coverage/
+*.lcov
+.nyc_output/
+
+# Monorepo
+.pnpm-debug.log
+.eslintcache

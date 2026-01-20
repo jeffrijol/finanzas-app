@@ -90,8 +90,6 @@ export function DashboardPage() {
         })
     });
 
-    const fullContext = { ...dashboardContext, stats };
-
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
     };

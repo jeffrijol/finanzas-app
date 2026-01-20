@@ -211,7 +211,6 @@ const DashboardPDF = ({ data, chartImages }: {
                 {chartImages?.monthlyTrend && (
                     <View style={{ marginBottom: 20 }}>
                         <Text style={styles.chartTitle}>Evolución Financiera (Vista UI)</Text>
-                        {/* eslint-disable-next-line jsx-a11y/alt-text */}
                         <Image
                             src={chartImages.monthlyTrend}
                             style={{ width: '100%', height: 250, objectFit: 'contain' }}
@@ -223,7 +222,6 @@ const DashboardPDF = ({ data, chartImages }: {
                 {chartImages?.distributionIngresos && (
                     <View style={{ marginBottom: 20 }}>
                         <Text style={styles.chartTitle}>Distribución de Ingresos</Text>
-                        {/* eslint-disable-next-line jsx-a11y/alt-text */}
                         <Image
                             src={chartImages.distributionIngresos}
                             style={{ width: '100%', height: 250, objectFit: 'contain' }}
@@ -235,7 +233,6 @@ const DashboardPDF = ({ data, chartImages }: {
                 {chartImages?.distributionGastos && (
                     <View>
                         <Text style={styles.chartTitle}>Distribución de Gastos</Text>
-                        {/* eslint-disable-next-line jsx-a11y/alt-text */}
                         <Image
                             src={chartImages.distributionGastos}
                             style={{ width: '100%', height: 250, objectFit: 'contain' }}

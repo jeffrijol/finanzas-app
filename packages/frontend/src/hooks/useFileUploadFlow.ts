@@ -34,21 +34,22 @@ export function useFileUploadFlow() {
         return localStorage.getItem('finanzas_app_upload_id');
     });
 
-    const [isReviewMode, setIsReviewMode] = useState<boolean>(() => {
-        return uploadedTransactions.length > 0;
-    });
+    // Derived state
+    const isReviewMode = uploadedTransactions.length > 0;
 
     // Ref to track if user is interacting (for debounce auto-save)
-    const lastInteractionRef = useRef<number>(Date.now());
+    const lastInteractionRef = useRef<number>(0);
+
+    useEffect(() => {
+        lastInteractionRef.current = Date.now();
+    }, []);
 
     // Persist to localStorage whenever transactions change
     useEffect(() => {
         if (uploadedTransactions.length > 0) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(uploadedTransactions));
-            setIsReviewMode(true);
         } else {
             localStorage.removeItem(STORAGE_KEY);
-            setIsReviewMode(false);
         }
     }, [uploadedTransactions]);
 
@@ -302,7 +303,6 @@ export function useFileUploadFlow() {
                 localStorage.removeItem('finanzas_app_upload_id');
                 setUploadedTransactions([]);
                 setUploadId(null);
-                setIsReviewMode(false);
 
                 toast({ title: 'Trimestre finalizado', description: 'Todas las transacciones se han procesado exitosamente.' });
             } catch (e: any) {
@@ -319,7 +319,6 @@ export function useFileUploadFlow() {
             // But if we want to reset UI:
             localStorage.removeItem(STORAGE_KEY);
             setUploadedTransactions([]);
-            setIsReviewMode(false);
             toast({ title: 'Trimestre finalizado (Local)', description: 'Se limpiaron los datos locales, pero no se vinculó a una carga.' });
         }
     };
@@ -329,7 +328,6 @@ export function useFileUploadFlow() {
         localStorage.removeItem('finanzas_app_upload_id');
         setUploadedTransactions([]);
         setUploadId(null);
-        setIsReviewMode(false);
     };
 
     // Auto-Save Effect

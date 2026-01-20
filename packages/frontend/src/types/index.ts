@@ -79,10 +79,13 @@ export interface TransactionStats {
     totalIngresos: number;
     totalGastos: number;
     balance: number;
+    totalTransacciones: number;
+    transaccionesConItem: number;
     transaccionesPorItem: {
         itemId: string;
-        itemNombre: string;
-        cantidad: number;
+        nombreItem: string;
+        color?: string;
+        totalTransacciones: number;
         total: number;
     }[];
     porTipoItem: {

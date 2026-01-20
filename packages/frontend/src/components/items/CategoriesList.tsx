@@ -77,7 +77,7 @@ export function CategoriesList() {
         return itemTypes.find(t => t.id === id)?.name || id;
     };
 
-    const columns = useMemo<ColumnDef<TransactionCategory>[]>(() => [
+    const columns: ColumnDef<TransactionCategory>[] = [
         {
             accessorKey: 'name',
             header: 'Nombre',
@@ -135,7 +135,7 @@ export function CategoriesList() {
                 </div>
             ),
         },
-    ], [itemTypes]);
+    ];
 
     if (isLoading) return <div>Cargando categorías...</div>;
 

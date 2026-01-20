@@ -40,6 +40,12 @@ export function ExcelsPage() {
         queryFn: () => apiClient.getItemTypes(),
     });
 
+    // Fetch categories (needed for table edit)
+    const { data: categories = [] } = useQuery({
+        queryKey: ['categories'],
+        queryFn: () => apiClient.getCategories(),
+    });
+
     // Fetch transactions for selected upload
     const {
         data: transactionsData,
@@ -180,6 +186,7 @@ export function ExcelsPage() {
                                     transactions={transactionsData?.items || []}
                                     items={items}
                                     itemTypes={itemTypes}
+                                    categories={categories}
                                     isLoading={isLoadingTransactions}
                                     currentPage={page}
                                     totalPages={transactionsData?.totalPages || 1}

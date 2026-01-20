@@ -8,7 +8,7 @@ export function ItemsStatsPanel() {
 
     const { data: stats } = useQuery({
         queryKey: ['stats'],
-        queryFn: () => apiClient.getTransactionStats(),
+        queryFn: () => apiClient.getStats(),
     });
 
     if (!stats || !stats.transaccionesPorItem) {

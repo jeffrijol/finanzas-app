@@ -47,21 +47,24 @@ export const useDashboardContext = (
         let description = 'Resumen financiero global';
 
         switch (level) {
-            case 'item':
+            case 'item': {
                 const itemName = items.find(i => i.id === selectedItemId)?.nombre || 'Item';
                 title = `Análisis: ${itemName}`;
                 description = 'Detalle de rendimiento por categoría y evolución';
                 break;
-            case 'type':
+            }
+            case 'type': {
                 const typeName = itemTypes.find(t => t.id === selectedTipoItem)?.name || 'Tipo';
                 title = `Tipo: ${typeName}`;
                 description = 'Comparativa de activos y distribución interna';
                 break;
-            case 'category':
+            }
+            case 'category': {
                 const catName = categories.find(c => c.id === selectedCategory)?.name || 'Categoría';
                 title = `Categoría: ${catName}`;
                 description = 'Análisis detallado de categoría';
                 break;
+            }
             case 'quarter':
                 title = `Trimestre ${quarter} - ${year}`;
                 description = 'Desglose detallado del trimestre';
@@ -73,7 +76,7 @@ export const useDashboardContext = (
         }
 
         return { level, title, description, filters };
-    }, [year, quarter, selectedTipoItem, selectedItemId, items, itemTypes]);
+    }, [year, quarter, selectedTipoItem, selectedItemId, selectedCategory, items, itemTypes, categories]);
 
     return context;
 };

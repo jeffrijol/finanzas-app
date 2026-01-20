@@ -46,7 +46,7 @@ export function ReportsPage() {
             return true;
         })
         .map(t => ({
-            name: t.itemNombre,
+            name: t.nombreItem,
             value: Math.abs(t.total), // Usamos valor absoluto para ver magnitud
             type: t.total > 0 ? 'Ingreso' : 'Gasto'
         }))
