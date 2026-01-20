@@ -13,13 +13,16 @@
                 "dist/**",
                 ".next/**",
                 ".astro/**"
-            ]
+            ],
+            "dependsOn": ["^build"]
         },
         "lint": {
-            "outputs": []
+            "outputs": [],
+            "cache": true
         },
         "test": {
-            "outputs": []
+            "outputs": [],
+            "cache": true
         },
         "clean": {
             "cache": false

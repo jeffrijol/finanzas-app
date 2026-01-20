@@ -32,9 +32,6 @@ importers:
       express:
         specifier: latest
         version: 5.2.1
-      express-async-errors:
-        specifier: latest
-        version: 3.1.1(express@5.2.1)
       helmet:
         specifier: latest
         version: 8.1.0
@@ -69,6 +66,9 @@ importers:
       eslint:
         specifier: latest
         version: 9.39.2
+      globals:
+        specifier: ^16.5.0
+        version: 16.5.0
       prisma:
         specifier: ^5.10.0
         version: 5.10.0
@@ -81,6 +81,9 @@ importers:
       typescript:
         specifier: latest
         version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.46.4
+        version: 8.50.0(eslint@9.39.2)(typescript@5.9.3)
       vitest:
         specifier: latest
         version: 4.0.16(@types/node@25.0.3)(tsx@4.21.0)
@@ -3476,14 +3479,6 @@ packages:
     resolution: {integrity: sha512-knvyeauYhqjOYvQ66MznSMs83wmHrCycNEN6Ao+2AeYEfxUIkuiVxdEa1qlGEPK+We3n0THiDciYSsCcgW/DoA==}
     engines: {node: '>=12.0.0'}
     dev: true
-
-  /express-async-errors@3.1.1(express@5.2.1):
-    resolution: {integrity: sha512-h6aK1da4tpqWSbyCa3FxB/V6Ehd4EEB15zyQq9qe75OZBp0krinNKuH4rAY+S/U/2I36vdLAUFSjQJ+TFmODng==}
-    peerDependencies:
-      express: ^4.16.2
-    dependencies:
-      express: 5.2.1
-    dev: false
 
   /express@5.2.1:
     resolution: {integrity: sha512-hIS4idWWai69NezIdRt2xFVofaF4j+6INOpJlVOLDO8zXGpUVEVzIYk12UUi2JzjEzWL3IOAxcTubgz9Po0yXw==}

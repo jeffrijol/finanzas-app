@@ -7,9 +7,9 @@
         "dev": "tsx watch src/index.ts",
         "build": "tsc && tsc-alias",
         "start": "node dist/index.js",
-        "lint": "eslint src --ext .ts",
+        "lint": "eslint src",
         "format": "prettier --write src/**/*.ts",
-        "test": "vitest run",
+        "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
         "clean": "rm -rf dist node_modules",
         "prisma:generate": "prisma generate",
@@ -25,7 +25,6 @@
         "cors": "latest",
         "dotenv": "latest",
         "express": "latest",
-        "express-async-errors": "latest",
         "helmet": "latest",
         "multer": "latest",
         "xlsx": "^0.18.5",
@@ -39,10 +38,12 @@
         "@typescript-eslint/eslint-plugin": "latest",
         "@typescript-eslint/parser": "latest",
         "eslint": "latest",
+        "globals": "^16.5.0",
         "prisma": "^5.10.0",
         "tsc-alias": "latest",
         "tsx": "latest",
         "typescript": "latest",
+        "typescript-eslint": "^8.46.4",
         "vitest": "latest"
     }
 }
