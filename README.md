@@ -1,76 +1,109 @@
-# Dashboard Financiero - Guía de Implementación
+# Finanzas App
 
-## 🎯 Resumen de Cambios Implementados
+![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen) ![pnpm](https://img.shields.io/badge/pnpm-8.15.0-orange) ![License](https://img.shields.io/badge/license-MIT-blue) ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue)
 
-Se ha completado la transformación del dashboard de estilo "Fintech" a un **área de trabajo limpia y profesional** con las siguientes mejoras:
-
-### ✅ Cambios en la UI/UX
-
-1. **Diseño Limpio**: Eliminado el tema oscuro y colores vibrantes. Nueva paleta neutral con grises y blancos.
-2. **Dos Secciones Separadas**:
-   - **HomePage (`/`)**: Carga y revisión de archivos
-   - **DashboardPage (`/dashboard`)**: Consulta histórica con filtros
-3. **FilePond**: Componente moderno para carga de archivos Excel/CSV
-4. **Flujo Borrador-Confirmación**: Las transacciones no se guardan automáticamente
-
-### ✅ Funcionalidades Nuevas
-
-1. **Selector de Período**: Filtrar por trimestre (T1, T2, T3, T4) o año completo
-2. **Estadísticas por Item**: Panel lateral sin balance total
-3. **Tabla sin Paginación**: En HomePage para revisar todas las transacciones del archivo
-4. **Tabla con Paginación**: En DashboardPage para consultar transacciones guardadas
+> **Aplicación web de gestión financiera personal** diseñada para procesar y analizar extractos bancarios de forma eficiente. Construida con React, Express y Prisma en arquitectura monorepo.
 
 ---
 
-## 🚀 Cómo Ejecutar la Aplicación
+## 📋 Descripción
+
+**Finanzas App** es una herramienta que permite cargar extractos bancarios (Excel/CSV), categorizar transacciones de forma semi-automática, y generar reportes analíticos por períodos (trimestres/años). Diseñada para un uso personal o pequeños equipos que necesitan llevar control detallado de sus finanzas.
+
+**Principales características:**
+
+- ✅ Carga de archivos Excel/CSV con preview y revisión antes de guardar
+- 📊 Dashboard analítico con filtros por período, categoría e item
+- 🔄 Asignación manual y masiva de items a transacciones
+- 📈 Gráficos de distribución por categoría y análisis temporal
+- 📄 Generación de reportes PDF personalizados
+- 🔍 Búsqueda y filtrado avanzado de transacciones históricas
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+- **Framework**: [React 19](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- **Build Tool**: [Vite 7](https://vite.dev/)
+- **Routing**: [React Router 7](https://reactrouter.com/)
+- **State Management**:
+  - [TanStack Query](https://tanstack.com/query) (server state)
+  - [Zustand](https://zustand-demo.pmnd.rs/) (client state)
+- **UI Components**: [shadcn/ui](https://ui.shadcn.com/) + [Radix UI](https://www.radix-ui.com/)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **Charts**: [Recharts](https://recharts.org/)
+- **Forms**: [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
+
+### Backend
+
+- **Runtime**: [Node.js 20](https://nodejs.org/) + [Express](https://expressjs.com/)
+- **Database**: [SQLite](https://www.sqlite.org/)
+- **ORM**: [Prisma 5](https://www.prisma.io/)
+- **Validation**: [Zod](https://zod.dev/)
+- **File Upload**: [Multer](https://github.com/expressjs/multer)
+- **Excel Parsing**: [XLSX](https://sheetjs.com/)
+
+### Tooling
+
+- **Monorepo**: [TurboRepo](https://turbo.build/repo)
+- **Package Manager**: [pnpm 8](https://pnpm.io/)
+- **Linting**: [ESLint 9](https://eslint.org/)
+- **Type Checking**: [TypeScript 5.9](https://www.typescriptlang.org/)
+
+---
+
+## 🚀 Quick Start
 
 ### Prerrequisitos
 
-- Node.js 18+ instalado
-- pnpm instalado globalmente: `npm install -g pnpm`
+```bash
+node --version  # >= 18.0.0
+pnpm --version  # >= 8.0.0
+```
 
-### 1. Instalar Dependencias
+Si no tienes pnpm instalado:
 
 ```bash
-# Desde la raíz del proyecto
+npm install -g pnpm@8
+```
+
+### Instalación
+
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/jeffrijol/finanzas-app.git
+cd finanzas-app
+
+# 2. Instalar dependencias
 pnpm install
-```
 
-### 2. Configurar Variables de Entorno
+# 3. Configurar variables de entorno
+# Backend (.env en packages/backend/)
+echo "DATABASE_URL='file:./dev.db'" > packages/backend/.env
+echo "PORT=3001" >> packages/backend/.env
+echo "NODE_ENV=development" >> packages/backend/.env
 
-#### Backend (.env en packages/backend/)
+# Frontend (.env.local en packages/frontend/)
+echo "VITE_API_URL=http://localhost:3001/api" > packages/frontend/.env.local
 
-```env
-DATABASE_URL="file:./dev.db"
-PORT=3001
-NODE_ENV=development
-```
-
-#### Frontend (.env.local en packages/frontend/)
-
-```env
-VITE_API_URL=http://localhost:3001/api
-```
-
-### 3. Inicializar Base de Datos
-
-```bash
+# 4. Inicializar base de datos
 cd packages/backend
 pnpm prisma:generate
 pnpm prisma:migrate
 pnpm prisma:seed
-```
+cd ../..
 
-### 4. Ejecutar en Modo Desarrollo
-
-```bash
-# Desde la raíz del proyecto
+# 5. Iniciar servidor de desarrollo
 pnpm dev
 ```
 
-Esto ejecutará:
-- Backend en `http://localhost:3001`
-- Frontend en `http://localhost:5173`
+**Acceso:**
+
+- 🎨 **Frontend**: [http://localhost:4321](http://localhost:4321)
+- 🔧 **Backend API**: [http://localhost:3001/api](http://localhost:3001/api)
+- 🗄️ **Prisma Studio**: `pnpm db:studio` → [http://localhost:5555](http://localhost:5555)
 
 ---
 
@@ -79,134 +112,124 @@ Esto ejecutará:
 ```
 finanzas-app/
 ├── packages/
-│   ├── frontend/
+│   ├── frontend/              # React + Vite application
 │   │   ├── src/
-│   │   │   ├── pages/
-│   │   │   │   ├── HomePage.tsx          ← Nueva página de carga
-│   │   │   │   └── DashboardPage.tsx     ← Nueva página de consulta
-│   │   │   ├── components/
-│   │   │   │   ├── dashboard/
-│   │   │   │   │   ├── FileUploadPond.tsx      ← FilePond
-│   │   │   │   │   ├── TransactionReviewTable.tsx  ← Sin paginación
-│   │   │   │   │   ├── ItemsStatsPanel.tsx         ← Estadísticas
-│   │   │   │   │   └── PeriodSelector.tsx          ← Selector trimestre
-│   │   │   │   └── ui/
-│   │   │   │       └── select.tsx         ← Nuevo componente
-│   │   │   ├── hooks/
-│   │   │   │   └── useFileUploadFlow.ts   ← Hook flujo de carga
-│   │   │   ├── stores/
-│   │   │   │   └── period-store.ts        ← Zustand store
-│   │   │   ├── lib/
-│   │   │   │   └── api-client.ts          ← Actualizado con createTransaction
-│   │   │   ├── types/
-│   │   │   │   └── index.ts               ← Actualizado con transactions[]
-│   │   │   ├── App.tsx                    ← Ahora es el Router
-│   │   │   └── index.css                  ← Tema limpio
-│   │   └── package.json                   ← Nuevas dependencias
-│   └── backend/
+│   │   │   ├── components/    # UI components (shadcn/ui)
+│   │   │   ├── hooks/         # Custom React hooks
+│   │   │   ├── lib/           # Utilities & API client
+│   │   │   ├── pages/         # Route pages
+│   │   │   ├── stores/        # Zustand stores
+│   │   │   └── types/         # TypeScript definitions
+│   │   ├── public/            # Static assets
+│   │   └── package.json
+│   │
+│   └── backend/               # Express API server
 │       ├── src/
-│       │   ├── controllers/
-│       │   │   └── transaction.controller.ts  ← createTransaction()
-│       │   ├── services/
-│       │   │   └── transactions.service.ts    ← createTransaction()
-│       │   └── routes/
-│       │       └── index.ts               ← Ruta POST /transactions
-│       └── prisma/
-│           └── schema.prisma
-└── docs/
-    └── FLUJO_USUARIO.md                   ← Documentación del flujo
+│       │   ├── controllers/   # Request handlers
+│       │   ├── services/      # Business logic
+│       │   ├── routes/        # API routes
+│       │   ├── middleware/    # Express middleware
+│       │   └── utils/         # Helper functions
+│       ├── prisma/
+│       │   ├── schema.prisma  # Database schema
+│       │   ├── migrations/    # DB migrations
+│       │   └── seed.ts        # Seed data
+│       └── package.json
+│
+├── docs/                      # Documentation
+│   ├── DEVELOPMENT.md         # Development guide
+│   ├── ARCHITECTURE.md        # System architecture
+│   ├── API.md                 # API reference
+│   ├── FLUJO_USUARIO.md       # User flows
+│   └── CI_CD_PLAN.md          # Future CI/CD setup
+│
+├── turbo.json                 # TurboRepo config
+├── tsconfig.base.json         # Shared TypeScript config
+├── package.json               # Root package
+└── README.md                  # This file
 ```
 
 ---
 
-## 🔄 Flujo de Usuario
+## 📜 Scripts Disponibles
 
-### 1. Cargar Archivo (HomePage)
+### Root Level (ejecutar desde raíz del proyecto)
 
-1. Ir a `http://localhost:5173/`
-2. Arrastrar archivo Excel/CSV o hacer clic para buscar
-3. El archivo se procesa y aparece la tabla de revisión
-4. Asignar items a cada transacción usando el dropdown
-5. Hacer clic en "Confirmar y Guardar"
+| Script           | Descripción                                  |
+| ---------------- | -------------------------------------------- |
+| `pnpm dev`       | Inicia frontend + backend en modo desarrollo |
+| `pnpm build`     | Construye ambos packages para producción     |
+| `pnpm lint`      | Ejecuta linting en todo el monorepo          |
+| `pnpm clean`     | Limpia builds y cache                        |
+| `pnpm db:studio` | Abre Prisma Studio (gestión de BD)           |
 
-### 2. Consultar Transacciones (DashboardPage)
+### Frontend (`packages/frontend/`)
 
-1. Ir a `http://localhost:5173/dashboard`
-2. Seleccionar trimestre y año
-3. Usar filtros adicionales (búsqueda, categoría, etc.)
-4. Ver transacciones con paginación
-5. Editar items asignados directamente en la tabla
+| Script         | Descripción                   |
+| -------------- | ----------------------------- |
+| `pnpm dev`     | Servidor de desarrollo (Vite) |
+| `pnpm build`   | Build de producción           |
+| `pnpm preview` | Preview del build             |
+| `pnpm lint`    | Lint del código frontend      |
 
----
+### Backend (`packages/backend/`)
 
-## ⚙️ Endpoints del Backend
-
-### Transacciones
-
-- `GET /api/transactions` - Listar transacciones con filtros y paginación
-- `POST /api/transactions` - Crear una nueva transacción ✨ NUEVO
-- `PUT /api/transactions/:id` - Actualizar una transacción
-- `GET /api/transactions/stats` - Obtener estadísticas
-
-### Items
-
-- `GET /api/items` - Listar todos los items
-- `POST /api/items` - Crear un nuevo item
-- `PUT /api/items/:id` - Actualizar un item
-- `DELETE /api/items/:id` - Eliminar un item
-
-### Upload
-
-- `POST /api/upload` - Procesar archivo Excel/CSV
+| Script                 | Descripción                        |
+| ---------------------- | ---------------------------------- |
+| `pnpm dev`             | Servidor de desarrollo (tsx watch) |
+| `pnpm build`           | Compilar TypeScript                |
+| `pnpm start`           | Ejecutar build compilado           |
+| `pnpm lint`            | Lint del código backend            |
+| `pnpm prisma:generate` | Generar Prisma Client              |
+| `pnpm prisma:migrate`  | Ejecutar migraciones               |
+| `pnpm prisma:seed`     | Poblar BD con datos de prueba      |
+| `pnpm prisma:studio`   | Abrir Prisma Studio                |
 
 ---
 
-## 📝 Notas Importantes
+## 📚 Documentación
 
-### Cambios de Comportamiento
+- **[Guía de Desarrollo](./docs/DEVELOPMENT.md)**: Setup detallado, troubleshooting, herramientas
+- **[Arquitectura del Sistema](./docs/ARCHITECTURE.md)**: Decisiones de diseño, estructura técnica
+- **[Referencia de API](./docs/API.md)**: Endpoints, schemas, ejemplos
+- **[Flujos de Usuario](./docs/FLUJO_USUARIO.md)**: Casos de uso y navegación
 
-1. **Carga de Archivos**:
-   - ❌ Antes: Guardado automático en BD
-   - ✅ Ahora: Revisión → Confirmación → Guardado
+---
 
-2. **Tabla de Revisión**:
-   - ❌ Antes: Con paginación
-   - ✅ Ahora: Sin paginación (muestra todas las filas del archivo)
+## 🗺️ Roadmap
 
-3. **Estadísticas**:
-   - ❌ Antes: Incluía balance total
-   - ✅ Ahora: Solo por item, sin balance
+### ✅ Implemented (v1.0)
 
-### Pendiente (Backend)
+- [x] Carga y parseo de archivos Excel/CSV
+- [x] CRUD de transacciones con filtros avanzados
+- [x] Gestión de Items y Categorías
+- [x] Dashboard analítico con gráficos (Recharts)
+- [x] Selector de período (trimestre/año)
+- [x] Asignación manual y masiva de items
+- [x] Generación de reportes PDF
+- [x] Flujo borrador-confirmación para carga de archivos
+- [x] Persistencia local de sesión de carga (LocalStorage)
 
-El endpoint `/api/upload` actualmente guarda las transacciones automáticamente en la BD. Para completar el nuevo flujo, debería:
+### 🚧 In Progress (v1.1)
 
-1. Parsear el archivo Excel/CSV
-2. Retornar las transacciones en formato JSON
-3. **NO guardar** en la base de datos
+- [ ] Tests automatizados (Vitest)
+- [ ] Integración de CI/CD (GitHub Actions)
+- [ ] Optimización de performance (lazy loading, code splitting)
 
-Formato de respuesta esperado:
+### 📅 Planned (v2.0)
 
-```json
-{
-  "success": true,
-  "data": {
-    "filename": "extracto.xlsx",
-    "fileSize": 15234,
-    "totalRows": 25,
-    "processed": true,
-    "transactions": [
-      {
-        "fechaValor": "2024-01-15",
-        "descripcion": "Compra...",
-        "importe": -45.50,
-        "categoria": "Compras",
-        "saldo": 1500.00
-      }
-    ]
-  }
-}
-```
+- [ ] Autenticación y multi-usuario
+- [ ] Exportación de reportes a Excel
+- [ ] Reglas de categorización automática (ML/regex)
+- [ ] Notificaciones de transacciones atípicas
+- [ ] Vista móvil optimizada
+- [ ] Temas (light/dark mode)
+
+---
+
+## 👥 Contribuir
+
+Para contribuir a este proyecto, consulta la guía detallada en el plan de CI/CD: [docs/CI_CD_PLAN.md](./docs/CI_CD_PLAN.md)
 
 ---
 
@@ -215,7 +238,6 @@ Formato de respuesta esperado:
 ### Error: "Module not found"
 
 ```bash
-# Limpiar node_modules y reinstalar
 rm -rf node_modules packages/*/node_modules
 pnpm install
 ```
@@ -228,47 +250,27 @@ pnpm prisma:migrate
 pnpm prisma:seed
 ```
 
-### FilePond no se muestra
+### Puerto 3001 o 4321 ocupado
 
-Verifica que el CSS está importado en `index.css`:
+```bash
+# Windows
+netstat -ano | findstr :3001
+taskkill /PID <PID> /F
 
-```css
-@import "filepond/dist/filepond.min.css";
+# Linux/Mac
+lsof -ti:3001 | xargs kill -9
 ```
 
----
-
-## 📚 Documentación Adicional
-
-- [Flujo de Usuario Completo](./FLUJO_USUARIO.md)
-- [API Documentation](./API.md) (pendiente)
-- [Componentes UI](./COMPONENTS.md) (pendiente)
-
----
-
-## 🎨 Paleta de Colores
-
-### Tema Limpio
-
-- **Fondo**: `#FAFAFA` (Gris muy claro)
-- **Textó**: `#262626` (Gris oscuro)
-- **Tarjetas**: `#FFFFFF` (Blanco)
-- **Bordes**: `#E5E5E5` (Gris claro)
-- **Primary**: `#0078D4` (Azul profesional)
-- **Success**: `#16A34A` (Verde)
-- **Error**: `#DC2626` (Rojo)
-
----
-
-## 👥 Contribuir
-
-1. Crear una rama desde `main`
-2. Hacer cambios
-3. Crear Pull Request
-4. Esperar revisión
+Para más problemas comunes, ver [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md#common-issues--solutions).
 
 ---
 
 ## 📄 Licencia
 
-MIT
+MIT © 2025
+
+---
+
+<p align="center">
+  Hecho con ❤️ usando React, Express y Prisma
+</p>
