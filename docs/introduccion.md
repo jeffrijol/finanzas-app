@@ -38,7 +38,7 @@ El proyecto está construido como un **monorepo** que contiene dos paquetes prin
 - **Express** - Web framework minimalista
 - **TypeScript 5.9** - Type safety en servidor
 - **Prisma 5** - ORM type-safe con migrations
-- **SQLite** - Base de datos embebida (sin servidor)
+- **PostgreSQL (Supabase)** - Base de datos cloud (reemplaza a SQLite)
 - **Zod** - Validación de schemas en runtime
 - **Multer** - Middleware de upload de archivos
 - **XLSX (SheetJS)** - Parser de archivos Excel
@@ -294,7 +294,7 @@ finanzas-app/
 ## 💡 Preguntas Frecuentes (FAQ)
 
 **Q: ¿Por qué SQLite y no PostgreSQL?**  
-A: Simplicidad para desarrollo local y despliegue. Ideal para uso personal. Migración a PostgreSQL es trivial con Prisma si crece el equipo.
+A: Originalmente se usó SQLite por simplicidad. Ahora hemos migrado a **Supabase (PostgreSQL)** para facilitar el acceso remoto, la persistencia en la nube y preparar el proyecto para un despliegue real.
 
 **Q: ¿Por qué TanStack Query en lugar de Redux?**  
 A: Menos boilerplate, cache automático, revalidación inteligente. Redux es overkill para server state.

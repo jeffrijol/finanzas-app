@@ -51,18 +51,24 @@ Esto instalará todas las dependencias del monorepo utilizando TurboRepo.
 
 #### Backend (packages/backend/.env)
 
-Crear archivo `.env` en `packages/backend/`:
+Crear archivo `.env` en `packages/backend/` con las credenciales de Supabase:
 
 ```env
-# Database
-DATABASE_URL="file:./dev.db"
+# Connect to Supabase via connection pooling with Supavisor.
+# Transaction Mode (Port 6543) for application queries
+DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&options=project%3D[PROJECT-REF]"
+
+# Direct connection to the database. Used for migrations.
+# Session Mode (Port 5432) for migrations to support prepared statements.
+DIRECT_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?options=project%3D[PROJECT-REF]"
+
+# Supabase Client Configuration
+SUPABASE_URL="https://[PROJECT-REF].supabase.co"
+SUPABASE_ANON_KEY="[YOUR-ANON-KEY]"
 
 # Server
 PORT=3001
 NODE_ENV=development
-
-# CORS (opcional, por defecto permite todos los orígenes en dev)
-# CORS_ORIGIN=http://localhost:4321
 ```
 
 #### Frontend (packages/frontend/.env.local)
