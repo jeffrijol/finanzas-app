@@ -3,6 +3,7 @@ import prisma from '../lib/prisma';
 
 export class TransactionsService {
     static async getTransactions(
+        userId: string,
         filters: TransactionFilters = {},
         pagination: PaginationParams = {}
     ) {
@@ -30,6 +31,7 @@ export class TransactionsService {
 
         // Construir where clause
         const where: any = {
+            userId,
             excelUpload: {
                 processed: true
             }
@@ -126,7 +128,7 @@ export class TransactionsService {
         };
     }
 
-    static async createTransaction(data: {
+    static async createTransaction(userId: string, data: {
         fechaValor: Date;
         descripcion: string;
         importe: number;
@@ -139,6 +141,7 @@ export class TransactionsService {
     }) {
         return prisma.transaction.create({
             data: {
+                userId,
                 fechaValor: data.fechaValor,
                 descripcion: data.descripcion,
                 importe: data.importe,
@@ -156,6 +159,7 @@ export class TransactionsService {
     }
 
     static async updateTransaction(
+        userId: string,
         id: string,
         data: {
             itemAsignadoId?: string | null;
@@ -164,7 +168,7 @@ export class TransactionsService {
         }
     ) {
         return prisma.transaction.update({
-            where: { id },
+            where: { id, userId },
             data: {
                 ...data,
                 itemAsignadoId: data.itemAsignadoId === '' ? null : data.itemAsignadoId,
@@ -175,13 +179,13 @@ export class TransactionsService {
         });
     }
 
-    static async deleteTransaction(id: string) {
+    static async deleteTransaction(userId: string, id: string) {
         return prisma.transaction.delete({
-            where: { id },
+            where: { id, userId },
         });
     }
 
-    static async getStats(filters: TransactionFilters = {}): Promise<TransactionStats> {
+    static async getStats(userId: string, filters: TransactionFilters = {}): Promise<TransactionStats> {
         const {
             startDate,
             endDate,
@@ -192,6 +196,7 @@ export class TransactionsService {
         } = filters;
 
         const where: any = {
+            userId,
             excelUpload: {
                 processed: true
             }
@@ -359,9 +364,10 @@ export class TransactionsService {
         };
     }
 
-    static async getCategories() {
+    static async getCategories(userId: string) {
         const categories = await prisma.transaction.groupBy({
             by: ['categoria'],
+            where: { userId },
             _count: {
                 id: true,
             },

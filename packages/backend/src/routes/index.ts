@@ -6,6 +6,7 @@ import * as uploadController from '../controllers/upload.controller';
 import * as categoryController from '../controllers/transaction-categories.controller';
 
 import { ApiResponseHelper } from '../utils/apiResponse';
+import { protect } from '../middleware/auth';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -18,6 +19,9 @@ router.get('/health', (req, res) => {
         environment: process.env.NODE_ENV || 'development'
     }, 'API is healthy'));
 });
+
+// Protected Routes
+router.use(protect);
 
 // Items
 router.get('/item-types', itemController.getItemTypes);

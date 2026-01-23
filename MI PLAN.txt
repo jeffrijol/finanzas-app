@@ -1,1 +1,307 @@
-He eliminado desde el ddashboard de supabase los proyectos finanzas-app-v2 y finanzas-app. Crea utilizando @mcp:supabase-mcp-server: un proyecto llamado finanzas-app. En @.env utiliza el mismo formato para DATABASE_URL y DIRECT_URL, igualmente manten la contraseña que estamos utilizando. La migración de la base de datos la dejamos para otro paso. 
+🎯 Objetivo del Sprint: Autenticación de Extremo a Extremo
+
+Estado Actual: Proyecto y BD en Supabase configurados, esquema y datos migrados.
+Meta: Usuarios pueden registrarse (con verificación de correo), iniciar sesión, y el backend protege las rutas con JWT.
+📋 Plan de Implementación Paso a Paso
+Fase 1: Configuración de Autenticación evitando en el Dashboard de Supabase ya que tenemos el MCP de supabase
+
+    Habilitar Proveedor de Email
+
+    Configurar Verificación de Email (Obligatoria):
+
+    Configurar URLs de Redirección (Site URL):
+
+        Ve a Authentication > URL Configuration.
+
+        En Site URL, pon http://localhost:puerto (puerto del frontend en desarrollo). Esto es crucial para que los flujos de autenticación (como el callback después de verificar un email) funcionen.
+
+Fase 2: Implementar Autenticación en el Frontend (UI + Lógica)
+
+    Instalar el SDK de Supabase:
+    bash
+
+    # Ejecuta en la raíz del monorepo
+    pnpm add @supabase/supabase-js(¿Es la mejor opción?)
+
+    Crear el Cliente de Supabase (lib/supabase.ts):(¿Es la mejor opción?)
+    typescript
+
+    // Archivo: packages/frontend/src/lib/supabase.ts
+    import { createClient } from '@supabase/supabase-js';
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true, // Maneja sesiones automáticamente
+        autoRefreshToken: true,
+      },
+    });
+
+    Crear un Proveedor  de Autenticación (providers/AuthProvider.tsx):
+
+        Este contexto manejará el estado del usuario en toda la app y sincronizará la sesión.(¿Es la mejor opción?)
+    typescript
+
+    // Archivo: packages/frontend/src/providers/AuthProvider.tsx
+    import React, { createContext, useContext, useEffect, useState } from 'react';
+    import { Session, User } from '@supabase/supabase-js';
+    import { supabase } from '@/lib/supabase';
+
+    type AuthContextType = {
+      user: User | null;
+      session: Session | null;
+      isLoading: boolean;
+    };
+
+    const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+    export function AuthProvider({ children }: { children: React.ReactNode }) {
+      const [user, setUser] = useState<User | null>(null);
+      const [session, setSession] = useState<Session | null>(null);
+      const [isLoading, setIsLoading] = useState(true);
+
+      useEffect(() => {
+        // 1. Obtener la sesión activa al cargar
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setIsLoading(false);
+        });
+
+        // 2. Escuchar cambios en el estado de autenticación
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+          setSession(session);
+          setUser(session?.user ?? null);
+          setIsLoading(false);
+        });
+
+        return () => subscription.unsubscribe();
+      }, []);
+
+      return (
+        <AuthContext.Provider value={{ user, session, isLoading }}>
+          {children}
+        </AuthContext.Provider>
+      );
+    }
+
+    export const useAuth = () => {
+      const context = useContext(AuthContext);
+      if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+      }
+      return context;
+    };
+
+    Envolver la App con el AuthProvider (App.tsx):
+    typescript
+
+    // En tu archivo principal App.tsx o main.tsx
+    import { AuthProvider } from './providers/AuthProvider';
+    // ... otras importaciones
+
+    function App() {
+      return (
+        <AuthProvider>
+          {/* Tus rutas y resto de la aplicación aquí */}
+          <Router />
+        </AuthProvider>
+      );
+    }
+
+    Crear Componentes de UI para Login/Registro:(¿Es la mejor opción?)
+
+        Usa shadcn/ui (que ya tienes) para crear formularios limpios.
+
+        Página de Login (pages/Login.tsx): Usa supabase.auth.signInWithPassword({ email, password }).
+
+        Página de Registro (pages/Register.tsx): Usa supabase.auth.signUp({ email, password, options: { emailRedirectTo: ${window.location.origin}/auth/callback } }). Supabase enviará el correo de confirmación automáticamente.
+
+        Página de Callback (pages/AuthCallback.tsx): Crea una página en /auth/callback que use supabase.auth.onAuthStateChange para manejar el intercambio de código después de la verificación por correo. Luego redirige al dashboard.
+
+    Crear un Componente ProtectedRoute: para envolver las páginas que requieren autenticación (ej. Dashboard, Upload).
+    typescript(¿Es la mejor opción?)
+
+    // components/ProtectedRoute.tsx
+    import { Navigate } from 'react-router-dom';
+    import { useAuth } from '@/providers/AuthProvider';
+    import { LoadingSpinner } from '@/components/ui/loading-spinner'; // Asegúrate de tener uno
+
+    export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+      const { user, isLoading } = useAuth();
+
+      if (isLoading) {
+        return <LoadingSpinner />;
+      }
+
+      if (!user) {
+        return <Navigate to="/login" replace />;
+      }
+
+      return <>{children}</>;
+    };
+
+        Úsalo en tu enrutador:
+    typescript
+
+    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+
+Fase 3: Proteger el Backend (Middleware de Autenticación)(¿Es la mejor opción?)
+
+    Instalar Dependencias Necesarias en el Backend:
+    bash
+
+    # En packages/backend/
+    pnpm add @supabase/supabase-js jsonwebtoken
+    pnpm add -D @types/jsonwebtoken
+
+    Crear un Middleware de Autenticación (middleware/auth.ts):
+    typescript
+
+    // Archivo: packages/backend/src/middleware/auth.ts
+    import { Request, Response, NextFunction } from 'express';
+    import { createClient } from '@supabase/supabase-js';
+    import { UnauthorizedError } from '../utils/AppError'; // Asume que crearás esta clase
+
+    const supabaseAdmin = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY! // ¡USA LA CLAVE DE SERVICIO!
+    );
+
+    export const protect = async (req: Request, res: Response, next: NextFunction) => {
+      try {
+        // 1. Obtener el token del header
+        const authHeader = req.headers.authorization;
+        const token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+
+        if (!token) {
+          throw new UnauthorizedError('No estás autenticado. Por favor, inicia sesión.');
+        }
+
+        // 2. Verificar el token JWT con Supabase
+        const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+
+        if (error || !user) {
+          throw new UnauthorizedError('El token es inválido o ha expirado.');
+        }
+
+        // 3. Adjuntar el usuario a la request para su uso en controladores
+        (req as any).user = user; // O extiende el tipo de Request de Express
+
+        next();
+      } catch (error) {
+        next(error); // Pasa el error al manejador centralizado
+      }
+    };
+
+    Aplicar el Middleware a las Rutas Protegidas:(¿Es la mejor opción?)
+
+        En tus archivos de rutas (ej. routes/transactionRoutes.ts):
+    typescript
+
+    import express from 'express';
+    import { protect } from '../middleware/auth';
+    import { getTransactions, createTransaction } from '../controllers/transactionController';
+
+    const router = express.Router();
+
+    // TODAS las rutas a continuación requerirán un token JWT válido
+    router.use(protect);
+
+    router.route('/').get(getTransactions).post(createTransaction);
+    // ... otras rutas
+    export default router;
+
+    Actualizar los Controladores para Usar req.user:
+
+        Modifica todos los servicios que consulten la base de datos para que filtren por user_id. Por ejemplo, en transactionService:
+    typescript(¿Es la mejor opción?)
+
+    // En lugar de: const transactions = await prisma.transaction.findMany(...);
+    // Hazlo: const transactions = await prisma.transaction.findMany({
+    //   where: { user_id: req.user.id }, // ¡Filtro CRÍTICO!
+    //   ...otrosFiltros
+    // });
+
+Fase 4: Sincronizar el Frontend con el Backend Protegido(¿Es la mejor opción?)
+
+    Configurar el Cliente de API (lib/api.ts) para Incluir el Token:
+
+        Modifica tu cliente de TanStack Query o fetch para adjuntar automáticamente el token de sesión a cada petición.
+    typescript
+
+    // Ejemplo usando fetch integrado con el cliente de Supabase
+    import { supabase } from './supabase';
+
+    export async function apiFetch(endpoint: string, options: RequestInit = {}) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers,
+        ...(token && { Authorization: `Bearer ${token}` }),
+      };
+
+      return fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
+    }
+
+    Actualizar los Hooks de TanStack Query: para usar este nuevo apiFetch en lugar de fetch genérico.
+
+Fase 5: Pruebas y Verificación
+
+    Flujo Completo de Usuario Nuevo:
+
+        Regístrate con un nuevo email. Debes recibir el correo de verificación.
+
+        Haz clic en el enlace del correo. Debes ser redirigido a la app y estar logueado.
+
+        Intenta acceder al Dashboard. Debe funcionar.
+
+        Intenta subir un extracto. Debe funcionar y guardarse vinculado a tu user_id.
+
+    Flujo de Login/Logout:
+
+        Cierra sesión. Intenta acceder a /dashboard. Debe redirigirte a /login.
+
+        Inicia sesión de nuevo. Debe funcionar.
+
+    Verifica la Protección del Backend:
+
+        Intenta hacer una petición GET /api/transactions sin token. Debe devolver 401 Unauthorized.
+
+        Con token, debe devolver solo tus transacciones, no las de otros usuarios.
+
+💡 Puntos Clave 
+
+    Usa SUPABASE_SERVICE_ROLE_KEY solo en el backend. Nunca la expongas en el frontend.
+
+    El filtro WHERE user_id = ... en TODAS las consultas del backend es NO NEGOCIABLE. Es la seguridad a nivel de fila.
+
+    Aprovecha los componentes de shadcn/ui para mantener la coherencia visual (Button, Input, Card, Form).
+
+    Usa el AuthProvider para que el estado del usuario esté disponible en toda la app sin "prop drilling".
+
+    Configura bien las Site URL y Redirect URLs en el dashboard de Supabase para que los flujos de correo funcionen en localhost.
+
+📌 Comandos de Resumen para el Agente
+
+    Dashboard: Activar Email Auth con Confirm email y configurar Site URL.
+
+    Frontend: Instalar SDK, crear supabase.ts, AuthProvider, componentes de Login/Registro con shadcn/ui, y ProtectedRoute.
+
+    Backend: Instalar dependencias, crear middleware protect que valide JWT con la SERVICE_ROLE_KEY, y aplicarlo a las rutas.
+
+    Controladores: Modificar TODOS los servicios para incluir where: { user_id: req.user.id } en las consultas a la BD.
+
+    Cliente de API: Modificar las peticiones HTTP para enviar el token JWT automáticamente.
+
+    Pruebas: Verificar flujos de registro (con correo), login, acceso protegido y aislamiento de datos entre usuarios.
+

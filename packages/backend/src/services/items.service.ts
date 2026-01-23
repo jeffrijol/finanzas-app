@@ -2,8 +2,11 @@ import { ItemCreateInput, ItemUpdateInput, ItemWithStats } from '../types/item.t
 import prisma from '../lib/prisma';
 
 export class ItemsService {
-    static async getAllItems(includeInactive: boolean = false) {
-        const where = includeInactive ? {} : { activo: true };
+    static async getAllItems(userId: string, includeInactive: boolean = false) {
+        const where = {
+            userId,
+            ...(includeInactive ? {} : { activo: true })
+        };
 
         const items = await prisma.item.findMany({
             where,
@@ -38,9 +41,9 @@ export class ItemsService {
         return itemsWithStats;
     }
 
-    static async getItemById(id: string) {
-        const item = await prisma.item.findUnique({
-            where: { id },
+    static async getItemById(userId: string, id: string) {
+        const item = await prisma.item.findFirst({
+            where: { id, userId },
         });
 
         if (!item) return null;
@@ -63,10 +66,10 @@ export class ItemsService {
         } as ItemWithStats;
     }
 
-    static async createItem(data: ItemCreateInput) {
+    static async createItem(userId: string, data: ItemCreateInput) {
         // Verificar si ya existe un item con el mismo nombre
-        const existing = await prisma.item.findUnique({
-            where: { nombre: data.nombre },
+        const existing = await prisma.item.findFirst({
+            where: { nombre: data.nombre, userId },
         });
 
         if (existing) {
@@ -76,17 +79,23 @@ export class ItemsService {
         return prisma.item.create({
             data: {
                 ...data,
+                userId,
                 color: data.color || '#3B82F6', // Color por defecto azul
             },
         });
     }
 
-    static async updateItem(id: string, data: ItemUpdateInput) {
+    static async updateItem(userId: string, id: string, data: ItemUpdateInput) {
+        // Enforce ownership
+        const item = await prisma.item.findFirst({ where: { id, userId } });
+        if (!item) throw new Error("Item not found or access denied");
+
         // Si se está actualizando el nombre, verificar que no exista otro
         if (data.nombre) {
             const existing = await prisma.item.findFirst({
                 where: {
                     nombre: data.nombre,
+                    userId,
                     NOT: { id },
                 },
             });
@@ -102,8 +111,11 @@ export class ItemsService {
         });
     }
 
-    static async deleteItem(id: string) {
+    static async deleteItem(userId: string, id: string) {
         // Soft delete
+        const item = await prisma.item.findFirst({ where: { id, userId } });
+        if (!item) throw new Error("Item not found or access denied");
+
         // We allow soft delete even if it has transactions, as it keeps history.
         return prisma.item.update({
             where: { id },

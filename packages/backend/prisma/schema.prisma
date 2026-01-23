@@ -29,6 +29,7 @@ model Transaction {
   excelUpload    ExcelUpload? @relation(fields: [excelUploadId], references: [id])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  userId         String   @default("legacy")
 
   @@index([fechaValor])
   @@index([categoria])
@@ -36,11 +37,12 @@ model Transaction {
   @@index([categoryId])
   @@index([createdAt])
   @@index([excelUploadId])
+  @@index([userId])
 }
 
 model Item {
   id          String       @id @default(cuid())
-  nombre      String       @unique
+  nombre      String
   descripcion String?
   
   // Nuevo modelo de tipos
@@ -52,7 +54,11 @@ model Item {
   icono       String?      // Icono para la UI
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  userId      String       @default("legacy")
   transactions Transaction[]
+  
+  @@index([userId])
+  @@unique([nombre, userId])
 }
 
 model ItemType {

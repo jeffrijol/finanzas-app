@@ -49,7 +49,8 @@ export const listTransactions = async (req: Request, res: Response) => {
         sortOrder: req.query.sortOrder as 'asc' | 'desc',
     };
 
-    const result = await TransactionsService.getTransactions(filters, pagination);
+    const userId = (req as any).user.id;
+    const result = await TransactionsService.getTransactions(userId, filters, pagination);
 
     res.json(ApiResponseHelper.paginated(
         result.transactions,
@@ -69,7 +70,8 @@ export const createTransaction = async (req: Request, res: Response) => {
         );
     }
 
-    const newTransaction = await TransactionsService.createTransaction({
+    const userId = (req as any).user.id;
+    const newTransaction = await TransactionsService.createTransaction(userId, {
         fechaValor: new Date(fechaValor),
         descripcion,
         importe,
@@ -94,7 +96,8 @@ export const updateTransaction = async (req: Request, res: Response) => {
         );
     }
 
-    const transaction = await TransactionsService.updateTransaction(id, validation.data);
+    const userId = (req as any).user.id;
+    const transaction = await TransactionsService.updateTransaction(userId, id, validation.data);
     res.json(ApiResponseHelper.success(transaction));
 };
 
@@ -110,6 +113,7 @@ export const getStats = async (req: Request, res: Response) => {
         tipoItem: req.query.tipoItem as string,
     };
 
-    const stats = await TransactionsService.getStats(filters);
+    const userId = (req as any).user.id;
+    const stats = await TransactionsService.getStats(userId, filters);
     res.json(ApiResponseHelper.success(stats));
 };

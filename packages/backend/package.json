@@ -22,10 +22,12 @@
     },
     "dependencies": {
         "@prisma/client": "^5.10.0",
+        "@supabase/supabase-js": "^2.91.0",
         "cors": "latest",
         "dotenv": "latest",
         "express": "latest",
         "helmet": "latest",
+        "jsonwebtoken": "^9.0.3",
         "multer": "latest",
         "xlsx": "^0.18.5",
         "zod": "latest"
@@ -33,6 +35,7 @@
     "devDependencies": {
         "@types/cors": "latest",
         "@types/express": "latest",
+        "@types/jsonwebtoken": "^9.0.10",
         "@types/multer": "latest",
         "@types/node": "latest",
         "@typescript-eslint/eslint-plugin": "latest",

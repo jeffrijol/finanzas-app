@@ -16,7 +16,15 @@ http://localhost:3001/api
 
 ## 🔐 Authentication
 
-Actualmente la API no requiere autenticación. Futuras versiones implementarán JWT tokens.
+La API utiliza autenticación basada en **JWT Bearer Tokens** proporcionados por Supabase Auth.
+
+**Header Requerido:**
+
+```
+Authorization: Bearer <your-access-token>
+```
+
+Todas las rutas (excepto `/health`) están protegidas y requieren este header. Si no se proporciona o es inválido, la API responderá con `401 Unauthorized`.
 
 ---
 
@@ -26,7 +34,7 @@ Actualmente la API no requiere autenticación. Futuras versiones implementarán 
 
 #### `GET /api/transactions`
 
-Obtiene lista de transacciones con filtros y paginación.
+Obtiene lista de transacciones del usuario actual con filtros y paginación.
 
 **Query Parameters:**
 
@@ -57,6 +65,7 @@ Obtiene lista de transacciones con filtros y paginación.
         "categoria": "Servicios",
         "itemAsignadoId": "item-uuid",
         "categoryId": "cat-uuid",
+        "userId": "user-uuid-from-token",
         "item": {
           "id": "item-uuid",
           "nombre": "Electricidad",
@@ -84,14 +93,15 @@ Obtiene lista de transacciones con filtros y paginación.
 **cURL Example:**
 
 ```bash
-curl -X GET "http://localhost:3001/api/transactions?page=1&limit=10&quarter=Q1&year=2024"
+curl -X GET "http://localhost:3001/api/transactions?page=1&limit=10" \
+  -H "Authorization: Bearer <token>"
 ```
 
 ---
 
 #### `POST /api/transactions`
 
-Crea una nueva transacción.
+Crea una nueva transacción para el usuario autenticado.
 
 **Request Body:**
 
@@ -107,15 +117,6 @@ Crea una nueva transacción.
 }
 ```
 
-**Validation Rules:**
-
-- `fechaValor`: ISO 8601 datetime string (required)
-- `descripcion`: String, min 1 char (required)
-- `importe`: Number (required)
-- `categoria`: String (required)
-- `itemAsignadoId`: UUID string (optional)
-- `categoryId`: UUID string (optional)
-
 **Response:**
 
 ```json
@@ -127,102 +128,27 @@ Crea una nueva transacción.
     "descripcion": "Compra de materiales",
     "importe": -75.3,
     "categoria": "Compras",
-    "itemAsignadoId": "item-uuid",
-    "categoryId": "cat-uuid",
-    "createdAt": "2024-01-15T12:00:00.000Z",
-    "updatedAt": "2024-01-15T12:00:00.000Z"
+    "userId": "user-uuid-from-token"
+    // ...
   }
 }
-```
-
-**cURL Example:**
-
-```bash
-curl -X POST http://localhost:3001/api/transactions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "fechaValor": "2024-01-15T00:00:00.000Z",
-    "descripcion": "Compra de materiales",
-    "importe": -75.30,
-    "categoria": "Compras"
-  }'
 ```
 
 ---
 
 #### `PUT /api/transactions/:id`
 
-Actualiza una transacción existente.
+Actualiza una transacción existente. Solo permite actualizar si la transacción pertenece al usuario.
 
-**URL Parameters:**
-
-- `id`: UUID de la transacción
-
-**Request Body:**
-
-```json
-{
-  "itemAsignadoId": "new-item-uuid",
-  "categoryId": "new-cat-uuid"
-}
-```
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "uuid-1234",
-    "itemAsignadoId": "new-item-uuid",
-    "categoryId": "new-cat-uuid",
-    "updatedAt": "2024-01-15T14:00:00.000Z"
-  }
-}
-```
-
-**cURL Example:**
-
-```bash
-curl -X PUT http://localhost:3001/api/transactions/uuid-1234 \
-  -H "Content-Type: application/json" \
-  -d '{"itemAsignadoId": "new-item-uuid"}'
-```
+**Response:** `200 OK` con objeto actualizado.
 
 ---
 
 #### `GET /api/transactions/stats`
 
-Obtiene estadísticas agregadas de transacciones.
+Obtiene estadísticas agregadas de transacciones del usuario.
 
-**Query Parameters:**
-
-| Parameter | Type   | Required | Description              |
-| --------- | ------ | -------- | ------------------------ |
-| `year`    | number | No       | Año (default: current)   |
-| `quarter` | string | No       | Trimestre (default: ALL) |
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "totalIngresos": 5000.0,
-    "totalGastos": -3500.0,
-    "balance": 1500.0,
-    "itemStats": [
-      {
-        "itemId": "item-uuid",
-        "itemNombre": "Salario",
-        "tipo": "Ingreso",
-        "total": 3000.0,
-        "count": 1
-      }
-    ]
-  }
-}
-```
+**Query Parameters:** `year`, `quarter`, `taskId`, etc.
 
 ---
 
@@ -230,85 +156,10 @@ Obtiene estadísticas agregadas de transacciones.
 
 #### `POST /api/upload`
 
-Sube y procesa un archivo Excel/CSV.
+Sube y procesa un archivo Excel/CSV asociado al usuario.
 
 **Content-Type:** `multipart/form-data`
-
-**Form Data:**
-
-- `file`: Archivo Excel (.xlsx, .xls) o CSV
-
-**File Constraints:**
-
-- Max size: 10MB
-- Allowed types: `.xlsx`, `.xls`, `.csv`
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "upload-uuid",
-    "filename": "extracto_enero.xlsx",
-    "fileSize": 15234,
-    "totalRows": 25,
-    "processed": true,
-    "transactions": [
-      {
-        "fechaValor": "2024-01-15",
-        "descripcion": "Pago de servicios",
-        "importe": -150.5,
-        "categoria": "Servicios",
-        "saldo": 1500.0
-      }
-    ]
-  }
-}
-```
-
-**cURL Example:**
-
-```bash
-curl -X POST http://localhost:3001/api/upload \
-  -F "file=@/path/to/extracto.xlsx"
-```
-
-**JavaScript Example:**
-
-```javascript
-const formData = new FormData();
-formData.append("file", fileInput.files[0]);
-
-const response = await fetch("http://localhost:3001/api/upload", {
-  method: "POST",
-  body: formData,
-});
-
-const data = await response.json();
-```
-
----
-
-#### `POST /api/upload/:id/finalize`
-
-Marca una carga de Excel como finalizada.
-
-**URL Parameters:**
-
-- `id`: UUID del upload
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "upload-uuid",
-    "status": "completed"
-  }
-}
-```
+**Header:** `Authorization: Bearer <token>`
 
 ---
 
@@ -316,36 +167,11 @@ Marca una carga de Excel como finalizada.
 
 #### `GET /api/items`
 
-Obtiene lista de todos los items.
-
-**Query Parameters:**
-
-| Parameter | Type   | Required | Description             |
-| --------- | ------ | -------- | ----------------------- |
-| `tipo`    | string | No       | `'Ingreso'` o `'Gasto'` |
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "item-uuid",
-      "nombre": "Salario",
-      "tipo": "Ingreso",
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
-    }
-  ]
-}
-```
-
----
+Obtiene lista de items del usuario.
 
 #### `POST /api/items`
 
-Crea un nuevo item.
+Crea un nuevo item asociado al usuario. El nombre debe ser único para ese usuario.
 
 **Request Body:**
 
@@ -356,163 +182,15 @@ Crea un nuevo item.
 }
 ```
 
-**Validation:**
-
-- `nombre`: String, unique (required)
-- `tipo`: `'Ingreso'` | `'Gasto'` (required)
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "new-item-uuid",
-    "nombre": "Freelance",
-    "tipo": "Ingreso",
-    "createdAt": "2024-01-15T12:00:00.000Z",
-    "updatedAt": "2024-01-15T12:00:00.000Z"
-  }
-}
-```
-
----
-
-#### `PUT /api/items/:id`
-
-Actualiza un item existente.
-
-**URL Parameters:**
-
-- `id`: UUID del item
-
-**Request Body:**
-
-```json
-{
-  "nombre": "Nuevo nombre"
-}
-```
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "item-uuid",
-    "nombre": "Nuevo nombre",
-    "updatedAt": "2024-01-15T14:00:00.000Z"
-  }
-}
-```
-
----
-
-#### `DELETE /api/items/:id`
-
-Elimina un item.
-
-**URL Parameters:**
-
-- `id`: UUID del item
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "message": "Item deleted successfully"
-}
-```
-
-**Note:** No se puede eliminar un item que tiene transacciones asociadas.
-
 ---
 
 ### Categories
 
+_(Las categorías de transacción pueden ser globales o por usuario, dependiendo de la implementación específica, pero los endpoints están protegidos)_
+
 #### `GET /api/categories`
 
-Obtiene lista de categorías.
-
-**Query Parameters:**
-
-| Parameter | Type   | Required | Description               |
-| --------- | ------ | -------- | ------------------------- |
-| `itemId`  | string | No       | Filtrar por item asociado |
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": [
-    {
-      "id": "cat-uuid",
-      "nombre": "Servicios",
-      "tipo": "Gasto",
-      "createdAt": "2024-01-01T00:00:00.000Z",
-      "updatedAt": "2024-01-01T00:00:00.000Z"
-    }
-  ]
-}
-```
-
----
-
 #### `POST /api/categories`
-
-Crea una nueva categoría.
-
-**Request Body:**
-
-```json
-{
-  "nombre": "Transporte",
-  "tipo": "Gasto",
-  "itemId": "item-uuid" // opcional, para asociar con un item
-}
-```
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "id": "new-cat-uuid",
-    "nombre": "Transporte",
-    "tipo": "Gasto",
-    "createdAt": "2024-01-15T12:00:00.000Z",
-    "updatedAt": "2024-01-15T12:00:00.000Z"
-  }
-}
-```
-
----
-
-#### `PUT /api/categories/:id`
-
-Actualiza una categoría.
-
-**URL Parameters:**
-
-- `id`: UUID de la categoría
-
-**Request Body:**
-
-```json
-{
-  "nombre": "Nuevo nombre"
-}
-```
-
----
-
-#### `DELETE /api/categories/:id`
-
-Elimina una categoría.
 
 ---
 
@@ -520,86 +198,32 @@ Elimina una categoría.
 
 #### `GET /api/analytics`
 
-Obtiene datos analíticos agregados.
-
-**Query Parameters:**
-
-| Parameter | Type   | Required | Description                 |
-| --------- | ------ | -------- | --------------------------- |
-| `year`    | number | No       | Año (default: current)      |
-| `quarter` | string | No       | Trimestre (default: ALL)    |
-| `itemId`  | string | No       | Filtrar por item específico |
-
-**Response:**
-
-```json
-{
-  "success": true,
-  "data": {
-    "categoryDistribution": [
-      {
-        "categoria": "Servicios",
-        "total": -500.0,
-        "count": 5,
-        "percentage": 14.3
-      }
-    ],
-    "monthlyTrend": [
-      {
-        "month": "2024-01",
-        "ingresos": 3000.0,
-        "gastos": -1500.0,
-        "balance": 1500.0
-      }
-    ],
-    "topCategories": [
-      {
-        "categoria": "Salario",
-        "total": 3000.0
-      }
-    ]
-  }
-}
-```
+Obtiene datos analíticos agregados personales.
 
 ---
 
-##❌ Error Responses
+## ❌ Error Responses
 
-Todos los endpoints pueden retornar los siguientes errores:
+### 401 Unauthorized
+
+```json
+{
+  "success": false,
+  "error": "Not authorized. No token provided / Invalid token."
+}
+```
+
+### 403 Forbidden
+
+Si se intenta acceder a un recurso de otro usuario (aunque raro dado el diseño de filtrado por defecto).
 
 ### 400 Bad Request
 
-```json
-{
-  "success": false,
-  "error": "Validation failed",
-  "details": [
-    {
-      "field": "importe",
-      "message": "Expected number, received string"
-    }
-  ]
-}
-```
-
-### 404 Not Found
-
-```json
-{
-  "success": false,
-  "error": "Transaction not found"
-}
-```
+Errores de validación.
 
 ### 500 Internal Server Error
 
-```json
-{
-  "success": false,
-  "error": "Internal server error"
-}
-```
+Error del servidor.
 
 ---
 
@@ -610,12 +234,6 @@ Todos los endpoints pueden retornar los siguientes errores:
 | `200` | Success                        |
 | `201` | Created                        |
 | `400` | Bad Request (validation error) |
+| `401` | Unauthorized (Auth Token fail) |
 | `404` | Not Found                      |
 | `500` | Internal Server Error          |
-
----
-
-## 🔗 Additional Resources
-
-- [Postman Collection](./postman_collection.json) (TBD)
-- [OpenAPI Spec](./openapi.yaml) (TBD)

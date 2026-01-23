@@ -8,6 +8,7 @@ import type {
     TransactionStats,
     ExcelUpload,
 } from '../types';
+import { supabase } from './supabase';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -24,13 +25,22 @@ class ApiClient {
     ): Promise<ApiResponse<T>> {
         const url = `${this.baseURL}${endpoint}`;
 
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            ...(options.headers as Record<string, string>),
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         try {
             const response = await fetch(url, {
                 ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers,
-                },
+                headers,
             });
 
             if (!response.ok) {
@@ -273,10 +283,18 @@ class ApiClient {
 
         const url = `${this.baseURL}/upload`;
 
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        const headers: Record<string, string> = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
         try {
             const response = await fetch(url, {
                 method: 'POST',
                 body: formData,
+                headers,
                 // Don't set Content-Type header, let browser set it with boundary
             });
 
