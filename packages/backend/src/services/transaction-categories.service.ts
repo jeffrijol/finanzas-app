@@ -3,8 +3,9 @@ import { PrismaClient, TransactionCategory } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export const TransactionCategoriesService = {
-    getAllCategories: async (): Promise<TransactionCategory[]> => {
+    getAllCategories: async (userId: string): Promise<TransactionCategory[]> => {
         return await prisma.transactionCategory.findMany({
+            where: { userId },
             include: {
                 itemType: true
             },
@@ -14,22 +15,23 @@ export const TransactionCategoriesService = {
         });
     },
 
-    getCategoryById: async (id: string): Promise<TransactionCategory | null> => {
-        return await prisma.transactionCategory.findUnique({
-            where: { id },
+    getCategoryById: async (userId: string, id: string): Promise<TransactionCategory | null> => {
+        return await prisma.transactionCategory.findFirst({
+            where: { id, userId },
             include: {
                 itemType: true
             }
         });
     },
 
-    createCategory: async (data: { name: string; type: string; itemTypeId: string }): Promise<TransactionCategory> => {
+    createCategory: async (userId: string, data: { name: string; type: string; itemTypeId: string }): Promise<TransactionCategory> => {
         // Check for duplicates
         const existing = await prisma.transactionCategory.findFirst({
             where: {
                 name: data.name,
                 type: data.type,
-                itemTypeId: data.itemTypeId
+                itemTypeId: data.itemTypeId,
+                userId
             }
         });
 
@@ -38,21 +40,29 @@ export const TransactionCategoriesService = {
         }
 
         return await prisma.transactionCategory.create({
-            data
+            data: { ...data, userId }
         });
     },
 
-    updateCategory: async (id: string, data: Partial<{ name: string; type: string; itemTypeId: string }>): Promise<TransactionCategory> => {
+    updateCategory: async (userId: string, id: string, data: Partial<{ name: string; type: string; itemTypeId: string }>): Promise<TransactionCategory> => {
+        // Verify ownership
+        const category = await prisma.transactionCategory.findFirst({ where: { id, userId } });
+        if (!category) throw new Error("Category not found or access denied");
+
         return await prisma.transactionCategory.update({
             where: { id },
             data
         });
     },
 
-    deleteCategory: async (id: string): Promise<void> => {
+    deleteCategory: async (userId: string, id: string): Promise<void> => {
+        // Verify ownership
+        const category = await prisma.transactionCategory.findFirst({ where: { id, userId } });
+        if (!category) throw new Error("Category not found or access denied");
+
         // Check usage
         const usageCount = await prisma.transaction.count({
-            where: { categoryId: id }
+            where: { categoryId: id, userId }
         });
 
         if (usageCount > 0) {

@@ -26,6 +26,7 @@
         "cors": "latest",
         "dotenv": "latest",
         "express": "latest",
+        "express-rate-limit": "^8.2.1",
         "helmet": "latest",
         "jsonwebtoken": "^9.0.3",
         "multer": "latest",

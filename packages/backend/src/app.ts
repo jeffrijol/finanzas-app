@@ -3,12 +3,14 @@ import cors from 'cors';
 import helmet from 'helmet';
 import routes from './routes';
 import { ApiResponseHelper } from './utils/apiResponse';
+import { apiLimiter } from './middleware/rate-limit';
 
 const app = express();
 
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(apiLimiter); // Apply rate limiting globally
 
 app.use('/api', routes);
 

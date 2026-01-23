@@ -6,11 +6,25 @@ Historial de cambios del proyecto siguiendo [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
-### Planned
+### Security
 
-- Tests automatizados
-- CI/CD con GitHub Actions
-- Autenticación y multi-usuario
+- **CRITICAL**: Corrección de middleware de autenticación - eliminado fallback inseguro a ANON_KEY
+- Implementación de fail-fast si SERVICE_ROLE_KEY no está configurada
+- Añadido rate limiting global (100 req/min) y específico para autenticación (5 intentos/15min)
+- Implementado sistema de logging de auditoría para trazabilidad de accesos
+
+### Changed
+
+- Migración de TransactionCategory a modelo multi-tenant (por usuario)
+- Actualizado esquema Prisma: añadido campo `userId` a TransactionCategory
+- Refactorizado TransactionCategoriesService para soportar aislamiento por usuario
+- Refactorizado TransactionCategoriesController para extraer userId del token
+
+### Added
+
+- Nuevo middleware: `rate-limit.ts` para prevención de abuso de API
+- Nueva utilidad: `logger.ts` para logging estructurado
+- Auditoría de eventos de autenticación (éxitos y fallos)
 
 ---
 

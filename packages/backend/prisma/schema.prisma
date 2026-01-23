@@ -76,9 +76,11 @@ model TransactionCategory {
   type        String   // "INCOME", "EXPENSE"
   itemTypeId  String
   itemType    ItemType @relation(fields: [itemTypeId], references: [id])
+  userId      String   @default("legacy")
   transactions Transaction[]
 
-  @@unique([name, itemTypeId, type])
+  @@unique([name, itemTypeId, type, userId])
+  @@index([userId])
 }
 
 model ExcelUpload {
