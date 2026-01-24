@@ -14,6 +14,8 @@ import { FileJson, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 
+import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
+
 // Lazy load Analytics View
 const AnalyticsView = lazy(() => import('@/components/dashboard/views/AnalyticsView').then(module => ({ default: module.AnalyticsView })));
 
@@ -79,7 +81,7 @@ export function DashboardPage() {
     });
 
     // Fetch Stats
-    const { data: stats } = useQuery({
+    const { data: stats, isLoading: isLoadingStats } = useQuery({
         queryKey: ['stats', year, quarter, selectedTipoItem, selectedItemId, selectedCategory],
         queryFn: () => apiClient.getStats({
             year: Number(year),
@@ -89,6 +91,29 @@ export function DashboardPage() {
             categoryId: selectedCategory || undefined,
         })
     });
+
+    // Show skeleton if main data is loading
+    const isLoading = isLoadingTransactions || isLoadingStats;
+
+    if (isLoading && !transactionsData && !stats) {
+        return (
+            <DashboardLayout>
+                <div className="container mx-auto p-4 max-w-7xl">
+                    <DashboardHeader
+                        items={items}
+                        itemTypes={itemTypes}
+                        categories={categories}
+                        currentView={currentView}
+                        onViewChange={setCurrentView}
+                        onExport={() => {}}
+                    />
+                    <div className="mt-4">
+                        <DashboardSkeleton />
+                    </div>
+                </div>
+            </DashboardLayout>
+        );
+    }
 
     const handlePageChange = (newPage: number) => {
         setPage(newPage);

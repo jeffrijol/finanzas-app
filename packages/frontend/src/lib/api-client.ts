@@ -9,6 +9,7 @@ import type {
     ExcelUpload,
 } from '../types';
 import { supabase } from './supabase';
+import { toast } from '@/hooks/use-toast';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -45,7 +46,33 @@ class ApiClient {
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+
+                if (response.status === 401) {
+                    // Session expired or unauthorized
+                    await supabase.auth.signOut();
+                    toast({
+                        title: "Sesión expirada",
+                        description: "Por favor, inicia sesión nuevamente.",
+                        variant: "destructive"
+                    });
+                    // Optional: Redirect to login handled by AuthProvider/ProtectedRoute
+                } else if (response.status === 429) {
+                    // Rate limit
+                    toast({
+                        title: "Demasiadas peticiones",
+                        description: "Por favor espera un momento antes de reintentar.",
+                        variant: "destructive"
+                    });
+                } else {
+                    toast({
+                        title: "Error del servidor",
+                        description: errorMessage,
+                        variant: "destructive"
+                    });
+                }
+
+                throw new Error(errorMessage);
             }
 
             if (response.status === 204) {

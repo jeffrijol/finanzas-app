@@ -1,12 +1,10 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { HomePage } from '@/pages/HomePage';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { MaintenancePage } from '@/pages/MaintenancePage';
 import { ReportsPage } from '@/pages/ReportsPage';
 import { ExcelsPage } from '@/pages/ExcelsPage';
-import { LoginPage } from '@/pages/LoginPage';
-import { RegisterPage } from '@/pages/RegisterPage';
-import { AuthCallback } from '@/pages/AuthCallback'; // Make sure file location is correct (I created it in pages/AuthCallback.tsx)
+import { AuthPage } from '@/pages/AuthPage';
+import { AuthCallback } from '@/pages/AuthCallback';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
@@ -16,9 +14,21 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          {/* Public Root wrapper to handle redirection logic */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              {/* If authenticated, ProtectedRoute renders children (DashboardPage), 
+                  but we want to redirect / to /dashboard explicitly or just render Dashboard here.
+                  Let's make / redirect to /dashboard if auth, or /auth if not.
+                  Actually ProtectedRoute redirects to /login (now /auth) if not auth.
+               */}
+               <DashboardPage /> 
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/login" element={<Navigate to="/auth?mode=login" replace />} />
+          <Route path="/register" element={<Navigate to="/auth?mode=register" replace />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           
           <Route path="/dashboard" element={

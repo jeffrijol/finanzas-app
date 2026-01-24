@@ -7,24 +7,41 @@ export function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
-      const { error } = await supabase.auth.getSession();
-      if (error) {
-        console.error('Error in auth callback:', error);
-        navigate('/login?error=auth_callback_failed');
-      } else {
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
         navigate('/dashboard');
       }
-    };
+    });
 
-    handleAuthCallback();
+    // Check current session immediately
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (session) {
+        navigate('/dashboard');
+      } else if (error) {
+        navigate(`/auth?error=${encodeURIComponent(error.message)}`);
+      } else {
+        // Check for error in URL params
+        const params = new URLSearchParams(window.location.search);
+        const urlError = params.get('error_description') || params.get('error');
+        if (urlError) {
+          navigate(`/auth?error=${encodeURIComponent(urlError)}`);
+        }
+      }
+    };
+    
+    checkSession();
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   return (
-    <div className="flex h-screen w-full items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-muted-foreground">Verificando autenticación...</p>
+    <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="text-center space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+        <p className="text-muted-foreground">Verificando credenciales...</p>
       </div>
     </div>
   );
