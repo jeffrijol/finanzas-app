@@ -25,6 +25,12 @@ Historial de cambios del proyecto siguiendo [Keep a Changelog](https://keepachan
 - Nuevo middleware: `rate-limit.ts` para prevención de abuso de API
 - Nueva utilidad: `logger.ts` para logging estructurado
 - Auditoría de eventos de autenticación (éxitos y fallos)
+- **Página de autenticación unificada** (`/auth`) con diseño split-layout profesional
+- Componente `DashboardSkeleton` para feedback visual durante carga de datos
+- Componente `AuthCallback` para manejo de redirecciones post-autenticación
+- Manejo global de errores en `ApiClient` con notificaciones toast (401, 429, errores genéricos)
+- Sistema de gestión de sesión con opción "Mantener sesión iniciada"
+- Protección mejorada de rutas: redirección automática basada en estado de autenticación
 
 ---
 

@@ -109,6 +109,7 @@ components/
 ├── ui/                # Atoms (shadcn/ui base components)
 │   ├── button.tsx
 │   ├── dialog.tsx
+│   ├── tabs.tsx
 │   └── ...
 ├── dashboard/         # Molecules/Organisms
 │   ├── TransactionsTable.tsx
@@ -117,8 +118,24 @@ components/
 ├── items/            # Feature-specific components
 │   ├── ItemForm.tsx
 │   └── CategoriesList.tsx
+├── skeletons/        # Loading states
+│   └── DashboardSkeleton.tsx
 └── ProtectedRoute.tsx # Route Guard
+
+pages/
+├── AuthPage.tsx           # Unified login/register
+├── AuthCallback.tsx       # Auth redirect handler
+├── DashboardPage.tsx
+├── ItemsPage.tsx
+└── AnalyticsPage.tsx
 ```
+
+**Componentes Clave de UX/UI:**
+
+- **`AuthPage`**: Página unificada con diseño split-layout para login/registro
+- **`AuthCallback`**: Maneja redirecciones de Supabase (confirmación de email)
+- **`DashboardSkeleton`**: Loading state elegante durante fetch de datos
+- **`ProtectedRoute`**: Guard que redirige según estado de autenticación
 
 ### State Management
 
@@ -152,19 +169,33 @@ const usePeriodStore = create<PeriodStore>((set) => ({
 **Global Auth State (Context):**
 
 - Provee el usuario y sesión de Supabase a toda la app.
+- Maneja auto-refresh de tokens mediante `onAuthStateChange`
 
 ### Routing
 
 ```typescript
 <AuthProvider>
   <Routes>
-    <Route path="/login" element={<LoginPage />} />
-    <Route path="/register" element={<RegisterPage />} />
+    {/* Rutas Públicas */}
+    <Route path="/auth" element={<AuthPage />} />
+    <Route path="/auth/callback" element={<AuthCallback />} />
+
+    {/* Rutas Protegidas */}
+    <Route path="/" element={<ProtectedRoute><Navigate to="/dashboard" /></ProtectedRoute>} />
     <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+    <Route path="/items" element={<ProtectedRoute><ItemsPage /></ProtectedRoute>} />
+    <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
     {/* ... otras rutas protegidas */}
   </Routes>
 </AuthProvider>
 ```
+
+**Protección de Rutas:**
+
+- `ProtectedRoute` verifica `user` del contexto
+- Si no hay usuario → Redirige a `/auth`
+- Si hay usuario en `/auth` → Redirige a `/dashboard`
+- Muestra spinner durante verificación de sesión inicial
 
 ### Styling Approach
 
@@ -232,11 +263,129 @@ ORM que abstrae SQL.
 
 ### Security Implementation
 
-- **Authentication**: JWT vía Supabase Auth.
-- **Authorization**: Row Level Security (simulado en capa de aplicación via `userId` filter).
-- **API Security**:
-  - Todas las rutas protegidas requieren Bearer Token.
-  - `middleware/auth.ts` valida integridad del token.
+**Arquitectura de Seguridad en Capas:**
+
+```
+Request → Rate Limiting → Auth Middleware → Route Handler → Business Logic
+            ↓                  ↓                                    ↓
+         429 Error         401 Error                      Logger (Audit)
+```
+
+#### 1. **Rate Limiting** (`middleware/rate-limit.ts`)
+
+Previene abuso de API mediante límites de peticiones:
+
+```typescript
+// Global rate limit: 100 requests/minuto por IP
+app.use(
+  rateLimiter({
+    windowMs: 60 * 1000,
+    max: 100,
+    message: "Demasiadas peticiones desde esta dirección. Inténtalo más tarde.",
+  }),
+);
+
+// Auth routes: 5 intentos/15 minutos
+router.use("/auth/*", authRateLimiter);
+```
+
+**Respuesta cuando se excede el límite:**
+
+- Status: `429 Too Many Requests`
+- El frontend muestra toast automático y sugiere esperar
+
+#### 2. **Authentication Middleware** (`middleware/auth.ts`)
+
+Verifica JWT en cada request a rutas protegidas:
+
+```typescript
+export const authenticateToken = async (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader?.split(" ")[1]; // Bearer TOKEN
+
+  if (!token) return res.status(401).json({ message: "No autorizado" });
+
+  try {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser(token);
+    if (error || !user) throw error;
+
+    req.user = user; // Inyecta user en request
+    logger.audit("AUTH_SUCCESS", { userId: user.id });
+    next();
+  } catch (error) {
+    logger.audit("AUTH_FAILED", { reason: error.message });
+    return res.status(401).json({ message: "Token inválido" });
+  }
+};
+```
+
+**Características de Seguridad:**
+
+- ✅ **Fail-fast**: Si `SERVICE_ROLE_KEY` no está configurada, el servidor NO arranca
+- ✅ **Sin fallback inseguro**: Eliminado el uso de `ANON_KEY` para verificación backend
+- ✅ **Inyección de usuario**: El `userId` se pasa automáticamente a los controladores
+
+#### 3. **Logging y Auditoría** (`utils/logger.ts`)
+
+Sistema de logging estructurado para trazabilidad:
+
+```typescript
+logger.info("Server started", { port: 3000 });
+logger.warn("High memory usage", { usage: "85%" });
+logger.error("Database connection failed", { error });
+logger.audit("AUTH_SUCCESS", { userId: "123" });
+logger.audit("AUTH_FAILED", { ip: "192.168.1.1", reason: "Invalid token" });
+```
+
+**Eventos auditados:**
+
+- `AUTH_SUCCESS`: Login exitoso con userId
+- `AUTH_FAILED`: Intento fallido con razón y contexto
+- (Futuro) `DATA_ACCESS`, `DATA_MODIFICATION`
+
+#### 4. **Authorization (Multi-Tenancy)**
+
+Cada request autenticado filtra datos por `userId`:
+
+```typescript
+// Controller extrae userId del token verificado
+export const getAll = async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const result = await transactionService.getTransactions(userId, filters);
+  res.json({ success: true, data: result });
+};
+
+// Service asegura aislamiento de datos
+export const getTransactions = async (userId: string, filters) => {
+  return await prisma.transaction.findMany({
+    where: {
+      userId, // SIEMPRE filtra por usuario
+      ...buildWhereClause(filters),
+    },
+  });
+};
+```
+
+**Garantías de Seguridad:**
+
+- ❌ Usuario A **NO puede** ver transacciones de Usuario B
+- ❌ Usuario A **NO puede** modificar categorías de Usuario B
+- ✅ Todos los modelos principales tienen campo `userId` con índice para performance
+
+#### 5. **API Security Headers** (Helmet + CORS)
+
+```typescript
+app.use(helmet()); // Protección contra vulnerabilidades comunes
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || "http://localhost:4321",
+    credentials: true,
+  }),
+);
+```
 
 ### Database
 

@@ -31,6 +31,7 @@ El proyecto está construido como un **monorepo** que contiene dos paquetes prin
 - **React Hook Form** + **Zod** - Gestión de formularios con validación
 - **FilePond** - Upload de archivos con preview y validación
 - **jsPDF** + **@react-pdf/renderer** - Generación de PDFs
+- **@supabase/supabase-js** - Cliente de autenticación Supabase
 
 **Backend:**
 
@@ -43,6 +44,8 @@ El proyecto está construido como un **monorepo** que contiene dos paquetes prin
 - **Multer** - Middleware de upload de archivos
 - **XLSX (SheetJS)** - Parser de archivos Excel
 - **Helmet** + **CORS** - Security middleware
+- **express-rate-limit** - Rate limiting y protección contra abuso
+- **@supabase/supabase-js** - Verificación de JWT en backend
 
 **Tooling:**
 

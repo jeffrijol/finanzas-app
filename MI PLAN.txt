@@ -1,57 +1,17 @@
-Puntos Críticos a Revisar (URGENTE)
-1. Middleware usando SUPABASE_ANON_KEY como fallback
+⚠️ Vulnerabilidad de Fuerza Bruta - PARCIALMENTE RESUELTO
+
+Backend: ✅ Rate limiting en authLimiter (5 intentos/15min)
+Frontend: ❌ Falta rate limiting en UI - Pueden enviarse requests manualmente
 typescript
 
-// ❌ RIESGO DE SEGURIDAD GRAVE
-// packages/backend/src/middleware/auth.ts
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY // ← PELIGROSO
-);
+// Recomendación adicional para frontend:
+const useAuthWithRateLimit = () => {
+  const [attempts, setAttempts] = useState(0);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  
+  // Bloquear UI después de 3 intentos fallidos
+  if (lockedUntil && Date.now() < lockedUntil) {
+    throw new Error('Demasiados intentos. Espera 15 minutos.');
+  }
+};
 
-Problema: La ANON_KEY tiene permisos limitados y puede no verificar correctamente tokens en todos los casos. Siempre debe fallar explícitamente si falta la SERVICE_ROLE_KEY.
-
-Solución:
-typescript
-
-// ✅ CORRECTO - Falla explícitamente
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!supabaseServiceKey) {
-  throw new Error('SUPABASE_SERVICE_ROLE_KEY no configurada');
-}
-
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL!,
-  supabaseServiceKey
-);
-
-
-2. Categorías Globales (TransactionCategory)
-typescript
-
-// Pregunta de diseño crítico:
-// ¿Quién puede crear/modificar categorías globales?
-// Actualmente: cualquier usuario autenticado (riesgo de inconsistencia)
-
-Propuesta solución:
-
-    Hacerlas por usuario (como Item)
-    prisma
-
-    model TransactionCategory {
-      userId String @map("user_id") @db.Uuid  // Añadir esto
-      // ...
-    }
-
-🛡️ Mejoras de Seguridad Recomendadas 
-
-    Rate Limiting en endpoints de login/registro:
-    bash
-
-    pnpm add express-rate-limit
-
-    Auditoría de Logs:
-    typescript
-
-    // En middleware/auth.ts
-    console.log(`Auth ${req.user?.id} -> ${req.method} ${req.path}`);

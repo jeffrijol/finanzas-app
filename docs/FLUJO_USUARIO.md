@@ -12,16 +12,151 @@ Este documento describe el flujo de trabajo del usuario en la aplicación de ges
 
 ```mermaid
 graph LR
-    Home[/ Home - Excels] --> Dashboard[/dashboard]
+    Auth[/auth - Login/Registro] -->|Autenticado| Home[/ Home - Excels]
+    Auth -->|Sin confirmar email| Auth
+    Home --> Dashboard[/dashboard]
     Home --> Items[/items - Mantenimiento]
     Home --> Analytics[/analytics]
     Home --> Reports[/reports]
     Dashboard --> Home
+    Items --> Home
+    Analytics --> Home
+    Reports --> Home
+
+    Root[/ Raíz] -->|No autenticado| Auth
+    Root -->|Autenticado| Dashboard
 ```
+
+**Protección de Rutas:**
+
+- **Rutas Públicas**: `/auth`, `/auth/callback`
+- **Rutas Protegidas**: Todas las demás (requieren JWT válido)
+- **Redirección Automática**:
+  - Si usuario NO autenticado → Redirige a `/auth`
+  - Si usuario autenticado y visita `/` → Redirige a `/dashboard`
+  - Si usuario autenticado y visita `/auth` → Redirige a `/dashboard`
+
+---
+
+## 0. Autenticación (/auth)
+
+### 0.1. Página de Autenticación Unificada
+
+**Ubicación**: `/auth`
+
+**Características Visuales**:
+
+- **Diseño Split-Layout**:
+  - Panel izquierdo: Decorativo con fondo oscuro, logo, y testimonial
+  - Panel derecho: Formularios de login/registro con tabs
+- **Componentes**:
+  - Tabs para cambiar entre "Iniciar sesión" y "Registrarse"
+  - Campos de email y contraseña con validación
+  - Checkbox "Mantener sesión iniciada"
+  - Botón de acción (Login/Registro)
+
+---
+
+### 0.2. Flujo de Registro
+
+**Pasos**:
+
+1. Usuario accede a `/auth?mode=register` (o selecciona tab "Registrarse")
+2. Ingresa email y contraseña (mínimo 8 caracteres)
+3. Al hacer clic en "Registrarse":
+   - Se envía petición a Supabase Auth
+   - Sistema envía email de confirmación
+   - Muestra toast: "Registro exitoso. Revisa tu correo electrónico para verificar tu cuenta."
+4. Usuario revisa su correo y hace clic en el link de confirmación
+5. Link redirige a `/auth/callback` con token de sesión
+6. Sistema verifica el token y redirige a `/dashboard`
+
+**Validaciones**:
+
+- Email debe ser válido
+- Contraseña debe tener al menos 8 caracteres
+- No permite registros duplicados
+
+**Manejo de Errores**:
+
+- Rate limit excedido → Toast "Demasiadas peticiones"
+- Email ya registrado → Toast "Email ya existe"
+- Error de red → Toast "Error del servidor"
+
+---
+
+### 0.3. Flujo de Login
+
+**Pasos**:
+
+1. Usuario accede a `/auth` (tab "Iniciar sesión" por defecto)
+2. Ingresa email y contraseña
+3. Al hacer clic en "Iniciar sesión":
+   - Se validan credenciales con Supabase
+   - Si tienen éxito, se obtiene JWT token
+   - Sistema redirige a `/dashboard`
+
+**Persistencia de Sesión**:
+
+- **"Mantener sesión iniciada" ACTIVADO**:
+  - Sesión se guarda en `localStorage` (predeterminado de Supabase)
+  - Token se refresca automáticamente
+  - Persiste al cerrar navegador
+- **"Mantener sesión iniciada" DESACTIVADO**:
+  - Sesión en memoria solamente
+  - Se pierde al cerrar navegador (requiere configuración adicional de Supabase)
+
+**Manejo de Errores**:
+
+- Credenciales incorrectas → Toast "Credenciales incorrectas"
+- Email no confirmado → Toast con indicación de confirmar email
+- Rate limit → Toast "Demasiadas peticiones. Espera un momento."
+
+---
+
+### 0.4. Gestión de Sesión
+
+**Auto-refresh de Token**:
+
+- Supabase maneja automáticamente el refresh de tokens JWT
+- El `ApiClient` obtiene el token actualizado en cada request
+
+**Expiración de Sesión**:
+
+- Si el token expira (401 Unauthorized):
+  - `ApiClient` ejecuta `supabase.auth.signOut()` automáticamente
+  - Muestra toast "Sesión expirada. Por favor, inicia sesión nuevamente."
+  - Redirige a `/auth`
+
+**Cierre de Sesión Manual**:
+
+- (Futuro) Botón "Cerrar Sesión" en navegación
+- Ejecuta `supabase.auth.signOut()`
+- Redirige a `/auth`
+
+---
+
+### 0.5. Callback de Autenticación
+
+**Ubicación**: `/auth/callback`
+
+**Función**:
+
+- Procesa redirecciones después de verificación de email
+- Maneja parámetros de URL enviados por Supabase
+- Verifica que hay una sesión válida
+- Redirige al dashboard o muestra errores
+
+**Casos de Uso**:
+
+- ✅ Email confirmado → Redirige a `/dashboard`
+- ❌ Error en confirmación → Redirige a `/auth` con mensaje de error
 
 ---
 
 ## 1. Página de Carga (/excels - HomePage)
+
+**NOTA**: Esta página requiere autenticación. Si el usuario no está autenticado, será redirigido a `/auth`.
 
 ### 1.1. Carga de Archivo
 
