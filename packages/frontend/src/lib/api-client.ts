@@ -351,6 +351,22 @@ class ApiClient {
         const response = await this.request<ExcelUpload>(`/excel-uploads/${id}`);
         return response.data;
     }
+
+    // Admin - Security Stats
+    async getSecurityStats(): Promise<{
+        totalUsers: number;
+        activeSessionsToday: number;
+        last24hLogins: number;
+        systemHealth: string;
+    }> {
+        const response = await this.request<{
+            totalUsers: number;
+            activeSessionsToday: number;
+            last24hLogins: number;
+            systemHealth: string;
+        }>('/admin/security-stats');
+        return response.data;
+    }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);

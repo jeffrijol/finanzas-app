@@ -1,4 +1,4 @@
-⚠️ Vulnerabilidad de Fuerza Bruta - PARCIALMENTE RESUELTO
+1- Vulnerabilidad de Fuerza Bruta - PARCIALMENTE RESUELTO
 
 Backend: ✅ Rate limiting en authLimiter (5 intentos/15min)
 Frontend: ❌ Falta rate limiting en UI - Pueden enviarse requests manualmente
@@ -15,3 +15,36 @@ const useAuthWithRateLimit = () => {
   }
 };
 
+MejorasExperiencia de Usuario 
+
+    Password strength meter para registro
+
+    "Olvidé mi contraseña" flow completo
+
+    Session timeout warning (5 min antes de expirar)
+
+3 Analytics de Seguridad 
+typescript
+
+Dashboard admin para monitoreo
+interface SecurityMetrics {
+  failedLogins: { userId: string; ip: string; timestamp: Date }[];
+  rateLimitEvents: { endpoint: string; ip: string }[];
+  userLocations: Map<string, string[]>; // Detectar acceso sospechoso
+}
+
+4 - Tests Críticos para Ejecutar (buscar forma de aplicar esta prueba, utilizando el mcp de Supabase y el browser preview) 
+bash
+
+# a. Test de carga concurrente
+for i in {1..10}; do
+  curl -H "Authorization: Bearer <VALID_TOKEN>" http://localhost:3001/api/transactions &
+done
+
+# b. Test de expiración de sesión
+# Modificar JWT exp a 1 minuto en Supabase (utilizando el mcp de Supabase si es posible, si no, buscar la forma de hacerlo. AL finalizar la prueba restablecer al tiempo anterior)
+# Verificar que frontend redirige a /auth
+
+# c. Test multi-pestaña
+# Login en Chrome, abrir nueva pestaña en Incognito (utilizando el browser preview)
+# Verificar que no hay conflictos de sesión

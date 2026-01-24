@@ -7,6 +7,8 @@ import * as categoryController from '../controllers/transaction-categories.contr
 
 import { ApiResponseHelper } from '../utils/apiResponse';
 import { protect } from '../middleware/auth';
+import { requireAdmin } from '../middleware/require-admin';
+import * as securityStatsController from '../controllers/security-stats.controller';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -52,6 +54,9 @@ router.get('/excel-uploads/:id', uploadController.getUploadDetails);
 // Analytics
 import analyticsRoutes from './analytics.routes';
 router.use('/analytics', analyticsRoutes);
+
+// Admin - Security Stats (protected by requireAdmin)
+router.get('/admin/security-stats', requireAdmin, securityStatsController.getSecurityStats);
 
 export default router;
 

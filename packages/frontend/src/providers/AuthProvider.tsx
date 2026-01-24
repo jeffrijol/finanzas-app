@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { useSessionTimeout } from '@/hooks/useSessionTimeout';
+import { SessionTimeoutDialog } from '@/components/auth/SessionTimeoutDialog';
 
 type AuthContextType = {
   user: User | null;
@@ -14,6 +16,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Session timeout monitoring (only when user is logged in)
+  const { showWarning, formatTime, refreshSession } = useSessionTimeout({ 
+    warningTime: 5 // Show warning 5 minutes before expiry
+  });
 
   useEffect(() => {
     // 1. Check active session on load
@@ -35,9 +42,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const handleKeepActive = async () => {
+    const success = await refreshSession();
+    if (success) {
+      // Session refreshed successfully
+      console.log('Session refreshed');
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ user, session, isLoading }}>
       {children}
+      {user && (
+        <SessionTimeoutDialog
+          open={showWarning}
+          timeLeft={formatTime()}
+          onKeepActive={handleKeepActive}
+        />
+      )}
     </AuthContext.Provider>
   );
 }

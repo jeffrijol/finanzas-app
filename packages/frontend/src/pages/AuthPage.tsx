@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/providers/AuthProvider';
+import { useAuthRateLimit } from '@/hooks/useAuthRateLimit';
+import { PasswordStrengthMeter } from '@/components/auth/PasswordStrengthMeter';
 
 export function AuthPage() {
   const [email, setEmail] = useState('');
@@ -20,6 +22,7 @@ export function AuthPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const { canAttempt, recordAttempt, formatRemainingTime, attemptsLeft } = useAuthRateLimit();
 
   // Redirect if already logged in
   if (user) {
@@ -48,11 +51,21 @@ export function AuthPage() {
 
       if (error) throw error;
       
+      // Record successful login
+      recordAttempt(true);
       navigate('/dashboard');
     } catch (error: any) {
+      // Record failed login attempt
+      recordAttempt(false);
+      
+      // Check if it's a rate limit error from backend
+      const is429 = error.message?.includes('429') || error.status === 429;
+      
       toast({
         title: "Error al iniciar sesión",
-        description: error.message || "Credenciales incorrectas",
+        description: is429 
+          ? "Demasiados intentos. El servidor te ha bloqueado temporalmente."
+          : error.message || "Credenciales incorrectas",
         variant: "destructive"
       });
     } finally {
@@ -150,6 +163,14 @@ export function AuthPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
+                  {!canAttempt && (
+                    <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive mb-4">
+                      <p className="font-semibold">Demasiados intentos fallidos</p>
+                      <p className="text-xs mt-1">
+                        Espera {formatRemainingTime()} antes de intentar nuevamente.
+                      </p>
+                    </div>
+                  )}
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-1">
                       <Label htmlFor="email">Email</Label>
@@ -172,6 +193,12 @@ export function AuthPage() {
                         required 
                       />
                     </div>
+                    <Link
+                      to="/auth/forgot-password"
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </Link>
                     <div className="flex items-center space-x-2">
                         <Checkbox 
                             id="remember" 
@@ -182,10 +209,15 @@ export function AuthPage() {
                             Mantener sesión iniciada
                         </Label>
                     </div>
-                    <Button type="submit" className="w-full" disabled={loading}>
+                    <Button type="submit" className="w-full" disabled={loading || !canAttempt}>
                       {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Entrar
+                      {!canAttempt ? `Bloqueado (${formatRemainingTime()})` : 'Entrar'}
                     </Button>
+                    {canAttempt && attemptsLeft < 3 && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        {attemptsLeft} intento{attemptsLeft !== 1 ? 's' : ''} restante{attemptsLeft !== 1 ? 's' : ''}
+                      </p>
+                    )}
                   </form>
                 </CardContent>
               </Card>
@@ -220,7 +252,9 @@ export function AuthPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required 
+                        minLength={8}
                       />
+                      <PasswordStrengthMeter password={password} className="mt-2" />
                     </div>
                     <Button type="submit" className="w-full" disabled={loading}>
                       {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
