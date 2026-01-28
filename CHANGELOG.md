@@ -6,6 +6,41 @@ Historial de cambios del proyecto siguiendo [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+### Added
+
+- **Multi-Tenant Organization System (95% complete)**
+  - New database tables: `Organization`, `Role`, `Member` with UUID primary keys
+  - Row Level Security (RLS) enabled on all data tables with 28+ policies
+  - Auto-assignment trigger: new users automatically join "Avance" organization as admins
+  - Composite indexes for performance: `org_date`, `org_name`, `org_type`
+  - Backend: `/api/organizations` router with endpoints (list, get, create, members)
+  - Backend: Updated `protect` middleware with organizationId validation and membership checks
+  - Backend: New `permissions` middleware with `requireRole()` helper
+  - Frontend: `OrganizationProvider` context with cross-tab synchronization
+  - Frontend: TypeScript types for Organization, Role, Member models
+  - Frontend: APIClient auto-injects `X-Organization-ID` header in requests
+
+### Changed
+
+- **Database Migration to Multi-Tenant**
+  - Migrated 422 transactions, 10 items, 23 categories to "Avance" organization
+  - Added `organizationId UUID` field to Transaction, Item, TransactionCategory, ExcelUpload tables
+  - Updated Prisma schema with Organization, Role, Member models
+  - Changed unique constraints: `Item.nombre` now unique per organization, not per user
+  - ItemType table remains global (all users can view, only admins can modify)
+
+### Technical
+
+- Regenerated Prisma Client v5.10.0 with new multi-tenant models
+- Created SQL helper function `public.get_user_organizations()` for RLS policies
+- Implemented ownership transfer function for organizations
+
+### Breaking Changes
+
+- **PENDING**: Services and controllers need update to use `organizationId` instead of `userId`
+- **PENDING**: Frontend integration of OrganizationProvider in App.tsx
+- **PENDING**: UI components for organization switching
+
 ### Security
 
 - **CRITICAL**: Corrección de middleware de autenticación - eliminado fallback inseguro a ANON_KEY

@@ -18,17 +18,140 @@ http://localhost:3001/api
 
 La API utiliza autenticación basada en **JWT Bearer Tokens** proporcionados por Supabase Auth.
 
-**Header Requerido:**
+**Headers Requeridos:**
 
 ```
 Authorization: Bearer <your-access-token>
+X-Organization-ID: <organization-uuid>
 ```
 
-Todas las rutas (excepto `/health`) están protegidas y requieren este header. Si no se proporciona o es inválido, la API responderá con `401 Unauthorized`.
+Todas las rutas (excepto `/health` y `/organizations`) están protegidas y requieren estos headers.
+
+- Si no se proporciona token, la API responderá con `401 Unauthorized`
+- Si no se proporciona organization ID o el usuario no es miembro, responderá con `403 Forbidden`
+
+**Rutas sin Organization ID requerido:**
+
+- `GET /api/health` - Health check
+- `GET /api/organizations` - Listar organizaciones del usuario
+- `POST /api/organizations` - Crear nueva organización
 
 ---
 
 ## 📦 Endpoints
+
+### Organizations
+
+#### `GET /api/organizations`
+
+Obtiene lista de organizaciones del usuario actual.
+
+**Headers:**
+
+```
+Authorization: Bearer <token>
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "org-uuid-1",
+      "name": "Avance",
+      "slug": "avance",
+      "ownerUserId": "user-uuid",
+      "isActive": true,
+      "role": {
+        "id": "admin",
+        "name": "Admin",
+        "permissions": ["read", "write", "delete", "invite"]
+      },
+      "membership": {
+        "joinedAt": "2024-01-01T00:00:00.000Z"
+      }
+    }
+  ]
+}
+```
+
+---
+
+#### `POST /api/organizations`
+
+Crea una nueva organización.
+
+**Headers:**
+
+```
+Authorization: Bearer <token>
+```
+
+**Request Body:**
+
+```json
+{
+  "name": "Mi Empresa",
+  "slug": "mi-empresa"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": "org-uuid-new",
+    "name": "Mi Empresa",
+    "slug": "mi-empresa",
+    "ownerUserId": "user-uuid",
+    "members": [
+      {
+        "userId": "user-uuid",
+        "roleId": "admin"
+      }
+    ]
+  }
+}
+```
+
+---
+
+#### `GET /api/organizations/:id/members`
+
+Obtiene lista de miembros de una organización.
+
+**Headers:**
+
+```
+Authorization: Bearer <token>
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "member-uuid",
+      "userId": "user-uuid",
+      "organizationId": "org-uuid",
+      "roleId": "admin",
+      "joinedAt": "2024-01-01T00:00:00.000Z",
+      "role": {
+        "id": "admin",
+        "name": "Admin"
+      }
+    }
+  ]
+}
+```
+
+---
 
 ### Transactions
 
@@ -94,7 +217,8 @@ Obtiene lista de transacciones del usuario actual con filtros y paginación.
 
 ```bash
 curl -X GET "http://localhost:3001/api/transactions?page=1&limit=10" \
-  -H "Authorization: Bearer <token>"
+  -H "Authorization: Bearer <token>" \
+  -H "X-Organization-ID: <org-uuid>"
 ```
 
 ---

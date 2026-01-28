@@ -56,12 +56,14 @@ El proyecto está construido como un **monorepo** que contiene dos paquetes prin
 
 ## 📂 Flujo de Trabajo del Usuario
 
-1. **Carga de Archivo** → Usuario sube Excel/CSV del banco
-2. **Preview y Revisión** → Transacciones se muestran en tabla (sin guardar en BD)
-3. **Asignación de Items** → Usuario asigna manualmente items a cada transacción
-4. **Confirmación** → Usuario confirma y las transacciones se guardan en SQLite
-5. **Análisis Histórico** → Consulta transacciones guardadas con filtros (trimestre, año, categoría)
-6. **Generación de Reportes** → Exporta PDFs con gráficos y tablas personalizadas
+1. **Autenticación** → Usuario se registra/loguea con Supabase Auth
+2. **Selección de Organización** → Usuario ve sus organizaciones disponibles
+3. **Carga de Archivo** → Usuario sube Excel/CSV del banco (datos asociados a la organización actual)
+4. **Preview y Revisión** → Transacciones se muestran en tabla (sin guardar en BD)
+5. **Asignación de Items** → Usuario asigna manualmente items a cada transacción
+6. **Confirmación** → Usuario confirma y las transacciones se guardan en PostgreSQL
+7. **Análisis Histórico** → Consulta transacciones guardadas con filtros (trimestre, año, categoría)
+8. **Generación de Reportes** → Exporta PDFs con gráficos y tablas personalizadas
 
 ## 📚 Documentación Disponible
 

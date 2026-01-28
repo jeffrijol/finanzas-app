@@ -221,32 +221,63 @@ const usePeriodStore = create<PeriodStore>((set) => ({
 ### Layered Architecture
 
 ```
-Request (JWT) → Middleware (Auth) → Router → Controller → Service → Prisma → Database
+Request (JWT) → Middleware (Auth + Org Validation) → Router → Controller → Service → Prisma → Database (RLS)
 ```
 
-**1. Middleware (Auth)**
+**1. Middleware (Auth + Multi-Tenant)**
 
-Verifica el token JWT en el header `Authorization` usando el cliente de Supabase.
+Verifica el token JWT y valida membresía a la organización:
+
+```typescript
+export const protect = async (req, res, next) => {
+  // 1. Verificar JWT con Supabase
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(token);
+
+  // 2. Obtener organizationId del header o query
+  const orgId = req.headers["x-organization-id"] || req.query.organizationId;
+
+  // 3. Verificar membresía del usuario en la organización
+  const member = await prisma.member.findFirst({
+    where: { userId: user.id, organizationId: orgId },
+    include: { role: true },
+  });
+
+  // 4. Inyectar contexto en el request
+  req.user = user;
+  req.member = member;
+  req.organizationId = orgId;
+  next();
+};
+```
 
 **2. Controllers (HTTP Handlers)**
 
-Extrae `userId` del request y lo pasa al servicio:
+Extrae `organizationId` del request y lo pasa al servicio:
 
 ```typescript
 export const getAll = async (req: Request, res: Response) => {
-  const userId = (req as any).user.id;
+  const organizationId = (req as any).organizationId; // Changed from userId
   const filters = req.query;
-  const result = await transactionService.getTransactions(userId, filters);
+  const result = await transactionService.getTransactions(
+    organizationId,
+    filters,
+  );
   res.json({ success: true, data: result });
 };
 ```
 
 **3. Services (Business Logic)**
 
-Lógica de negocio pura, asegura aislamiento de datos con `where: { userId }`:
+Lógica de negocio pura, asegura aislamiento de datos con `where: { organizationId }`:
 
 ```typescript
-export const getTransactions = async (userId: string, filters: Filters) => {
+export const getTransactions = async (
+  organizationId: string,
+  filters: Filters,
+) => {
   return await prisma.transaction.findMany({
     where: {
       userId,
@@ -266,10 +297,12 @@ ORM que abstrae SQL.
 **Arquitectura de Seguridad en Capas:**
 
 ```
-Request → Rate Limiting → Auth Middleware → Route Handler → Business Logic
-            ↓                  ↓                                    ↓
-         429 Error         401 Error                      Logger (Audit)
+Request → Rate Limiting → Auth Middleware → Org Validation → Route Handler → Business Logic → RLS Policies
+            ↓                  ↓                  ↓                                              ↓
+         429 Error         401 Error         403 Error                                   DB Level Security
 ```
+
+**Row Level Security (RLS)**: Todas las tablas de datos tienen políticas RLS que validan acceso a nivel de base de datos usando la función `public.get_user_organizations()` que retorna las organizaciones y roles del usuario autenticado.
 
 #### 1. **Rate Limiting** (`middleware/rate-limit.ts`)
 
@@ -346,23 +379,42 @@ logger.audit("AUTH_FAILED", { ip: "192.168.1.1", reason: "Invalid token" });
 - `AUTH_FAILED`: Intento fallido con razón y contexto
 - (Futuro) `DATA_ACCESS`, `DATA_MODIFICATION`
 
-#### 4. **Authorization (Multi-Tenancy)**
+#### 4. **Authorization (Multi-Tenancy with Organizations)**
 
-Cada request autenticado filtra datos por `userId`:
+Cada request autenticado filtra datos por `organizationId` y valida roles:
 
 ```typescript
-// Controller extrae userId del token verificado
+// Middleware valida membresía y rol
+export const protect = async (req, res, next) => {
+  const user = await supabase.auth.getUser(token);
+  const orgId = req.headers["x-organization-id"];
+
+  const member = await prisma.member.findFirst({
+    where: { userId: user.id, organizationId: orgId },
+    include: { role: true },
+  });
+
+  req.user = user;
+  req.member = member;
+  req.organizationId = orgId;
+  next();
+};
+
+// Controller extrae organizationId del middleware
 export const getAll = async (req: Request, res: Response) => {
-  const userId = (req as any).user.id;
-  const result = await transactionService.getTransactions(userId, filters);
+  const organizationId = (req as any).organizationId;
+  const result = await transactionService.getTransactions(
+    organizationId,
+    filters,
+  );
   res.json({ success: true, data: result });
 };
 
-// Service asegura aislamiento de datos
-export const getTransactions = async (userId: string, filters) => {
+// Service asegura aislamiento de datos por organización
+export const getTransactions = async (organizationId: string, filters) => {
   return await prisma.transaction.findMany({
     where: {
-      userId, // SIEMPRE filtra por usuario
+      organizationId, // SIEMPRE filtra por organización
       ...buildWhereClause(filters),
     },
   });
