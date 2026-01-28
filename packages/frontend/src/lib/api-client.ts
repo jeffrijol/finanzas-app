@@ -15,9 +15,22 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 
 class ApiClient {
     private baseURL: string;
+    private currentOrgId: string | null = null;
 
     constructor(baseURL: string) {
         this.baseURL = baseURL;
+        
+        // Escuchar cambios en localStorage (desde otras pestañas)
+        if (typeof window !== 'undefined') {
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'currentOrganizationId') {
+                    this.currentOrgId = e.newValue;
+                }
+            });
+            
+            // Inicializar con valor actual
+            this.currentOrgId = localStorage.getItem('currentOrganizationId');
+        }
     }
 
     private async request<T>(
@@ -36,6 +49,12 @@ class ApiClient {
 
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        // MULTI-TENANT: Agregar organization ID header
+        const orgId = this.currentOrgId || (typeof window !== 'undefined' ? localStorage.getItem('currentOrganizationId') : null);
+        if (orgId && !endpoint.includes('/organizations') && !endpoint.includes('/health')) {
+            headers['X-Organization-ID'] = orgId;
         }
 
         try {
@@ -365,6 +384,36 @@ class ApiClient {
             last24hLogins: number;
             systemHealth: string;
         }>('/admin/security-stats');
+        return response.data;
+    }
+
+    // ========== MULTI-TENANT: Organizations Endpoints ==========
+    
+    async getUserOrganizations(): Promise<any[]> {
+        const response = await this.request<any[]>('/organizations');
+        return response.data;
+    }
+
+    async getOrganization(id: string): Promise<any> {
+        const response = await this.request<any>(`/organizations/${id}`);
+        return response.data;
+    }
+
+    async getMembership(orgId: string): Promise<any> {
+        const response = await this.request<any>(`/organizations/${orgId}`);
+        return response.data;
+    }
+
+    async createOrganization(data: { name: string; slug: string }): Promise<any> {
+        const response = await this.request<any>('/organizations', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+        return response.data;
+    }
+
+    async getOrganizationMembers(orgId: string): Promise<any[]> {
+        const response = await this.request<any[]>(`/organizations/${orgId}/members`);
         return response.data;
     }
 }

@@ -1,50 +1,64 @@
-1- Vulnerabilidad de Fuerza Bruta - PARCIALMENTE RESUELTO
+Objetivo:
+Rediseñar el modelo de datos actual de Supabase para implementar un sistema de organizaciones, 
+miembros y roles (similar a Clerk Organizations: https://clerk.com/organizations), 
+manteniendo la compatibilidad con las tablas existentes.
 
-Backend: ✅ Rate limiting en authLimiter (5 intentos/15min)
-Frontend: ❌ Falta rate limiting en UI - Pueden enviarse requests manualmente
-typescript
+Contexto actual:
 
-// Recomendación adicional para frontend:
-const useAuthWithRateLimit = () => {
-  const [attempts, setAttempts] = useState(0);
-  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
-  
-  // Bloquear UI después de 3 intentos fallidos
-  if (lockedUntil && Date.now() < lockedUntil) {
-    throw new Error('Demasiados intentos. Espera 15 minutos.');
-  }
-};
+    Tablas principales: ExcelUpload, Item, ItemType, Transaction, TransactionCategory
 
-MejorasExperiencia de Usuario 
+    Relación actual: varias tablas usan userId para vincular datos a un usuario individual
 
-    Password strength meter para registro
+    Autenticación actual: basada en usuario único (Supabase auth.users)
 
-    "Olvidé mi contraseña" flow completo
+Requerimientos nuevos:
 
-    Session timeout warning (5 min antes de expirar)
+    Organizaciones: cada organización tendrá su propio conjunto de datos 
+    (items, transacciones, categorías, etc.).
 
-3 Analytics de Seguridad 
-typescript
+    Miembros: los usuarios (auth.users) pueden pertenecer a una o más organizaciones como miembros.
 
-Dashboard admin para monitoreo
-interface SecurityMetrics {
-  failedLogins: { userId: string; ip: string; timestamp: Date }[];
-  rateLimitEvents: { endpoint: string; ip: string }[];
-  userLocations: Map<string, string[]>; // Detectar acceso sospechoso
-}
+    Roles: dos roles básicos:
 
-4 - Tests Críticos para Ejecutar (buscar forma de aplicar esta prueba, utilizando el mcp de Supabase y el browser preview) 
-bash
+        admin: CRUD completo en los datos de la organización
 
-# a. Test de carga concurrente
-for i in {1..10}; do
-  curl -H "Authorization: Bearer <VALID_TOKEN>" http://localhost:3001/api/transactions &
-done
+        viewer: solo lectura
 
-# b. Test de expiración de sesión
-# Modificar JWT exp a 1 minuto en Supabase (utilizando el mcp de Supabase si es posible, si no, buscar la forma de hacerlo. AL finalizar la prueba restablecer al tiempo anterior)
-# Verificar que frontend redirige a /auth
+    Políticas RLS: usar Row Level Security de Supabase para restringir acceso por organización y rol.
 
-# c. Test multi-pestaña
-# Login en Chrome, abrir nueva pestaña en Incognito (utilizando el browser preview)
-# Verificar que no hay conflictos de sesión
+    Migración: mantener datos existentes asignándolos a una organización llamada "Avance" y asociando usuarios actuales como admin.
+
+Propuesta de tablas nuevas:
+
+    Organization: id, nombre, created_at, primary_contact_user_id (opcional)
+
+    Member: id, user_id (referencia a auth.users), organization_id, role_id, joined_at
+
+    Role: id, name (admin/viewer), permisos (array o texto)
+
+Cambios en tablas existentes:
+
+    Agregar organization_id a: Item, Transaction, TransactionCategory, ExcelUpload
+
+    Remplazar userId por member_id
+
+    Ajustar claves foráneas y RLS
+
+Puntos clave a considerar:
+
+    Cómo manejar usuarios que pertenecen a múltiples organizaciones (selector de org en UI)
+
+    Cómo migrar datos existentes sin pérdida
+
+    Cómo integrar con Supabase Auth (tabla profiles solo si es necesario)
+
+Salida esperada:
+
+    Scripts SQL para nuevas tablas y modificaciones
+
+    Políticas RLS por tabla y rol
+
+    Script de migración de datos existentes
+
+    Recomendaciones para la capa de aplicación (API, hooks, UI)
+

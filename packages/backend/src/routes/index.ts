@@ -55,6 +55,10 @@ router.get('/excel-uploads/:id', uploadController.getUploadDetails);
 import analyticsRoutes from './analytics.routes';
 router.use('/analytics', analyticsRoutes);
 
+// Organizations (Multi-Tenant)
+import organizationsRoutes from './organizations';
+router.use('/organizations', organizationsRoutes);
+
 // Admin - Security Stats (protected by requireAdmin)
 router.get('/admin/security-stats', requireAdmin, securityStatsController.getSecurityStats);
 
