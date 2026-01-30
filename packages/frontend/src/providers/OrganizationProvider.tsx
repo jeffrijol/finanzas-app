@@ -30,6 +30,9 @@ export function OrganizationProvider({ children }: { children: ReactNode }) {
 
   const setCurrentOrg = (org: OrganizationWithRole) => {
     setCurrentOrgState(org);
+    // Sync with ApiClient immediately
+    apiClient.setCurrentOrganizationId(org.id);
+    // Sync with localStorage
     localStorage.setItem('currentOrganizationId', org.id);
     // Disparar evento para sincronizar otras pestañas/ventanas
     window.dispatchEvent(new Event('storage'));

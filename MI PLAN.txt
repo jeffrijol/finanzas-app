@@ -1,64 +1,85 @@
-Objetivo:
-Rediseñar el modelo de datos actual de Supabase para implementar un sistema de organizaciones, 
-miembros y roles (similar a Clerk Organizations: https://clerk.com/organizations), 
-manteniendo la compatibilidad con las tablas existentes.
+Urgente (corregir ahora):
 
-Contexto actual:
+    Elimina la función duplicada signOut en AuthProvider
 
-    Tablas principales: ExcelUpload, Item, ItemType, Transaction, TransactionCategory
+    Remueve setLoading(false) después de logout() en Sidebar
 
-    Relación actual: varias tablas usan userId para vincular datos a un usuario individual
+    Añade manejo de errores en el botón de logout
 
-    Autenticación actual: basada en usuario único (Supabase auth.users)
+Importante (próximos días):
+4. Considera añadir confirmación (AlertDialog o confirm())
+5. Verifica índices de BD para las nuevas queries de stats
+6. Testea logout en diferentes escenarios (con/sin internet, múltiples tabs)
 
-Requerimientos nuevos:
+Opcional (mejoras futuras):
+7. Añade analytics para tracking
+8. Implementa resetAppState() helper
+9. Considera logout automático por inactividad
 
-    Organizaciones: cada organización tendrá su propio conjunto de datos 
-    (items, transacciones, categorías, etc.).
+🔧 REFINAMIENTOS ADICIONALES
+1. Mejorar Manejo de Estado Global
+typescript
 
-    Miembros: los usuarios (auth.users) pueden pertenecer a una o más organizaciones como miembros.
+// En tu queryClient config (App.tsx):
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Reset cache on logout
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
 
-    Roles: dos roles básicos:
+// Función helper para resetear TODO el estado de la app
+export const resetAppState = () => {
+  queryClient.clear();
+  localStorage.clear();
+  sessionStorage.clear();
+};
 
-        admin: CRUD completo en los datos de la organización
+2. Añadir Analytics de Logout
+// En AuthProvider, antes de signOut:
+const logout = async () => {
+  // Opcional: enviar evento a analytics
+  if (window.analytics) {
+    window.analytics.track('user_logged_out', {
+      userId: user?.id,
+      timestamp: new Date().toISOString(),
+    });
+  }
+  
+  // Resto del código...
+};
 
-        viewer: solo lectura
+3. Manejar Tabs Múltiples
+typescript
 
-    Políticas RLS: usar Row Level Security de Supabase para restringir acceso por organización y rol.
+// Escuchar logout desde otras pestañas
+useEffect(() => {
+  const handleStorageChange = (e: StorageEvent) => {
+    if (e.key === 'logout' && e.newValue) {
+      // Otra pestaña inició logout
+      window.location.href = '/login';
+    }
+  };
+  
+  window.addEventListener('storage', handleStorageChange);
+  return () => window.removeEventListener('storage', handleStorageChange);
+}, []);
 
-    Migración: mantener datos existentes asignándolos a una organización llamada "Avance" y asociando usuarios actuales como admin.
 
-Propuesta de tablas nuevas:
 
-    Organization: id, nombre, created_at, primary_contact_user_id (opcional)
+📊 ANÁLISIS DE LOS STATS CALCULATIONS FIX
+⚠️ Problemas potenciales que debes verificar:
+.
 
-    Member: id, user_id (referencia a auth.users), organization_id, role_id, joined_at
+    Validar que TypeScript types están actualizados (interface TransactionStats)
+    ¿Los índices de la base de datos soportan los nuevos filtros?
+    sql (Valida todos los inidices existentes usando MCO supabase)
 
-    Role: id, name (admin/viewer), permisos (array o texto)
+    -- Verificar que existen estos índices:
+    CREATE INDEX IF NOT EXISTS idx_transaction_org_date 
+    ON "Transaction"("organizationId", "fechaValor" DESC);
 
-Cambios en tablas existentes:
-
-    Agregar organization_id a: Item, Transaction, TransactionCategory, ExcelUpload
-
-    Remplazar userId por member_id
-
-    Ajustar claves foráneas y RLS
-
-Puntos clave a considerar:
-
-    Cómo manejar usuarios que pertenecen a múltiples organizaciones (selector de org en UI)
-
-    Cómo migrar datos existentes sin pérdida
-
-    Cómo integrar con Supabase Auth (tabla profiles solo si es necesario)
-
-Salida esperada:
-
-    Scripts SQL para nuevas tablas y modificaciones
-
-    Políticas RLS por tabla y rol
-
-    Script de migración de datos existentes
-
-    Recomendaciones para la capa de aplicación (API, hooks, UI)
-
+    CREATE INDEX IF NOT EXISTS idx_transaction_org_amount 
+    ON "Transaction"("organizationId", "importe");

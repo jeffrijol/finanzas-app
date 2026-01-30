@@ -3,6 +3,18 @@ import { LayoutDashboard, UploadCloud, PieChart, Wallet, Settings, FileSpreadshe
 import { cn } from '@/lib/utils';
 import { OrganizationSwitcher } from '@/components/OrganizationSwitcher';
 import { useAuth } from '@/providers/AuthProvider';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const menuItems = [
     { icon: UploadCloud, label: 'Cargar Datos', path: '/' },
@@ -15,6 +27,20 @@ const menuItems = [
 export function Sidebar() {
     const location = useLocation();
     const { signOut } = useAuth();
+    const { toast } = useToast();
+
+    const handleLogout = async () => {
+        try {
+            await signOut();
+        } catch (error) {
+            console.error('Logout error:', error);
+            toast({
+                title: "Error",
+                description: "No se pudo cerrar la sesión.",
+                variant: "destructive",
+            });
+        }
+    };
 
     return (
         <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-screen fixed left-0 top-0 z-50">
@@ -58,13 +84,30 @@ export function Sidebar() {
                     <Settings className="w-5 h-5" />
                     Configuración
                 </button>
-                <button 
-                    onClick={() => signOut()}
-                    className="flex items-center gap-3 text-sm font-medium text-slate-400 hover:text-red-600 transition-colors w-full p-2 rounded-md hover:bg-red-50"
-                >
-                    <LogOut className="w-5 h-5" />
-                    Cerrar Sesión
-                </button>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <button 
+                            className="flex items-center gap-3 text-sm font-medium text-slate-400 hover:text-red-600 transition-colors w-full p-2 rounded-md hover:bg-red-50"
+                        >
+                            <LogOut className="w-5 h-5" />
+                            Cerrar Sesión
+                        </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>¿Cerrar sesión?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                ¿Estás seguro que quieres salir de la aplicación?
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleLogout} className="bg-red-600 hover:bg-red-700 focus:ring-red-600">
+                                Cerrar Sesión
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </aside>
     );

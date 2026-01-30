@@ -96,6 +96,7 @@ model Transaction {
   @@index([userId])
   @@index([organizationId])
   @@index([organizationId, fechaValor(sort: Desc)])
+  @@index([organizationId, importe])
 }
 
 model Item {
