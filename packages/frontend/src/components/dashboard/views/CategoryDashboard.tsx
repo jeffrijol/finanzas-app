@@ -1,5 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { useOrgCategoryStats } from '@/hooks/useOrgStats';
 import { MonthlyTrendChart } from '@/components/charts/MonthlyTrendChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
@@ -12,11 +11,7 @@ interface CategoryDashboardProps {
 export function CategoryDashboard({ context, isGeneratingPdf }: CategoryDashboardProps) {
     const { year, categoryId, quarter } = context.filters;
 
-    const { data: stats, isLoading } = useQuery({
-        queryKey: ['categoryStats', categoryId, year, quarter],
-        queryFn: () => apiClient.getCategoryStats(categoryId, Number(year), quarter),
-        enabled: !!categoryId && categoryId !== 'ALL'
-    });
+    const { data: stats, isLoading } = useOrgCategoryStats(categoryId, Number(year), quarter);
 
     if (isLoading) {
         return <div className="p-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>;

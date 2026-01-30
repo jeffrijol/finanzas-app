@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useOrganizationQuery } from '@/hooks/useOrganizationQuery';
+import { useOrgItems } from '@/hooks/useOrgItems';
+import { useOrganization } from '@/providers/OrganizationProvider';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,21 +28,19 @@ import { usePermissions } from '@/hooks/use-permissions';
 export function ItemsList() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const { currentOrg } = useOrganization();
     const { canWrite, canDelete } = usePermissions();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<Item | undefined>(undefined);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [showInactive, setShowInactive] = useState(false);
 
-    const { data: items = [], isLoading } = useOrganizationQuery({
-        queryKey: ['items', showInactive],
-        queryFn: () => apiClient.getItems({ includeInactive: showInactive }),
-    });
+    const { data: items = [], isLoading } = useOrgItems({ includeInactive: showInactive });
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => apiClient.deleteItem(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['items'] });
+            queryClient.invalidateQueries({ queryKey: ['items', currentOrg?.id] });
             toast({
                 title: 'Item eliminado',
                 description: 'El item ha sido eliminado correctamente.',

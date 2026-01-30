@@ -146,11 +146,16 @@ pages/
 - Categorías
 - Stats/Analytics
 
+**Isolation Strategy (Level 2 Hooks):**
+Se utiliza una arquitectura de hooks de dos niveles para asegurar aislamiento de datos:
+
 ```typescript
-const { data, isLoading } = useQuery({
-  queryKey: ["transactions", filters],
-  queryFn: () => apiClient.getTransactions(filters),
-});
+// Uso en Componente (Level 2 Hook)
+const { data, isLoading } = useOrgTransactions(filters);
+
+// Implementación subyacente (Level 1 Wrapper)
+// usa useOrganizationQuery que inyecta automáticamente el orgId
+// Resultado final QueryKey: ["transactions", "org-uuid-123", filters]
 ```
 
 **Client State (Zustand):**

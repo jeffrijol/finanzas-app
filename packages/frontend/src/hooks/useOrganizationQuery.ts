@@ -56,9 +56,10 @@ export function useOrganizationQuery<
   const enabled = shouldEnable && (options.enabled !== false);
 
   // Construir query key con o sin orgId
+  // Insertamos orgId como SEGUNDO elemento para permitir invalidación jerárquica: ['key', orgId, ...rest]
   const finalQueryKey = skipOrgDependency
     ? queryKey
-    : [...queryKey, currentOrg?.id].filter(Boolean) as unknown as TQueryKey;
+    : [queryKey[0], currentOrg?.id, ...queryKey.slice(1)].filter(Boolean) as unknown as TQueryKey;
 
   return useQuery({
     ...options,

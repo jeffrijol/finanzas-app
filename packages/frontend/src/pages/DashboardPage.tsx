@@ -1,6 +1,8 @@
-import { useState, Suspense, lazy } from 'react';
+import { useState, Suspense, lazy, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useOrganizationQuery } from '@/hooks/useOrganizationQuery';
+import { useOrgTransactions } from '@/hooks/useOrgTransactions';
+import { useOrganization } from '@/providers/OrganizationProvider';
 import { apiClient } from '@/lib/api-client';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -22,6 +24,7 @@ const AnalyticsView = lazy(() => import('@/components/dashboard/views/AnalyticsV
 
 export function DashboardPage() {
     const { year, quarter } = usePeriodStore();
+    const { currentOrg } = useOrganization(); // Get currentOrg
     const queryClient = useQueryClient();
 
     // View State
@@ -33,6 +36,7 @@ export function DashboardPage() {
         selectedTipoItem,
         selectedItemId,
         selectedCategory,
+        resetFilters
     } = useDashboardFiltersStore();
 
     // Local pagination state
@@ -40,6 +44,18 @@ export function DashboardPage() {
     const [updatingTransactionId, setUpdatingTransactionId] = useState<string | undefined>();
     const [isExporting, setIsExporting] = useState(false);
     const [isTableVisible, setIsTableVisible] = useState(true);
+
+    // CRITICAL: Reset state on Organization Change
+    useEffect(() => {
+        // Reset pagination
+        setPage(1);
+        // Reset local UI states
+        setUpdatingTransactionId(undefined);
+        setIsExporting(false);
+        // Reset Global Filters to avoid ID mismatch or confusion
+        resetFilters();
+    }, [currentOrg?.id, resetFilters]);
+
 
     // Fetch items
     const { data: items = [] } = useOrganizationQuery({
@@ -62,23 +78,19 @@ export function DashboardPage() {
     // Smart Dashboard Context
     const dashboardContext = useDashboardContext(items, itemTypes, categories);
 
-    // Fetch transactions with filters from Store
+    // Fetch transactions using Level 2 Hook
     const {
         data: transactionsData,
         isLoading: isLoadingTransactions,
-    } = useOrganizationQuery({
-        queryKey: ['transactions', page, searchQuery, selectedTipoItem, selectedItemId, selectedCategory, year, quarter],
-        queryFn: () =>
-            apiClient.getTransactions({
-                page,
-                limit: 10,
-                search: searchQuery || undefined,
-                tipoItem: selectedTipoItem || undefined,
-                itemAsignadoId: selectedItemId || undefined,
-                categoryId: selectedCategory || undefined,
-                year: Number(year),
-                quarter: quarter === 'all' ? undefined : Number(quarter),
-            }),
+    } = useOrgTransactions({
+        page,
+        limit: 10,
+        search: searchQuery || undefined,
+        tipoItem: selectedTipoItem || undefined,
+        itemAsignadoId: selectedItemId || undefined,
+        categoryId: selectedCategory || undefined,
+        year: Number(year),
+        quarter: quarter === 'all' ? undefined : Number(quarter),
     });
 
     // Fetch Stats
@@ -124,8 +136,8 @@ export function DashboardPage() {
         setUpdatingTransactionId(transactionId);
         try {
             await apiClient.updateTransaction(transactionId, { itemAsignadoId: itemId });
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
-            queryClient.invalidateQueries({ queryKey: ['stats'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', currentOrg?.id] });
+            queryClient.invalidateQueries({ queryKey: ['stats', currentOrg?.id] });
         } finally {
             setUpdatingTransactionId(undefined);
         }
@@ -135,8 +147,8 @@ export function DashboardPage() {
         setUpdatingTransactionId(transactionId);
         try {
             await apiClient.updateTransaction(transactionId, { categoryId });
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
-            queryClient.invalidateQueries({ queryKey: ['stats'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', currentOrg?.id] });
+            queryClient.invalidateQueries({ queryKey: ['stats', currentOrg?.id] });
         } finally {
             setUpdatingTransactionId(undefined);
         }

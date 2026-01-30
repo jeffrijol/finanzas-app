@@ -1,12 +1,14 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useOrgCategories } from '@/hooks/useOrgCategories';
 import { useOrganizationQuery } from '@/hooks/useOrganizationQuery';
+import { useOrganization } from '@/providers/OrganizationProvider';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Edit2, Trash2, Plus, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TransactionCategory } from '@/types';
-import { CategoryForm } from './CategoryForm';
+import { CategoryForm } from './CategoryForm'; 
 import { Badge } from '@/components/ui/badge';
 import { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
@@ -25,15 +27,13 @@ import { usePermissions } from '@/hooks/use-permissions';
 export function CategoriesList() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const { currentOrg } = useOrganization();
     const { canWrite, canDelete } = usePermissions();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<TransactionCategory | undefined>(undefined);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    const { data: categories = [], isLoading } = useOrganizationQuery({
-        queryKey: ['categories'],
-        queryFn: () => apiClient.getCategories(),
-    });
+    const { data: categories = [], isLoading } = useOrgCategories();
 
     const { data: itemTypes = [] } = useOrganizationQuery({
         queryKey: ['itemTypes'],
@@ -43,7 +43,7 @@ export function CategoriesList() {
     const deleteMutation = useMutation({
         mutationFn: (id: string) => apiClient.deleteCategory(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['categories'] });
+            queryClient.invalidateQueries({ queryKey: ['categories', currentOrg?.id] });
             toast({
                 title: 'Categoría eliminada',
                 description: 'La categoría ha sido eliminada correctamente.',

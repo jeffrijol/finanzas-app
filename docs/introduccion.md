@@ -188,6 +188,19 @@ Para comenzar a trabajar en el proyecto, consulta los siguientes documentos **en
 
 ---
 
+### 5. Auditoría y Seguridad
+
+#### `docs/AUDIT_DATA_ISOLATION.md`
+
+**Qué contiene:**
+
+- Reporte de la auditoría de aislamiento de datos multi-tenant.
+- Detalles de la arquitectura de hooks (Level 2) y estrategias de invalidación.
+
+**Cuándo revisar:** Para entender las garantías de seguridad de datos entre organizaciones.
+
+---
+
 ## 🚀 Primeros Pasos (Onboarding Rápido)
 
 ### Día 1: Setup Local (1-2 horas)
@@ -326,12 +339,12 @@ A: Vitest está configurado pero los tests están pendientes. Ver Roadmap en `RE
 
 ## 📝 Última Actualización
 
-**Fecha**: 2026-01-30  
+**Fecha**: 2026-01-30
 **Cambios Principales**:
 
-- ✅ Implementación completa de audit trail con userId en todas las operaciones de creación
-- ✅ Corrección crítica de aislamiento multi-tenant en ExcelService
-- ✅ Migración de 462 registros legacy a userId real
-- 📚 Documentación actualizada: `CHANGELOG.md`, `docs/API.md`
+- ✅ **Frontend Data Isolation**: Refactorización completa de hooks (Level 2) para scope estricto por organización.
+- ✅ **Security Hardening**: Invalidación de caché dirigida y reset de estado en cambio de organización.
+- ✅ **Audit**: Generación de reporte de auditoría (`docs/AUDIT_DATA_ISOLATION.md`).
+- 📚 Documentación actualizada: `CHANGELOG.md`, `docs/ARCHITECTURE.md`.
 
 Ver detalles completos en [`CHANGELOG.md`](../CHANGELOG.md).

@@ -73,12 +73,18 @@ Historial de cambios del proyecto siguiendo [Keep a Changelog](https://keepachan
 
 ### Security
 
+### Security
+
 - **CRITICAL**: Corrección de middleware de autenticación - eliminado fallback inseguro a ANON_KEY
 - Implementación de fail-fast si SERVICE_ROLE_KEY no está configurada
 - Añadido rate limiting global (100 req/min) y específico para autenticación (5 intentos/15min)
 - Implementado sistema de logging de auditoría para trazabilidad de accesos
 - **CRITICAL**: All new records now include authenticated userId for complete audit trail
 - **CRITICAL**: Excel imports now properly enforce organizationId isolation (prevents data leaks)
+- **Frontend Data Isolation Hardening**:
+  - Implemented Level 2 Hook Architecture (`useOrgStats`, `useOrgTransactions`) to enforce strict organization scoping.
+  - Added State Reset logic in Dashboard and Reports to clear stale data immediately on organization switch.
+  - Implemented Targeted Cache Invalidation (`['key', orgId]`) to prevent cross-tenant cache leaks.
 
 ### Changed
 
