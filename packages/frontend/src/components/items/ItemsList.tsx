@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useOrganizationQuery } from '@/hooks/useOrganizationQuery';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,7 +33,7 @@ export function ItemsList() {
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [showInactive, setShowInactive] = useState(false);
 
-    const { data: items = [], isLoading } = useQuery({
+    const { data: items = [], isLoading } = useOrganizationQuery({
         queryKey: ['items', showInactive],
         queryFn: () => apiClient.getItems({ includeInactive: showInactive }),
     });

@@ -22,7 +22,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { apiClient } from '@/lib/api-client';
 import { TransactionCategory } from '@/types';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useOrganizationQuery } from '@/hooks/useOrganizationQuery';
 import { useToast } from '@/hooks/use-toast';
 
 const categorySchema = z.object({
@@ -43,7 +44,7 @@ export function CategoryForm({ open, onOpenChange, categoryToEdit }: CategoryFor
     const { toast } = useToast();
     const queryClient = useQueryClient();
 
-    const { data: itemTypes = [] } = useQuery({
+    const { data: itemTypes = [] } = useOrganizationQuery({
         queryKey: ['itemTypes'],
         queryFn: () => apiClient.getItemTypes(),
     });

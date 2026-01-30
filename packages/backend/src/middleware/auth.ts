@@ -45,9 +45,9 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
 
   // Solo validar organización si la ruta lo requiere
   const requiresOrg =
-    !req.path.includes('/profile') &&
-    !req.path.includes('/organizations') &&
-    !req.path.includes('/health');
+    !req.originalUrl.includes('/profile') &&
+    !req.originalUrl.includes('/organizations') &&
+    !req.originalUrl.includes('/health');
 
   if (requiresOrg && !orgId) {
     return res.status(400).json({

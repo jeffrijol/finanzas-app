@@ -38,6 +38,13 @@ Historial de cambios del proyecto siguiendo [Keep a Changelog](https://keepachan
 
 ### Fixed
 
+### Fixed
+
+- **CRITICAL: Dashboard Startup Fix**
+  - Resolved "Organization ID is required" error blocking application startup
+  - Backend `auth` middleware now explicitly excludes `/api/organizations` from strict organization validation headers
+  - Updated frontend `useOrganizationQuery` to robustly handle organization loading states
+
 - **CRITICAL: ExcelService Multi-Tenant Isolation**
   - Added missing `organizationId` and `userId` parameters to `ExcelService.processExcelFile()`
   - Fixed batch transaction creation to include `organizationId` and `userId` fields
@@ -79,6 +86,11 @@ Historial de cambios del proyecto siguiendo [Keep a Changelog](https://keepachan
 - Actualizado esquema Prisma: añadido campo `userId` a TransactionCategory
 - Refactorizado TransactionCategoriesService para soportar aislamiento por usuario
 - Refactorizado TransactionCategoriesController para extraer userId del token
+
+- **Frontend Data Fetching Strategy**
+  - Migrated `DashboardPage`, `ReportsPage`, `ExcelsPage`, `ItemsList`, `CategoriesList` to uses `useOrganizationQuery`
+  - Replaced `useQuery` with `useGlobalQuery` / `useOrganizationQuery` in Forms to prevent race conditions
+  - Centralized API header logic in `api-client.ts` to strictly enforce `X-Organization-ID` on protected endpoints
 
 ### Added
 

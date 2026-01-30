@@ -33,7 +33,7 @@ Todas las rutas (excepto `/health` y `/organizations`) están protegidas y requi
 **Rutas sin Organization ID requerido:**
 
 - `GET /api/health` - Health check
-- `GET /api/organizations` - Listar organizaciones del usuario
+- `GET /api/organizations` - Listar organizaciones del usuario (Endpoint de bootstrap)
 - `POST /api/organizations` - Crear nueva organización
 
 ---

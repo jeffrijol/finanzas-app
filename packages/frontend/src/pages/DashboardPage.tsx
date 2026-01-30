@@ -1,5 +1,6 @@
 import { useState, Suspense, lazy } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useOrganizationQuery } from '@/hooks/useOrganizationQuery';
 import { apiClient } from '@/lib/api-client';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -41,19 +42,19 @@ export function DashboardPage() {
     const [isTableVisible, setIsTableVisible] = useState(true);
 
     // Fetch items
-    const { data: items = [] } = useQuery({
+    const { data: items = [] } = useOrganizationQuery({
         queryKey: ['items'],
         queryFn: () => apiClient.getItems(),
     });
 
     // Fetch itemTypes
-    const { data: itemTypes = [] } = useQuery({
+    const { data: itemTypes = [] } = useOrganizationQuery({
         queryKey: ['itemTypes'],
         queryFn: () => apiClient.getItemTypes(),
     });
 
     // Fetch categories
-    const { data: categories = [] } = useQuery({
+    const { data: categories = [] } = useOrganizationQuery({
         queryKey: ['categories'],
         queryFn: () => apiClient.getCategories(),
     });
@@ -65,7 +66,7 @@ export function DashboardPage() {
     const {
         data: transactionsData,
         isLoading: isLoadingTransactions,
-    } = useQuery({
+    } = useOrganizationQuery({
         queryKey: ['transactions', page, searchQuery, selectedTipoItem, selectedItemId, selectedCategory, year, quarter],
         queryFn: () =>
             apiClient.getTransactions({
@@ -81,7 +82,7 @@ export function DashboardPage() {
     });
 
     // Fetch Stats
-    const { data: stats, isLoading: isLoadingStats } = useQuery({
+    const { data: stats, isLoading: isLoadingStats } = useOrganizationQuery({
         queryKey: ['stats', year, quarter, selectedTipoItem, selectedItemId, selectedCategory],
         queryFn: () => apiClient.getStats({
             year: Number(year),

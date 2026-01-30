@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useOrganizationQuery } from '@/hooks/useOrganizationQuery';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Edit2, Trash2, Plus, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
@@ -29,12 +30,12 @@ export function CategoriesList() {
     const [editingCategory, setEditingCategory] = useState<TransactionCategory | undefined>(undefined);
     const [deletingId, setDeletingId] = useState<string | null>(null);
 
-    const { data: categories = [], isLoading } = useQuery({
+    const { data: categories = [], isLoading } = useOrganizationQuery({
         queryKey: ['categories'],
         queryFn: () => apiClient.getCategories(),
     });
 
-    const { data: itemTypes = [] } = useQuery({
+    const { data: itemTypes = [] } = useOrganizationQuery({
         queryKey: ['itemTypes'],
         queryFn: () => apiClient.getItemTypes(),
     });

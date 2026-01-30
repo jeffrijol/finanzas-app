@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useOrganizationQuery } from '@/hooks/useOrganizationQuery';
 import { apiClient } from '@/lib/api-client';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { TransactionsTable } from '@/components/dashboard/TransactionsTable';
@@ -16,32 +17,32 @@ export function ExcelsPage() {
     const [updatingTransactionId, setUpdatingTransactionId] = useState<string | undefined>();
 
     // Fetch list of Excel Uploads
-    const { data: uploads = [] } = useQuery({
+    const { data: uploads = [] } = useOrganizationQuery({
         queryKey: ['excel-uploads'],
         queryFn: () => apiClient.getExcelUploads(),
     });
 
     // Fetch details for selected upload
-    const { data: uploadDetails } = useQuery({
+    const { data: uploadDetails } = useOrganizationQuery({
         queryKey: ['excel-upload-details', selectedUploadId],
         queryFn: () => apiClient.getExcelUploadDetails(selectedUploadId),
         enabled: !!selectedUploadId,
     });
 
     // Fetch items (needed for table edit)
-    const { data: items = [] } = useQuery({
+    const { data: items = [] } = useOrganizationQuery({
         queryKey: ['items'],
         queryFn: () => apiClient.getItems(),
     });
 
     // Fetch itemTypes (needed for table edit)
-    const { data: itemTypes = [] } = useQuery({
+    const { data: itemTypes = [] } = useOrganizationQuery({
         queryKey: ['itemTypes'],
         queryFn: () => apiClient.getItemTypes(),
     });
 
     // Fetch categories (needed for table edit)
-    const { data: categories = [] } = useQuery({
+    const { data: categories = [] } = useOrganizationQuery({
         queryKey: ['categories'],
         queryFn: () => apiClient.getCategories(),
     });
@@ -50,7 +51,7 @@ export function ExcelsPage() {
     const {
         data: transactionsData,
         isLoading: isLoadingTransactions,
-    } = useQuery({
+    } = useOrganizationQuery({
         queryKey: ['transactions', 'excel', selectedUploadId, page],
         queryFn: () =>
             apiClient.getTransactions({

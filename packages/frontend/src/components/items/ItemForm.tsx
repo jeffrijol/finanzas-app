@@ -4,7 +4,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Loader2 } from "lucide-react"
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useOrganizationQuery } from "@/hooks/useOrganizationQuery"
 import { apiClient } from "@/lib/api-client"
 import { Item } from "@/types"
 
@@ -56,7 +57,7 @@ export function ItemForm({ open, onOpenChange, itemToEdit }: ItemFormProps) {
     const { toast } = useToast()
     const queryClient = useQueryClient()
 
-    const { data: itemTypes = [] } = useQuery({
+    const { data: itemTypes = [] } = useOrganizationQuery({
         queryKey: ['itemTypes'],
         queryFn: () => apiClient.getItemTypes(),
     });

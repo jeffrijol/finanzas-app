@@ -9,8 +9,15 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      retry: 1,
       staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: (failureCount, error: any) => {
+        // Don't retry if it's a 400 error about Organization ID
+        if (error?.status === 400 && error?.message?.includes('Organization ID')) {
+          return false;
+        }
+        // For other errors, retry up to 3 times (default was 1 in previous config, bumping to 3 or keeping as needed, plan said < 3)
+        return failureCount < 3;
+      },
     },
   },
 })

@@ -6,7 +6,7 @@ import { logger } from '../utils/logger';
 const router = Router();
 
 // GET /api/organizations - Listar organizaciones del usuario
-router.get('/', protect, async (req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
 
@@ -37,7 +37,7 @@ router.get('/', protect, async (req: Request, res: Response) => {
 });
 
 // GET /api/organizations/:id - Obtener detalles de una organización
-router.get('/:id', protect, async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user = (req as any).user;
@@ -73,7 +73,7 @@ router.get('/:id', protect, async (req: Request, res: Response) => {
 });
 
 // POST /api/organizations - Crear nueva organización
-router.post('/', protect, async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
     const { name, slug } = req.body;
@@ -113,7 +113,7 @@ router.post('/', protect, async (req: Request, res: Response) => {
 });
 
 // GET /api/organizations/:id/members - Listar miembros de una organización
-router.get('/:id/members', protect, async (req: Request, res: Response) => {
+router.get('/:id/members', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const user = (req as any).user;
