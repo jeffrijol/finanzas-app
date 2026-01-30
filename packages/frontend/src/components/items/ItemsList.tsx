@@ -21,10 +21,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { usePermissions } from '@/hooks/use-permissions';
 
 export function ItemsList() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const { canWrite, canDelete } = usePermissions();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<Item | undefined>(undefined);
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -129,7 +131,9 @@ export function ItemsList() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(row.original)}
-                        className="h-8 w-8 text-slate-500 hover:text-indigo-600"
+                        disabled={!canWrite}
+                        className="h-8 w-8 text-slate-500 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!canWrite ? 'No tienes permisos para editar' : 'Editar item'}
                     >
                         <Pencil className="w-4 h-4" />
                     </Button>
@@ -137,14 +141,16 @@ export function ItemsList() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setDeletingId(row.original.id)}
-                        className="h-8 w-8 text-slate-500 hover:text-red-600"
+                        disabled={!canDelete}
+                        className="h-8 w-8 text-slate-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!canDelete ? 'No tienes permisos para eliminar' : 'Eliminar item'}
                     >
                         <Trash2 className="w-4 h-4" />
                     </Button>
                 </div>
             ),
         },
-    ], []);
+    ], [canWrite, canDelete]);
 
     if (isLoading) {
         return <div className="text-center py-8 text-gray-500">Cargando items...</div>;
@@ -168,7 +174,12 @@ export function ItemsList() {
                         />
                         <Label htmlFor="show-inactive">Mostrar inactivos</Label>
                     </div>
-                    <Button onClick={handleCreate} className="bg-slate-900 text-white hover:bg-slate-800">
+                    <Button 
+                        onClick={handleCreate} 
+                        disabled={!canWrite}
+                        className="bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!canWrite ? 'No tienes permisos para crear items' : 'Crear nuevo item'}
+                    >
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo Item
                     </Button>

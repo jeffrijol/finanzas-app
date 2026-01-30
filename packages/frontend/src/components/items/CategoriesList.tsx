@@ -19,10 +19,12 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { usePermissions } from '@/hooks/use-permissions';
 
 export function CategoriesList() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const { canWrite, canDelete } = usePermissions();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<TransactionCategory | undefined>(undefined);
     const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -120,7 +122,9 @@ export function CategoriesList() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(row.original)}
-                        className="h-8 w-8 text-slate-500 hover:text-indigo-600"
+                        disabled={!canWrite}
+                        className="h-8 w-8 text-slate-500 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!canWrite ? 'No tienes permisos para editar' : 'Editar categoría'}
                     >
                         <Edit2 className="w-4 h-4" />
                     </Button>
@@ -128,7 +132,9 @@ export function CategoriesList() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setDeletingId(row.original.id)}
-                        className="h-8 w-8 text-slate-500 hover:text-red-600"
+                        disabled={!canDelete}
+                        className="h-8 w-8 text-slate-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!canDelete ? 'No tienes permisos para eliminar' : 'Eliminar categoría'}
                     >
                         <Trash2 className="w-4 h-4" />
                     </Button>
@@ -146,7 +152,12 @@ export function CategoriesList() {
                     <h2 className="text-lg font-semibold text-slate-800">Categorías de Transacción</h2>
                     <p className="text-sm text-slate-500">Administra las categorías internas para ingresos y gastos.</p>
                 </div>
-                <Button onClick={handleCreate} className="bg-slate-900 text-white hover:bg-slate-800">
+                <Button 
+                    onClick={handleCreate} 
+                    disabled={!canWrite}
+                    className="bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={!canWrite ? 'No tienes permisos para crear categorías' : 'Crear nueva categoría'}
+                >
                     <Plus className="w-4 h-4 mr-2" />
                     Nueva Categoría
                 </Button>

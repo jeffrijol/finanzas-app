@@ -4,9 +4,9 @@ import { ApiResponseHelper } from '../utils/apiResponse';
 import { itemSchema } from '../utils/validators';
 
 export const listItems = async (req: Request, res: Response) => {
-    const userId = (req as any).user.id;
+    const organizationId = (req as any).organizationId;
     const includeInactive = req.query.includeInactive === 'true';
-    const items = await ItemsService.getAllItems(userId, includeInactive);
+    const items = await ItemsService.getAllItems(organizationId, includeInactive);
     res.json(ApiResponseHelper.success(items));
 };
 
@@ -23,8 +23,9 @@ export const createItem = async (req: Request, res: Response) => {
         );
     }
 
+    const organizationId = (req as any).organizationId;
     const userId = (req as any).user.id;
-    const item = await ItemsService.createItem(userId, validation.data);
+    const item = await ItemsService.createItem(organizationId, userId, validation.data);
     res.status(201).json(ApiResponseHelper.success(item, 'Item created successfully'));
 };
 
@@ -37,14 +38,14 @@ export const updateItem = async (req: Request, res: Response) => {
         );
     }
 
-    const userId = (req as any).user.id;
-    const item = await ItemsService.updateItem(userId, id, validation.data);
+    const organizationId = (req as any).organizationId;
+    const item = await ItemsService.updateItem(organizationId, id, validation.data);
     res.json(ApiResponseHelper.success(item));
 };
 
 export const deleteItem = async (req: Request, res: Response) => {
     const { id } = req.params;
-    const userId = (req as any).user.id;
-    await ItemsService.deleteItem(userId, id);
+    const organizationId = (req as any).organizationId;
+    await ItemsService.deleteItem(organizationId, id);
     res.json(ApiResponseHelper.success(null, 'Item deleted successfully'));
 };

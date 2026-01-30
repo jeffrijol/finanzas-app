@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, UploadCloud, PieChart, Wallet, Settings, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { OrganizationSwitcher } from '@/components/OrganizationSwitcher';
 
 const menuItems = [
     { icon: UploadCloud, label: 'Cargar Datos', path: '/' },
@@ -16,11 +17,16 @@ export function Sidebar() {
     return (
         <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-screen fixed left-0 top-0 z-50">
             <div className="p-6">
-                <div className="flex items-center gap-2 mb-8">
+                <div className="flex items-center gap-2 mb-6">
                     <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
                         <span className="text-white font-bold text-lg">F</span>
                     </div>
                     <span className="font-semibold text-lg text-slate-900 tracking-tight">FinanzasApp</span>
+                </div>
+
+                {/* Organization Switcher */}
+                <div className="mb-6">
+                    <OrganizationSwitcher />
                 </div>
 
                 <nav className="space-y-1">

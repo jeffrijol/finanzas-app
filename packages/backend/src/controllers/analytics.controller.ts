@@ -1,5 +1,4 @@
 import { Request, Response } from 'express';
-import { TransactionsService } from '../services/transactions.service';
 import { ApiResponseHelper } from '../utils/apiResponse';
 import prisma from '../lib/prisma';
 
@@ -33,28 +32,30 @@ export class AnalyticsController {
     }
 
     // Wrapper for the existing powerful getStats
+    // TODO: Implement TransactionsService.getStats or refactor this method
     static async getGeneralStats(req: Request, res: Response) {
         try {
-            const { year, quarter, tipoItem, itemAsignadoId } = req.query;
+            // const { year, quarter, tipoItem, itemAsignadoId } = req.query;
 
-            let startDate: Date | undefined;
-            let endDate: Date | undefined;
-            const yearNum = Number(year);
+            // let startDate: Date | undefined;
+            // let endDate: Date | undefined;
+            // const yearNum = Number(year);
 
-            if (year && !isNaN(yearNum)) {
-                const { start, end } = AnalyticsController.getRange(yearNum, quarter);
-                startDate = start;
-                endDate = end;
-            }
+            // if (year && !isNaN(yearNum)) {
+            //     const { start, end } = AnalyticsController.getRange(yearNum, quarter);
+            //     startDate = start;
+            //     endDate = end;
+            // }
 
-            const stats = await TransactionsService.getStats({
-                startDate: startDate, // Pass Date object
-                endDate: endDate,     // Pass Date object
-                tipoItem: tipoItem as string,
-                itemAsignadoId: itemAsignadoId as string
-            });
+            // const stats = await TransactionsService.getStats({
+            //     startDate: startDate, // Pass Date object
+            //     endDate: endDate,     // Pass Date object
+            //     tipoItem: tipoItem as string,
+            //     itemAsignadoId: itemAsignadoId as string
+            // });
 
-            res.json(ApiResponseHelper.success(stats));
+            // res.json(ApiResponseHelper.success(stats));
+            res.status(501).json(ApiResponseHelper.error('getGeneralStats not yet implemented'));
         } catch (error) {
             console.error('Error in getGeneralStats:', error);
             res.status(500).json(ApiResponseHelper.error('Error fetching general stats'));

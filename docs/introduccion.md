@@ -321,3 +321,17 @@ A: Vitest está configurado pero los tests están pendientes. Ver Roadmap en `RE
 ---
 
 **¡Bienvenido al equipo! 🚀**
+
+---
+
+## 📝 Última Actualización
+
+**Fecha**: 2026-01-30  
+**Cambios Principales**:
+
+- ✅ Implementación completa de audit trail con userId en todas las operaciones de creación
+- ✅ Corrección crítica de aislamiento multi-tenant en ExcelService
+- ✅ Migración de 462 registros legacy a userId real
+- 📚 Documentación actualizada: `CHANGELOG.md`, `docs/API.md`
+
+Ver detalles completos en [`CHANGELOG.md`](../CHANGELOG.md).

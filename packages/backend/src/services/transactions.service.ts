@@ -3,7 +3,7 @@ import prisma from '../lib/prisma';
 
 export class TransactionsService {
     static async getTransactions(
-        userId: string,
+        organizationId: string,
         filters: TransactionFilters = {},
         pagination: PaginationParams = {}
     ) {
@@ -31,7 +31,7 @@ export class TransactionsService {
 
         // Construir where clause
         const where: any = {
-            userId,
+            organizationId,
             excelUpload: {
                 processed: true
             }
@@ -128,19 +128,24 @@ export class TransactionsService {
         };
     }
 
-    static async createTransaction(userId: string, data: {
-        fechaValor: Date;
-        descripcion: string;
-        importe: number;
-        categoria: string;
-        saldo?: number;
-        itemAsignadoId?: string | null;
-        categoryId?: string | null;
-        metadata?: string | null;
-        excelUploadId?: string | null;
-    }) {
+    static async createTransaction(
+        organizationId: string,
+        userId: string,
+        data: {
+            fechaValor: Date;
+            descripcion: string;
+            importe: number;
+            categoria: string;
+            saldo?: number;
+            itemAsignadoId?: string | null;
+            categoryId?: string | null;
+            metadata?: string | null;
+            excelUploadId?: string | null;
+        }
+    ) {
         return prisma.transaction.create({
             data: {
+                organizationId,
                 userId,
                 fechaValor: data.fechaValor,
                 descripcion: data.descripcion,
@@ -159,7 +164,7 @@ export class TransactionsService {
     }
 
     static async updateTransaction(
-        userId: string,
+        organizationId: string,
         id: string,
         data: {
             itemAsignadoId?: string | null;
@@ -168,7 +173,7 @@ export class TransactionsService {
         }
     ) {
         return prisma.transaction.update({
-            where: { id, userId },
+            where: { id, organizationId },
             data: {
                 ...data,
                 itemAsignadoId: data.itemAsignadoId === '' ? null : data.itemAsignadoId,

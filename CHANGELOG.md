@@ -29,6 +29,29 @@ Historial de cambios del proyecto siguiendo [Keep a Changelog](https://keepachan
   - Changed unique constraints: `Item.nombre` now unique per organization, not per user
   - ItemType table remains global (all users can view, only admins can modify)
 
+- **userId Audit Trail Implementation**
+  - Updated `TransactionsService.createTransaction()` to accept and save authenticated user's UUID
+  - Updated `ItemsService.createItem()` to accept and save authenticated user's UUID
+  - Updated `TransactionCategoriesService.createCategory()` to accept and save authenticated user's UUID
+  - Updated all corresponding controllers to extract `userId` from `req.user.id` and pass to services
+  - Migrated 455 legacy records and 7 NULL records to actual user UUID `83cc7d1a-eb61-49d8-bbef-7b33076f40d0`
+
+### Fixed
+
+- **CRITICAL: ExcelService Multi-Tenant Isolation**
+  - Added missing `organizationId` and `userId` parameters to `ExcelService.processExcelFile()`
+  - Fixed batch transaction creation to include `organizationId` and `userId` fields
+  - **Impact**: Prevents data leaks between organizations during Excel imports
+  - **Risk**: Without this fix, imported transactions could bypass RLS policies
+
+- **ExcelUpload Isolation**
+  - Added missing `organizationId` field to ExcelUpload record creation in `upload.controller.ts`
+  - Ensures ExcelUpload records are properly tenant-isolated
+
+- **Backend Compilation Errors**
+  - Fixed prisma import path in `auth.ts` middleware (from `../config/database` to `../lib/prisma`)
+  - Temporarily disabled `getGeneralStats` endpoint (returns HTTP 501) - endpoint not used by frontend
+
 ### Technical
 
 - Regenerated Prisma Client v5.10.0 with new multi-tenant models
@@ -37,9 +60,9 @@ Historial de cambios del proyecto siguiendo [Keep a Changelog](https://keepachan
 
 ### Breaking Changes
 
-- **PENDING**: Services and controllers need update to use `organizationId` instead of `userId`
-- **PENDING**: Frontend integration of OrganizationProvider in App.tsx
-- **PENDING**: UI components for organization switching
+- ~~**PENDING**: Services and controllers need update to use `organizationId` instead of `userId`~~ ✅ **COMPLETED**
+- ~~**PENDING**: Frontend integration of OrganizationProvider in App.tsx~~ ✅ **COMPLETED**
+- ~~**PENDING**: UI components for organization switching~~ ✅ **COMPLETED**
 
 ### Security
 
@@ -47,6 +70,8 @@ Historial de cambios del proyecto siguiendo [Keep a Changelog](https://keepachan
 - Implementación de fail-fast si SERVICE_ROLE_KEY no está configurada
 - Añadido rate limiting global (100 req/min) y específico para autenticación (5 intentos/15min)
 - Implementado sistema de logging de auditoría para trazabilidad de accesos
+- **CRITICAL**: All new records now include authenticated userId for complete audit trail
+- **CRITICAL**: Excel imports now properly enforce organizationId isolation (prevents data leaks)
 
 ### Changed
 

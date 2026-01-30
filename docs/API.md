@@ -351,6 +351,96 @@ Error del servidor.
 
 ---
 
+## 📊 Analytics Endpoints
+
+### `GET /api/analytics/type/:typeId`
+
+Obtiene estadísticas para un tipo específico de item (ej: "Inmuebles").
+
+**Query Parameters:**
+
+- `year` (required): Año a analizar
+- `quarter` (optional): Trimestre (1-4) o 'all' para año completo
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "monthlyTrend": [
+      { "month": 1, "ingresos": 5000, "gastos": 3000 },
+      ...
+    ],
+    "categoryDistribution": [
+      { "categoria": "Alquiler", "ingresos": 15000, "gastos": 0 }
+    ],
+    "topItems": [
+      { "name": "Edificio Central", "amount": 12000 }
+    ]
+  }
+}
+```
+
+---
+
+### `GET /api/analytics/item/:itemId`
+
+Obtiene estadísticas para un item específico.
+
+**Query Parameters:**
+
+- `year` (required): Año a analizar
+- `quarter` (optional): Trimestre (1-4) o 'all'
+
+**Response:** Similar a `/type/:typeId` pero específico del item.
+
+---
+
+### `GET /api/analytics/category/:categoryId`
+
+Obtiene estadísticas para una categoría interna específica.
+
+**Query Parameters:**
+
+- `year` (required): Año a analizar
+- `quarter` (optional): Trimestre (1-4) o 'all'
+
+---
+
+### `GET /api/analytics/quarterly/:year`
+
+Obtiene reporte trimestral completo para un año.
+
+**Query Parameters:**
+
+- `tipoItem` (optional): Filtrar por tipo de item
+- `categoryId` (optional): Filtrar por categoría
+- `itemAsignadoId` (optional): Filtrar por item específico
+
+---
+
+### `GET /api/analytics/stacked-trend/:year`
+
+Obtiene tendencia apilada de gastos por categoría e ingresos.
+
+**Query Parameters:**
+
+- `year` (required): vía path parameter
+- `quarter` (optional): Trimestre (1-4) o 'all'
+- `tipoItem` (optional): Filtrar por tipo
+- `categoryId` (optional): Filtrar por categoría
+- `itemAsignadoId` (optional): Filtrar por item
+
+---
+
+### ~~`GET /api/analytics/general`~~ ⚠️ DEPRECATED
+
+**Status**: Not Implemented (HTTP 501)  
+**Reason**: Endpoint no utilizado por el frontend. Marcado para futura implementación o eliminación.
+
+---
+
 ## 📊 HTTP Status Codes
 
 | Code  | Meaning                        |

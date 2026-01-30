@@ -27,6 +27,9 @@ export const uploadFile = async (req: Request, res: Response) => {
         }
 
         // Crear registro en ExcelUpload
+        const organizationId = (req as any).organizationId;
+        const userId = (req as any).user.id;
+        
         const uploadRecord = await prisma.excelUpload.create({
             data: {
                 filename: file.originalname,
@@ -34,7 +37,8 @@ export const uploadFile = async (req: Request, res: Response) => {
                 totalRows: result.totalRows,
                 processed: false,
                 errors: null,
-                userId: (req as any).user.id
+                organizationId,
+                userId
             }
         });
 

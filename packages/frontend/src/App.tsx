@@ -9,60 +9,63 @@ import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 import { AdminPage } from '@/pages/AdminPage';
 import { AuthProvider } from '@/providers/AuthProvider';
+import { OrganizationProvider } from '@/providers/OrganizationProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Root wrapper to handle redirection logic */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              {/* If authenticated, ProtectedRoute renders children (DashboardPage), 
-                  but we want to redirect / to /dashboard explicitly or just render Dashboard here.
-                  Let's make / redirect to /dashboard if auth, or /auth if not.
-                  Actually ProtectedRoute redirects to /login (now /auth) if not auth.
-               */}
-               <DashboardPage /> 
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/login" element={<Navigate to="/auth?mode=login" replace />} />
-          <Route path="/register" element={<Navigate to="/auth?mode=register" replace />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-          
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/mantenimiento" element={
-            <ProtectedRoute>
-              <MaintenancePage />
-            </ProtectedRoute>
-          } />
-          <Route path="/reportes" element={
-            <ProtectedRoute>
-              <ReportsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/excels" element={
-            <ProtectedRoute>
-              <ExcelsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin" element={
-            <ProtectedRoute>
-              <AdminPage />
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </Router>
+      <OrganizationProvider>
+        <Router>
+          <Routes>
+            {/* Public Root wrapper to handle redirection logic */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                {/* If authenticated, ProtectedRoute renders children (DashboardPage), 
+                    but we want to redirect / to /dashboard explicitly or just render Dashboard here.
+                    Let's make / redirect to /dashboard if auth, or /auth if not.
+                    Actually ProtectedRoute redirects to /login (now /auth) if not auth.
+                 */}
+                 <DashboardPage /> 
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/login" element={<Navigate to="/auth?mode=login" replace />} />
+            <Route path="/register" element={<Navigate to="/auth?mode=register" replace />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
+            
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/mantenimiento" element={
+              <ProtectedRoute>
+                <MaintenancePage />
+              </ProtectedRoute>
+            } />
+            <Route path="/reportes" element={
+              <ProtectedRoute>
+                <ReportsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/excels" element={
+              <ProtectedRoute>
+                <ExcelsPage />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminPage />
+              </ProtectedRoute>
+            } />
+          </Routes>
+        </Router>
+      </OrganizationProvider>
     </AuthProvider>
   );
 }
