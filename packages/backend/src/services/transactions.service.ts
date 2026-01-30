@@ -190,7 +190,7 @@ export class TransactionsService {
         });
     }
 
-    static async getStats(userId: string, filters: TransactionFilters = {}): Promise<TransactionStats> {
+    static async getStats(organizationId: string, filters: TransactionFilters = {}): Promise<TransactionStats> {
         const {
             startDate,
             endDate,
@@ -201,7 +201,7 @@ export class TransactionsService {
         } = filters;
 
         const where: any = {
-            userId,
+            organizationId,
             excelUpload: {
                 processed: true
             }

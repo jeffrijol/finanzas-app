@@ -24,7 +24,8 @@ graph LR
     Reports --> Home
 
     Root[/ Raíz] -->|No autenticado| Auth
-    Root -->|Autenticado| Dashboard
+    Root -->|Autenticado| Home (Upload)
+    Dashboard --> Auth (Logout)
 ```
 
 **Protección de Rutas:**
@@ -130,7 +131,8 @@ graph LR
 
 **Cierre de Sesión Manual**:
 
-- (Futuro) Botón "Cerrar Sesión" en navegación
+- **Implementado**: Botón "Cerrar Sesión" en el menú lateral de navegación
+- Click en botón sidebar -> `signOut` -> Redirección a `/auth`
 - Ejecuta `supabase.auth.signOut()`
 - Redirige a `/auth`
 

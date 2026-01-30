@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HomePage } from '@/pages/HomePage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { MaintenancePage } from '@/pages/MaintenancePage';
 import { ReportsPage } from '@/pages/ReportsPage';
@@ -22,12 +23,7 @@ function App() {
             {/* Public Root wrapper to handle redirection logic */}
             <Route path="/" element={
               <ProtectedRoute>
-                {/* If authenticated, ProtectedRoute renders children (DashboardPage), 
-                    but we want to redirect / to /dashboard explicitly or just render Dashboard here.
-                    Let's make / redirect to /dashboard if auth, or /auth if not.
-                    Actually ProtectedRoute redirects to /login (now /auth) if not auth.
-                 */}
-                 <DashboardPage /> 
+                 <HomePage /> 
               </ProtectedRoute>
             } />
             

@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, UploadCloud, PieChart, Wallet, Settings, FileSpreadsheet } from 'lucide-react';
+import { LayoutDashboard, UploadCloud, PieChart, Wallet, Settings, FileSpreadsheet, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OrganizationSwitcher } from '@/components/OrganizationSwitcher';
+import { useAuth } from '@/providers/AuthProvider';
 
 const menuItems = [
     { icon: UploadCloud, label: 'Cargar Datos', path: '/' },
@@ -13,6 +14,7 @@ const menuItems = [
 
 export function Sidebar() {
     const location = useLocation();
+    const { signOut } = useAuth();
 
     return (
         <aside className="w-64 bg-white border-r border-gray-100 flex flex-col h-screen fixed left-0 top-0 z-50">
@@ -51,10 +53,17 @@ export function Sidebar() {
                 </nav>
             </div>
 
-            <div className="mt-auto p-6 border-t border-gray-50">
-                <button className="flex items-center gap-3 text-sm font-medium text-slate-400 hover:text-slate-900 transition-colors w-full">
+            <div className="mt-auto p-6 border-t border-gray-50 space-y-2">
+                <button className="flex items-center gap-3 text-sm font-medium text-slate-400 hover:text-slate-900 transition-colors w-full p-2 rounded-md hover:bg-slate-50">
                     <Settings className="w-5 h-5" />
                     Configuración
+                </button>
+                <button 
+                    onClick={() => signOut()}
+                    className="flex items-center gap-3 text-sm font-medium text-slate-400 hover:text-red-600 transition-colors w-full p-2 rounded-md hover:bg-red-50"
+                >
+                    <LogOut className="w-5 h-5" />
+                    Cerrar Sesión
                 </button>
             </div>
         </aside>

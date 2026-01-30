@@ -103,6 +103,7 @@ Historial de cambios del proyecto siguiendo [Keep a Changelog](https://keepachan
 - Manejo global de errores en `ApiClient` con notificaciones toast (401, 429, errores genéricos)
 - Sistema de gestión de sesión con opción "Mantener sesión iniciada"
 - Protección mejorada de rutas: redirección automática basada en estado de autenticación
+- **Logout Button**: Added "Cerrar Sesión" option in Sidebar with visual coherence and secure sign-out functionality
 
 ---
 
