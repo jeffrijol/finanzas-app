@@ -13,5 +13,21 @@ export const logger = {
       `[AUDIT] ${new Date().toISOString()} - User:${userId} Action:${action} Resource:${resource}`,
       meta || ''
     );
+  },
+  
+  // Multi-tenant aware logging
+  tenantAction: (organizationId: string, userId: string, action: string, resource: string, meta?: any) => {
+    console.log(
+      `[TENANT_ACTION] ${new Date().toISOString()} - Org:${organizationId} User:${userId} Action:${action} Resource:${resource}`,
+      meta || ''
+    );
+  },
+  
+  // Service role usage audit
+  serviceRoleAccess: (table: string, operation: string, meta?: any) => {
+    console.warn(
+      `[SERVICE_ROLE] ${new Date().toISOString()} - Table:${table} Operation:${operation}`,
+      meta || ''
+    );
   }
 };

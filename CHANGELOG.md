@@ -6,6 +6,49 @@ Historial de cambios del proyecto siguiendo [Keep a Changelog](https://keepachan
 
 ## [Unreleased]
 
+### Security
+
+- **RLS Hardening & Multi-Tenant Compliance (100% complete)**
+  - **Database Layer (RLS)**
+    - Implemented 7 "Default Deny" policies in Supabase (`PERMISSIVE` with `USING (false)`)
+    - Protected tables: Transaction, Item, TransactionCategory, ExcelUpload, ItemType, Organization, Member
+    - Blocks anonymous access while allowing authenticated users based on organization membership
+  - **Backend Security**
+    - Fixed `deleteTransaction()` to validate `organizationId` (prevented cross-tenant deletion vulnerability)
+    - Implemented tenant-aware logging system (`logger.ts`: `tenantAction()`, `serviceRoleAccess()`)
+    - Created `tenantLogging.middleware.ts` to inject tenant context into all logs
+    - Integrated logging middleware globally in `app.ts`
+    - All service methods now validate `organizationId` in WHERE clauses
+    - Documented SERVICE_ROLE_KEY security practices (env storage, rotation, auditing)
+  - **Frontend Security**
+    - Refactored `HomePage.tsx` to use organization-aware hooks (`useOrgItems`, `useOrgStats`)
+    - Fixed hardcoded year (2025) to dynamic `new Date().getFullYear()`
+    - Implemented organization-scoped localStorage keys in `useFileUploadFlow.ts`
+    - All query cache keys now include `organizationId` automatically via `useOrganizationQuery`
+  - **Database Seeds**
+    - Refactored `seed.ts` to be multi-tenant compliant
+    - Creates test organization, user, and member association
+    - All seeded entities now include `organizationId` and `userId`
+  - **Documentation**
+    - Created comprehensive security documentation in `/docs`:
+      - `FASE1_RLS_COMPLETADA.md`: RLS policies and logging implementation
+      - `FASE2_AUDITORIA_COMPLETADA.md`: Backend/frontend compliance audit results
+      - `FASE3_TESTING_Y_REVISION_FINAL.md`: Testing and code review
+      - `CORRECCIONES_COMPLETADAS.md`: Detailed breach corrections
+      - `RESUMEN_EJECUTIVO_RLS_HARDENING.md`: Executive summary
+    - Updated `.agent/rules/multi-tenant-development.md` with full-stack guidelines
+
+### Fixed
+
+- Cross-tenant data deletion vulnerability in `transactions.service.ts::deleteTransaction()`
+- Cache contamination between organizations in `HomePage.tsx` (raw `useQuery` without org scoping)
+- LocalStorage data leakage between organizations in upload flow
+- Database seeds failing due to missing `organizationId` and `userId` fields
+
+### Changed
+
+- `eslint.config.js`: Excluded `prisma/` directory from linting to prevent parsing errors on seed files
+
 ### Added
 
 - **Multi-Tenant Organization System (95% complete)**

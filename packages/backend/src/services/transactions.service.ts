@@ -184,9 +184,13 @@ export class TransactionsService {
         });
     }
 
-    static async deleteTransaction(userId: string, id: string) {
+    static async deleteTransaction(organizationId: string, userId: string, id: string) {
         return prisma.transaction.delete({
-            where: { id, userId },
+            where: { 
+                id, 
+                organizationId, // Validate tenant isolation
+                userId 
+            },
         });
     }
 
