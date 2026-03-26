@@ -1,5 +1,10 @@
-import { useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useOrganizationQuery } from '@/hooks/useOrganizationQuery';
+import { useOrgItems } from '@/hooks/useOrgItems';
+import { useOrgCategories } from '@/hooks/useOrgCategories';
+import { useOrgTransactions } from '@/hooks/useOrgTransactions';
+import { useOrganization } from '@/providers/OrganizationProvider';
 import { apiClient } from '@/lib/api-client';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { TransactionsTable } from '@/components/dashboard/TransactionsTable';
@@ -11,54 +16,50 @@ import { es } from 'date-fns/locale';
 
 export function ExcelsPage() {
     const queryClient = useQueryClient();
+    const { currentOrg } = useOrganization();
     const [selectedUploadId, setSelectedUploadId] = useState<string>('');
     const [page, setPage] = useState(1);
     const [updatingTransactionId, setUpdatingTransactionId] = useState<string | undefined>();
 
+    // Reset state on Org Change
+    useEffect(() => {
+        setSelectedUploadId('');
+        setPage(1);
+    }, [currentOrg?.id]);
+
     // Fetch list of Excel Uploads
-    const { data: uploads = [] } = useQuery({
+    const { data: uploads = [] } = useOrganizationQuery({
         queryKey: ['excel-uploads'],
         queryFn: () => apiClient.getExcelUploads(),
     });
 
     // Fetch details for selected upload
-    const { data: uploadDetails } = useQuery({
+    const { data: uploadDetails } = useOrganizationQuery({
         queryKey: ['excel-upload-details', selectedUploadId],
         queryFn: () => apiClient.getExcelUploadDetails(selectedUploadId),
         enabled: !!selectedUploadId,
     });
 
-    // Fetch items (needed for table edit)
-    const { data: items = [] } = useQuery({
-        queryKey: ['items'],
-        queryFn: () => apiClient.getItems(),
-    });
+    // Fetch items (Level 2)
+    const { data: items = [] } = useOrgItems();
 
-    // Fetch itemTypes (needed for table edit)
-    const { data: itemTypes = [] } = useQuery({
+    // Fetch itemTypes
+    const { data: itemTypes = [] } = useOrganizationQuery({
         queryKey: ['itemTypes'],
         queryFn: () => apiClient.getItemTypes(),
     });
 
-    // Fetch categories (needed for table edit)
-    const { data: categories = [] } = useQuery({
-        queryKey: ['categories'],
-        queryFn: () => apiClient.getCategories(),
-    });
+    // Fetch categories (Level 2)
+    const { data: categories = [] } = useOrgCategories();
 
-    // Fetch transactions for selected upload
+    // Fetch transactions for selected upload (Level 2)
     const {
         data: transactionsData,
         isLoading: isLoadingTransactions,
-    } = useQuery({
-        queryKey: ['transactions', 'excel', selectedUploadId, page],
-        queryFn: () =>
-            apiClient.getTransactions({
-                excelUploadId: selectedUploadId,
-                page,
-                limit: 20, // Reasonable limit per page
-            }),
-        enabled: !!selectedUploadId,
+    } = useOrgTransactions({
+        excelUploadId: selectedUploadId,
+        page,
+        limit: 20,
     });
 
     const handleUploadChange = (value: string) => {
@@ -76,7 +77,7 @@ export function ExcelsPage() {
         try {
             await apiClient.updateTransaction(transactionId, { itemAsignadoId: itemId });
             // Invalidate transactions query to reflect changes immediately
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', currentOrg?.id] });
         } finally {
             setUpdatingTransactionId(undefined);
         }
@@ -86,7 +87,7 @@ export function ExcelsPage() {
         setUpdatingTransactionId(transactionId);
         try {
             await apiClient.updateTransaction(transactionId, { categoryId });
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', currentOrg?.id] });
         } finally {
             setUpdatingTransactionId(undefined);
         }

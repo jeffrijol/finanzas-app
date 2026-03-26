@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useOrganizationQuery } from '@/hooks/useOrganizationQuery';
 import { apiClient } from '@/lib/api-client';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,7 +15,7 @@ export function ReportsPage() {
     const [selectedItemId, setSelectedItemId] = useState<string>('ALL');
 
     // Fetch items
-    const { data: items = [] } = useQuery({
+    const { data: items = [] } = useOrganizationQuery({
         queryKey: ['items'],
         queryFn: () => apiClient.getItems(),
     });
@@ -25,7 +25,7 @@ export function ReportsPage() {
     // En la versión actual del backend service, GET /stats acepta filtros básicos.
     // Necesitaríamos pasarle tipoItem para filtrar el query subyacente. 
     // Como getStats global devuelve 'transaccionesPorItem', podemos filtrar eso en el frontend.
-    const { data: stats } = useQuery({
+    const { data: stats } = useOrganizationQuery({
         queryKey: ['stats-reports', year, quarter],
         queryFn: () => apiClient.getStats({
             year,

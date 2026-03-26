@@ -1,5 +1,8 @@
-import { useState, Suspense, lazy } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState, Suspense, lazy, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useOrganizationQuery } from '@/hooks/useOrganizationQuery';
+import { useOrgTransactions } from '@/hooks/useOrgTransactions';
+import { useOrganization } from '@/providers/OrganizationProvider';
 import { apiClient } from '@/lib/api-client';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -14,11 +17,14 @@ import { FileJson, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
 
+import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
+
 // Lazy load Analytics View
 const AnalyticsView = lazy(() => import('@/components/dashboard/views/AnalyticsView').then(module => ({ default: module.AnalyticsView })));
 
 export function DashboardPage() {
     const { year, quarter } = usePeriodStore();
+    const { currentOrg } = useOrganization(); // Get currentOrg
     const queryClient = useQueryClient();
 
     // View State
@@ -30,6 +36,7 @@ export function DashboardPage() {
         selectedTipoItem,
         selectedItemId,
         selectedCategory,
+        resetFilters
     } = useDashboardFiltersStore();
 
     // Local pagination state
@@ -38,20 +45,32 @@ export function DashboardPage() {
     const [isExporting, setIsExporting] = useState(false);
     const [isTableVisible, setIsTableVisible] = useState(true);
 
+    // CRITICAL: Reset state on Organization Change
+    useEffect(() => {
+        // Reset pagination
+        setPage(1);
+        // Reset local UI states
+        setUpdatingTransactionId(undefined);
+        setIsExporting(false);
+        // Reset Global Filters to avoid ID mismatch or confusion
+        resetFilters();
+    }, [currentOrg?.id, resetFilters]);
+
+
     // Fetch items
-    const { data: items = [] } = useQuery({
+    const { data: items = [] } = useOrganizationQuery({
         queryKey: ['items'],
         queryFn: () => apiClient.getItems(),
     });
 
     // Fetch itemTypes
-    const { data: itemTypes = [] } = useQuery({
+    const { data: itemTypes = [] } = useOrganizationQuery({
         queryKey: ['itemTypes'],
         queryFn: () => apiClient.getItemTypes(),
     });
 
     // Fetch categories
-    const { data: categories = [] } = useQuery({
+    const { data: categories = [] } = useOrganizationQuery({
         queryKey: ['categories'],
         queryFn: () => apiClient.getCategories(),
     });
@@ -59,27 +78,23 @@ export function DashboardPage() {
     // Smart Dashboard Context
     const dashboardContext = useDashboardContext(items, itemTypes, categories);
 
-    // Fetch transactions with filters from Store
+    // Fetch transactions using Level 2 Hook
     const {
         data: transactionsData,
         isLoading: isLoadingTransactions,
-    } = useQuery({
-        queryKey: ['transactions', page, searchQuery, selectedTipoItem, selectedItemId, selectedCategory, year, quarter],
-        queryFn: () =>
-            apiClient.getTransactions({
-                page,
-                limit: 10,
-                search: searchQuery || undefined,
-                tipoItem: selectedTipoItem || undefined,
-                itemAsignadoId: selectedItemId || undefined,
-                categoryId: selectedCategory || undefined,
-                year: Number(year),
-                quarter: quarter === 'all' ? undefined : Number(quarter),
-            }),
+    } = useOrgTransactions({
+        page,
+        limit: 10,
+        search: searchQuery || undefined,
+        tipoItem: selectedTipoItem || undefined,
+        itemAsignadoId: selectedItemId || undefined,
+        categoryId: selectedCategory || undefined,
+        year: Number(year),
+        quarter: quarter === 'all' ? undefined : Number(quarter),
     });
 
     // Fetch Stats
-    const { data: stats } = useQuery({
+    const { data: stats, isLoading: isLoadingStats } = useOrganizationQuery({
         queryKey: ['stats', year, quarter, selectedTipoItem, selectedItemId, selectedCategory],
         queryFn: () => apiClient.getStats({
             year: Number(year),
@@ -90,6 +105,29 @@ export function DashboardPage() {
         })
     });
 
+    // Show skeleton if main data is loading
+    const isLoading = isLoadingTransactions || isLoadingStats;
+
+    if (isLoading && !transactionsData && !stats) {
+        return (
+            <DashboardLayout>
+                <div className="container mx-auto p-4 max-w-7xl">
+                    <DashboardHeader
+                        items={items}
+                        itemTypes={itemTypes}
+                        categories={categories}
+                        currentView={currentView}
+                        onViewChange={setCurrentView}
+                        onExport={() => {}}
+                    />
+                    <div className="mt-4">
+                        <DashboardSkeleton />
+                    </div>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
     };
@@ -98,8 +136,8 @@ export function DashboardPage() {
         setUpdatingTransactionId(transactionId);
         try {
             await apiClient.updateTransaction(transactionId, { itemAsignadoId: itemId });
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
-            queryClient.invalidateQueries({ queryKey: ['stats'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', currentOrg?.id] });
+            queryClient.invalidateQueries({ queryKey: ['stats', currentOrg?.id] });
         } finally {
             setUpdatingTransactionId(undefined);
         }
@@ -109,8 +147,8 @@ export function DashboardPage() {
         setUpdatingTransactionId(transactionId);
         try {
             await apiClient.updateTransaction(transactionId, { categoryId });
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
-            queryClient.invalidateQueries({ queryKey: ['stats'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', currentOrg?.id] });
+            queryClient.invalidateQueries({ queryKey: ['stats', currentOrg?.id] });
         } finally {
             setUpdatingTransactionId(undefined);
         }

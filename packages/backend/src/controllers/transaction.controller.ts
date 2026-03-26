@@ -49,7 +49,8 @@ export const listTransactions = async (req: Request, res: Response) => {
         sortOrder: req.query.sortOrder as 'asc' | 'desc',
     };
 
-    const result = await TransactionsService.getTransactions(filters, pagination);
+    const organizationId = (req as any).organizationId;
+    const result = await TransactionsService.getTransactions(organizationId, filters, pagination);
 
     res.json(ApiResponseHelper.paginated(
         result.transactions,
@@ -69,17 +70,24 @@ export const createTransaction = async (req: Request, res: Response) => {
         );
     }
 
-    const newTransaction = await TransactionsService.createTransaction({
-        fechaValor: new Date(fechaValor),
-        descripcion,
-        importe,
-        categoria: categoria || 'Sin categoría',
-        saldo: saldo || 0,
-        itemAsignadoId: itemAsignadoId || null,
-        categoryId: categoryId || null,
-        metadata: metadata || null,
-        excelUploadId: excelUploadId || null,
-    });
+    const organizationId = (req as any).organizationId;
+    const userId = (req as any).user.id;
+    
+    const newTransaction = await TransactionsService.createTransaction(
+        organizationId,
+        userId,
+        {
+            fechaValor: new Date(fechaValor),
+            descripcion,
+            importe,
+            categoria: categoria || 'Sin categoría',
+            saldo: saldo || 0,
+            itemAsignadoId: itemAsignadoId || null,
+            categoryId: categoryId || null,
+            metadata: metadata || null,
+            excelUploadId: excelUploadId || null,
+        }
+    );
 
     res.status(201).json(ApiResponseHelper.success(newTransaction, 'Transacción creada exitosamente'));
 };
@@ -94,7 +102,8 @@ export const updateTransaction = async (req: Request, res: Response) => {
         );
     }
 
-    const transaction = await TransactionsService.updateTransaction(id, validation.data);
+    const organizationId = (req as any).organizationId;
+    const transaction = await TransactionsService.updateTransaction(organizationId, id, validation.data);
     res.json(ApiResponseHelper.success(transaction));
 };
 
@@ -110,6 +119,7 @@ export const getStats = async (req: Request, res: Response) => {
         tipoItem: req.query.tipoItem as string,
     };
 
-    const stats = await TransactionsService.getStats(filters);
+    const organizationId = (req as any).organizationId;
+    const stats = await TransactionsService.getStats(organizationId, filters);
     res.json(ApiResponseHelper.success(stats));
 };

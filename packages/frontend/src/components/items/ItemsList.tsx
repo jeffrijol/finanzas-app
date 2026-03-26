@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useOrgItems } from '@/hooks/useOrgItems';
+import { useOrganization } from '@/providers/OrganizationProvider';
 import { apiClient } from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,24 +23,24 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { usePermissions } from '@/hooks/use-permissions';
 
 export function ItemsList() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const { currentOrg } = useOrganization();
+    const { canWrite, canDelete } = usePermissions();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<Item | undefined>(undefined);
     const [deletingId, setDeletingId] = useState<string | null>(null);
     const [showInactive, setShowInactive] = useState(false);
 
-    const { data: items = [], isLoading } = useQuery({
-        queryKey: ['items', showInactive],
-        queryFn: () => apiClient.getItems({ includeInactive: showInactive }),
-    });
+    const { data: items = [], isLoading } = useOrgItems({ includeInactive: showInactive });
 
     const deleteMutation = useMutation({
         mutationFn: (id: string) => apiClient.deleteItem(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['items'] });
+            queryClient.invalidateQueries({ queryKey: ['items', currentOrg?.id] });
             toast({
                 title: 'Item eliminado',
                 description: 'El item ha sido eliminado correctamente.',
@@ -129,7 +131,9 @@ export function ItemsList() {
                         variant="ghost"
                         size="icon"
                         onClick={() => handleEdit(row.original)}
-                        className="h-8 w-8 text-slate-500 hover:text-indigo-600"
+                        disabled={!canWrite}
+                        className="h-8 w-8 text-slate-500 hover:text-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!canWrite ? 'No tienes permisos para editar' : 'Editar item'}
                     >
                         <Pencil className="w-4 h-4" />
                     </Button>
@@ -137,14 +141,16 @@ export function ItemsList() {
                         variant="ghost"
                         size="icon"
                         onClick={() => setDeletingId(row.original.id)}
-                        className="h-8 w-8 text-slate-500 hover:text-red-600"
+                        disabled={!canDelete}
+                        className="h-8 w-8 text-slate-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!canDelete ? 'No tienes permisos para eliminar' : 'Eliminar item'}
                     >
                         <Trash2 className="w-4 h-4" />
                     </Button>
                 </div>
             ),
         },
-    ], []);
+    ], [canWrite, canDelete]);
 
     if (isLoading) {
         return <div className="text-center py-8 text-gray-500">Cargando items...</div>;
@@ -168,7 +174,12 @@ export function ItemsList() {
                         />
                         <Label htmlFor="show-inactive">Mostrar inactivos</Label>
                     </div>
-                    <Button onClick={handleCreate} className="bg-slate-900 text-white hover:bg-slate-800">
+                    <Button 
+                        onClick={handleCreate} 
+                        disabled={!canWrite}
+                        className="bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title={!canWrite ? 'No tienes permisos para crear items' : 'Crear nuevo item'}
+                    >
                         <Plus className="w-4 h-4 mr-2" />
                         Nuevo Item
                     </Button>

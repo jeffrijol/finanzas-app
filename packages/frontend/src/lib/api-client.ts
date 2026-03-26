@@ -8,34 +8,154 @@ import type {
     TransactionStats,
     ExcelUpload,
 } from '../types';
+import { supabase } from './supabase';
+import { toast } from '@/hooks/use-toast';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 class ApiClient {
     private baseURL: string;
+    private currentOrgId: string | null = null;
 
     constructor(baseURL: string) {
         this.baseURL = baseURL;
+        
+        // Escuchar cambios en localStorage (desde otras pestañas)
+        if (typeof window !== 'undefined') {
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'currentOrganizationId') {
+                    this.currentOrgId = e.newValue;
+                }
+            });
+            
+            // Inicializar con valor actual
+            this.currentOrgId = localStorage.getItem('currentOrganizationId');
+        }
+    }
+
+    /**
+     * Determines if an endpoint requires X-Organization-ID header
+     * @returns true if endpoint needs organization context
+     */
+    private endpointRequiresOrganization(endpoint: string): boolean {
+        if (!endpoint) return true;
+        
+        // Endpoints that work without organization context
+        const orgIndependentEndpoints = [
+            '/organizations',
+            '/profile',
+            '/auth',
+            '/health',
+            '/public',
+        ];
+        
+        return !orgIndependentEndpoints.some(independent => 
+            endpoint.startsWith(independent)
+        );
+    }
+
+    /**
+     * Builds request headers with early validation
+     * @throws Error if org is required but missing
+     */
+    private async getHeaders(endpoint: string): Promise<Record<string, string>> {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+        };
+        
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const requiresOrgId = this.endpointRequiresOrganization(endpoint);
+        
+        if (requiresOrgId) {
+            const orgId = this.currentOrgId || (typeof window !== 'undefined' ? localStorage.getItem('currentOrganizationId') : null);
+            
+            if (!orgId) {
+                const error = new Error(
+                    `Organization ID required for endpoint: ${endpoint}. ` +
+                    `Is OrganizationProvider loaded?`
+                );
+                console.error('❌ API Client Error:', {
+                    endpoint,
+                    orgId,
+                    localStorage: typeof window !== 'undefined' ? localStorage.getItem('currentOrganizationId') : null,
+                });
+                throw error;
+            }
+            
+            // Validate UUID format
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidRegex.test(orgId)) {
+                console.warn(`⚠️ Organization ID may be invalid (not UUID): ${orgId}`);
+            }
+            
+            headers['X-Organization-ID'] = orgId;
+        }
+        
+        return headers;
     }
 
     private async request<T>(
         endpoint: string,
-        options: RequestInit = {}
+        options: RequestInit = {},
+        customHeaders?: Record<string, string>
     ): Promise<ApiResponse<T>> {
         const url = `${this.baseURL}${endpoint}`;
 
         try {
+            // Get headers with validation (includes org check)
+            const baseHeaders = await this.getHeaders(endpoint);
+            
+            const headers: Record<string, string> = {
+                ...baseHeaders,
+                ...(options.headers as Record<string, string> || {}),
+                ...(customHeaders || {}),
+            };
+
             const response = await fetch(url, {
                 ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers,
-                },
+                headers,
             });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+                const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+
+                // Handle specific error types
+                if (response.status === 400 && errorMessage.includes('Organization ID')) {
+                    console.warn('🔄 Organization ID error (race condition):', errorMessage);
+                } else if (response.status === 401) {
+                    await supabase.auth.signOut();
+                    toast({
+                        title: "Sesión expirada",
+                        description: "Por favor, inicia sesión nuevamente.",
+                        variant: "destructive"
+                    });
+                } else if (response.status === 429) {
+                    toast({
+                        title: "Demasiadas peticiones",
+                        description: "Por favor espera un momento antes de reintentar.",
+                        variant: "destructive"
+                    });
+                } else {
+                    toast({
+                        title: "Error del servidor",
+                        description: errorMessage,
+                        variant: "destructive"
+                    });
+                }
+
+                // Enhanced error with metadata
+                const enhancedError = new Error(errorMessage);
+                (enhancedError as any).status = response.status;
+                (enhancedError as any).endpoint = endpoint;
+                (enhancedError as any).requiresOrganization = this.endpointRequiresOrganization(endpoint);
+                throw enhancedError;
             }
 
             if (response.status === 204) {
@@ -44,6 +164,11 @@ class ApiClient {
 
             return await response.json();
         } catch (error) {
+            // If error was thrown in getHeaders(), just re-throw
+            if (error instanceof Error && error.message.includes('Organization ID required')) {
+                throw error;
+            }
+            
             console.error(`API request failed: ${endpoint}`, error);
             throw error;
         }
@@ -274,10 +399,17 @@ class ApiClient {
         const url = `${this.baseURL}/upload`;
 
         try {
+            // Get headers (includes org validation)
+            const baseHeaders = await this.getHeaders('/upload');
+            
+            // Remove Content-Type to let browser set multipart/form-data with boundary
+            const headers: Record<string, string> = { ...baseHeaders };
+            delete headers['Content-Type'];
+
             const response = await fetch(url, {
                 method: 'POST',
                 body: formData,
-                // Don't set Content-Type header, let browser set it with boundary
+                headers,
             });
 
             if (!response.ok) {
@@ -305,6 +437,69 @@ class ApiClient {
     async getExcelUploadDetails(id: string): Promise<ExcelUpload> {
         const response = await this.request<ExcelUpload>(`/excel-uploads/${id}`);
         return response.data;
+    }
+
+    // Admin - Security Stats
+    async getSecurityStats(): Promise<{
+        totalUsers: number;
+        activeSessionsToday: number;
+        last24hLogins: number;
+        systemHealth: string;
+    }> {
+        const response = await this.request<{
+            totalUsers: number;
+            activeSessionsToday: number;
+            last24hLogins: number;
+            systemHealth: string;
+        }>('/admin/security-stats');
+        return response.data;
+    }
+
+    // ========== MULTI-TENANT: Organizations Endpoints ==========
+    
+    async getUserOrganizations(): Promise<any[]> {
+        const response = await this.request<any[]>('/organizations');
+        return response.data;
+    }
+
+    async getOrganization(id: string): Promise<any> {
+        const response = await this.request<any>(`/organizations/${id}`);
+        return response.data;
+    }
+
+    async getMembership(orgId: string): Promise<any> {
+        const response = await this.request<any>(`/organizations/${orgId}`);
+        return response.data;
+    }
+
+    async createOrganization(data: { name: string; slug: string }): Promise<any> {
+        const response = await this.request<any>('/organizations', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+        return response.data;
+    }
+
+    async getOrganizationMembers(orgId: string): Promise<any[]> {
+        const response = await this.request<any[]>(`/organizations/${orgId}/members`);
+        return response.data;
+    }
+
+    /**
+     * Debug helper: gets current org ID
+     */
+    getCurrentOrganizationId(): string | null {
+        return this.currentOrgId || (typeof window !== 'undefined' ? localStorage.getItem('currentOrganizationId') : null);
+    }
+
+    /**
+     * Manually set org ID (for testing or special cases)
+     */
+    setCurrentOrganizationId(orgId: string): void {
+        this.currentOrgId = orgId;
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('currentOrganizationId', orgId);
+        }
     }
 }
 

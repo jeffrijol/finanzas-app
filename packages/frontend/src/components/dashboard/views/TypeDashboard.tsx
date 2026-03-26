@@ -1,5 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { useOrgTypeStats } from '@/hooks/useOrgStats';
 import { CategoryPieChart } from '@/components/charts/CategoryPieChart';
 import { MonthlyTrendChart } from '@/components/charts/MonthlyTrendChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,11 +12,7 @@ interface TypeDashboardProps {
 export function TypeDashboard({ context, isGeneratingPdf }: TypeDashboardProps) {
     const { year, tipoItem, quarter } = context.filters;
 
-    const { data: stats, isLoading } = useQuery({
-        queryKey: ['typeStats', tipoItem, year, quarter],
-        queryFn: () => apiClient.getTypeStats(tipoItem, Number(year), quarter),
-        enabled: !!tipoItem && tipoItem !== 'ALL'
-    });
+    const { data: stats, isLoading } = useOrgTypeStats(tipoItem, Number(year), quarter);
 
     if (isLoading) {
         return <div className="p-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>;

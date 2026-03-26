@@ -27,13 +27,18 @@ export const uploadFile = async (req: Request, res: Response) => {
         }
 
         // Crear registro en ExcelUpload
+        const organizationId = (req as any).organizationId;
+        const userId = (req as any).user.id;
+        
         const uploadRecord = await prisma.excelUpload.create({
             data: {
                 filename: file.originalname,
                 fileSize: file.size,
                 totalRows: result.totalRows,
                 processed: false,
-                errors: null
+                errors: null,
+                organizationId,
+                userId
             }
         });
 
@@ -62,6 +67,12 @@ export const finalizeUpload = async (req: Request, res: Response) => {
     console.log(`[finalizeUpload] Request received for ID: ${id}`);
 
     try {
+        const userId = (req as any).user.id;
+        const exists = await prisma.excelUpload.findFirst({ where: { id, userId } });
+        if (!exists) {
+             return res.status(404).json(ApiResponseHelper.error("Not found or access denied"));
+        }
+
         const upload = await prisma.excelUpload.update({
             where: { id },
             data: { processed: true }
@@ -78,8 +89,9 @@ export const finalizeUpload = async (req: Request, res: Response) => {
 
 export const listProcessedUploads = async (req: Request, res: Response) => {
     try {
+        const userId = (req as any).user.id;
         const uploads = await prisma.excelUpload.findMany({
-            where: { processed: true },
+            where: { processed: true, userId },
             orderBy: { createdAt: 'desc' },
             select: {
                 id: true,
@@ -100,8 +112,9 @@ export const listProcessedUploads = async (req: Request, res: Response) => {
 export const getUploadDetails = async (req: Request, res: Response) => {
     const { id } = req.params;
     try {
-        const upload = await prisma.excelUpload.findUnique({
-            where: { id },
+        const userId = (req as any).user.id;
+        const upload = await prisma.excelUpload.findFirst({
+            where: { id, userId },
             include: {
                 _count: {
                     select: { transactions: true }

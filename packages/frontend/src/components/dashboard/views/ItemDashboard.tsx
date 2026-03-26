@@ -1,5 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
+import { useOrgItemStats } from '@/hooks/useOrgStats';
 import { CategoryPieChart } from '@/components/charts/CategoryPieChart';
 import { MonthlyTrendChart } from '@/components/charts/MonthlyTrendChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,11 +12,7 @@ interface ItemDashboardProps {
 export function ItemDashboard({ context, isGeneratingPdf }: ItemDashboardProps) {
     const { year, itemId, quarter } = context.filters;
 
-    const { data: stats, isLoading } = useQuery({
-        queryKey: ['itemStats', itemId, year, quarter],
-        queryFn: () => apiClient.getItemStats(itemId, Number(year), quarter),
-        enabled: !!itemId
-    });
+    const { data: stats, isLoading } = useOrgItemStats(itemId, Number(year), quarter);
 
     if (isLoading) {
         return <div className="p-12 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-slate-400" /></div>;

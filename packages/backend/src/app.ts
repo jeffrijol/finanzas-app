@@ -3,12 +3,16 @@ import cors from 'cors';
 import helmet from 'helmet';
 import routes from './routes';
 import { ApiResponseHelper } from './utils/apiResponse';
+import { apiLimiter } from './middleware/rate-limit';
+import { tenantLoggingMiddleware } from './middleware/tenantLogging.middleware';
 
 const app = express();
 
 app.use(helmet());
 app.use(cors());
 app.use(express.json());
+app.use(apiLimiter); // Apply rate limiting globally
+app.use(tenantLoggingMiddleware); // Inject tenant-aware logger into requests
 
 app.use('/api', routes);
 

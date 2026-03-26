@@ -3,9 +3,62 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
+
+// ========== MULTI-TENANT MODELS ==========
+
+model Organization {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  slug          String   @unique
+  ownerUserId   String   @map("owner_user_id") @db.Uuid
+  createdBy     String?  @map("created_by") @db.Uuid
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  metadata      Json?    @default("{}")
+
+  members       Member[]
+  transactions  Transaction[]
+  items         Item[]
+  categories    TransactionCategory[]
+  uploads       ExcelUpload[]
+
+  @@map("Organization")
+}
+
+model Role {
+  id          String  @id
+  name        String  @unique
+  description String?
+  permissions Json    @default("[]")
+
+  members Member[]
+
+  @@map("Role")
+}
+
+model Member {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  roleId         String   @map("role_id")
+  joinedAt       DateTime @default(now()) @map("joined_at") @db.Timestamptz
+  invitedBy      String?  @map("invited_by") @db.Uuid
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  role         Role         @relation(fields: [roleId], references: [id])
+
+  @@unique([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("Member")
+}
+
+// ========== EXISTING MODELS (UPDATED) ==========
 
 model Transaction {
   id             String   @id @default(cuid())
@@ -28,6 +81,11 @@ model Transaction {
   excelUpload    ExcelUpload? @relation(fields: [excelUploadId], references: [id])
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  userId         String   @default("legacy")
+  
+  // MULTI-TENANT: Organización
+  organizationId String   @map("organizationId") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
   @@index([fechaValor])
   @@index([categoria])
@@ -35,11 +93,15 @@ model Transaction {
   @@index([categoryId])
   @@index([createdAt])
   @@index([excelUploadId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([organizationId, fechaValor(sort: Desc)])
+  @@index([organizationId, importe])
 }
 
 model Item {
   id          String       @id @default(cuid())
-  nombre      String       @unique
+  nombre      String
   descripcion String?
   
   // Nuevo modelo de tipos
@@ -51,7 +113,16 @@ model Item {
   icono       String?      // Icono para la UI
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  userId      String       @default("legacy")
   transactions Transaction[]
+  
+  // MULTI-TENANT: Organización
+  organizationId String @map("organizationId") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([organizationId])
+  @@unique([nombre, organizationId])
 }
 
 model ItemType {
@@ -69,9 +140,16 @@ model TransactionCategory {
   type        String   // "INCOME", "EXPENSE"
   itemTypeId  String
   itemType    ItemType @relation(fields: [itemTypeId], references: [id])
+  userId      String   @default("legacy")
   transactions Transaction[]
+  
+  // MULTI-TENANT: Organización
+  organizationId String @map("organizationId") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([name, itemTypeId, type])
+  @@unique([name, itemTypeId, type, organizationId])
+  @@index([userId])
+  @@index([organizationId])
 }
 
 model ExcelUpload {
@@ -84,4 +162,10 @@ model ExcelUpload {
   userId     String?  // Si implementas autenticación
   createdAt  DateTime @default(now())
   transactions Transaction[]
+  
+  // MULTI-TENANT: Organización
+  organizationId String @map("organizationId") @db.Uuid
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([organizationId])
 }

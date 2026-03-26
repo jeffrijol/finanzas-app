@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { useToast } from '@/hooks/use-toast';
+import { useOrganization } from '@/providers/OrganizationProvider';
 
 export type TransactionState = 'draft' | 'assigned' | 'synced';
 
@@ -18,11 +19,14 @@ export interface ReviewTransaction {
     isDirty: boolean;
 }
 
-const STORAGE_KEY = 'finanzas_app_upload_session';
-
 export function useFileUploadFlow() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
+    const { currentOrg } = useOrganization();
+
+    // Organization-scoped storage keys
+    const STORAGE_KEY = `finanzas_app_upload_session_${currentOrg?.id || 'default'}`;
+    const UPLOAD_ID_KEY = `finanzas_app_upload_id_${currentOrg?.id || 'default'}`;
 
     // Initialize state from localStorage if available
     const [uploadedTransactions, setUploadedTransactions] = useState<ReviewTransaction[]>(() => {
@@ -31,7 +35,7 @@ export function useFileUploadFlow() {
     });
 
     const [uploadId, setUploadId] = useState<string | null>(() => {
-        return localStorage.getItem('finanzas_app_upload_id');
+        return localStorage.getItem(UPLOAD_ID_KEY);
     });
 
     // Derived state
@@ -51,7 +55,7 @@ export function useFileUploadFlow() {
         } else {
             localStorage.removeItem(STORAGE_KEY);
         }
-    }, [uploadedTransactions]);
+    }, [uploadedTransactions, STORAGE_KEY]);
 
     // Cleanup valid/old sessions (optional logic could go here)
 
@@ -224,7 +228,7 @@ export function useFileUploadFlow() {
                 duration: 2000,
                 variant: 'default', // or specific success style if available
             });
-        } catch (error) {
+        } catch {
             update({
                 id,
                 title: '❌ Error al guardar',

@@ -6,6 +6,9 @@ import * as uploadController from '../controllers/upload.controller';
 import * as categoryController from '../controllers/transaction-categories.controller';
 
 import { ApiResponseHelper } from '../utils/apiResponse';
+import { protect } from '../middleware/auth';
+import { requireAdmin } from '../middleware/require-admin';
+import * as securityStatsController from '../controllers/security-stats.controller';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -18,6 +21,9 @@ router.get('/health', (req, res) => {
         environment: process.env.NODE_ENV || 'development'
     }, 'API is healthy'));
 });
+
+// Protected Routes
+router.use(protect);
 
 // Items
 router.get('/item-types', itemController.getItemTypes);
@@ -48,6 +54,13 @@ router.get('/excel-uploads/:id', uploadController.getUploadDetails);
 // Analytics
 import analyticsRoutes from './analytics.routes';
 router.use('/analytics', analyticsRoutes);
+
+// Organizations (Multi-Tenant)
+import organizationsRoutes from './organizations';
+router.use('/organizations', organizationsRoutes);
+
+// Admin - Security Stats (protected by requireAdmin)
+router.get('/admin/security-stats', requireAdmin, securityStatsController.getSecurityStats);
 
 export default router;
 

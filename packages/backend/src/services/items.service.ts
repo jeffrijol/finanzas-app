@@ -2,8 +2,11 @@ import { ItemCreateInput, ItemUpdateInput, ItemWithStats } from '../types/item.t
 import prisma from '../lib/prisma';
 
 export class ItemsService {
-    static async getAllItems(includeInactive: boolean = false) {
-        const where = includeInactive ? {} : { activo: true };
+    static async getAllItems(organizationId: string, includeInactive: boolean = false) {
+        const where = {
+            organizationId,
+            ...(includeInactive ? {} : { activo: true })
+        };
 
         const items = await prisma.item.findMany({
             where,
@@ -17,11 +20,11 @@ export class ItemsService {
         const itemsWithStats = await Promise.all(
             items.map(async (item) => {
                 const transactionCount = await prisma.transaction.count({
-                    where: { itemAsignadoId: item.id },
+                    where: { itemAsignadoId: item.id, organizationId },
                 });
 
                 const transactions = await prisma.transaction.findMany({
-                    where: { itemAsignadoId: item.id },
+                    where: { itemAsignadoId: item.id, organizationId },
                     select: { importe: true },
                 });
 
@@ -38,19 +41,19 @@ export class ItemsService {
         return itemsWithStats;
     }
 
-    static async getItemById(id: string) {
-        const item = await prisma.item.findUnique({
-            where: { id },
+    static async getItemById(organizationId: string, id: string) {
+        const item = await prisma.item.findFirst({
+            where: { id, organizationId },
         });
 
         if (!item) return null;
 
         const transactionCount = await prisma.transaction.count({
-            where: { itemAsignadoId: id },
+            where: { itemAsignadoId: id, organizationId },
         });
 
         const transactions = await prisma.transaction.findMany({
-            where: { itemAsignadoId: id },
+            where: { itemAsignadoId: id, organizationId },
             select: { importe: true },
         });
 
@@ -63,10 +66,10 @@ export class ItemsService {
         } as ItemWithStats;
     }
 
-    static async createItem(data: ItemCreateInput) {
+    static async createItem(organizationId: string, userId: string, data: ItemCreateInput) {
         // Verificar si ya existe un item con el mismo nombre
-        const existing = await prisma.item.findUnique({
-            where: { nombre: data.nombre },
+        const existing = await prisma.item.findFirst({
+            where: { nombre: data.nombre, organizationId },
         });
 
         if (existing) {
@@ -76,17 +79,24 @@ export class ItemsService {
         return prisma.item.create({
             data: {
                 ...data,
+                organizationId,
+                userId,
                 color: data.color || '#3B82F6', // Color por defecto azul
             },
         });
     }
 
-    static async updateItem(id: string, data: ItemUpdateInput) {
+    static async updateItem(organizationId: string, id: string, data: ItemUpdateInput) {
+        // Enforce ownership
+        const item = await prisma.item.findFirst({ where: { id, organizationId } });
+        if (!item) throw new Error("Item not found or access denied");
+
         // Si se está actualizando el nombre, verificar que no exista otro
         if (data.nombre) {
             const existing = await prisma.item.findFirst({
                 where: {
                     nombre: data.nombre,
+                    organizationId,
                     NOT: { id },
                 },
             });
@@ -102,8 +112,11 @@ export class ItemsService {
         });
     }
 
-    static async deleteItem(id: string) {
+    static async deleteItem(organizationId: string, id: string) {
         // Soft delete
+        const item = await prisma.item.findFirst({ where: { id, organizationId } });
+        if (!item) throw new Error("Item not found or access denied");
+
         // We allow soft delete even if it has transactions, as it keeps history.
         return prisma.item.update({
             where: { id },

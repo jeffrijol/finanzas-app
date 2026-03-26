@@ -39,6 +39,9 @@ Thumbs.db
 # Prisma
 packages/backend/prisma/migrations
 
+# Generated Prisma Client
+packages/backend/src/generated/
+
 # Data and Logs
 *.xlsx
 *.sql
@@ -56,3 +59,4 @@ coverage/
 # Monorepo
 .pnpm-debug.log
 .eslintcache
+SUPABASE_SETUP.md

@@ -1,0 +1,85 @@
+Urgente (corregir ahora):
+
+    Elimina la función duplicada signOut en AuthProvider
+
+    Remueve setLoading(false) después de logout() en Sidebar
+
+    Añade manejo de errores en el botón de logout
+
+Importante (próximos días):
+4. Considera añadir confirmación (AlertDialog o confirm())
+5. Verifica índices de BD para las nuevas queries de stats
+6. Testea logout en diferentes escenarios (con/sin internet, múltiples tabs)
+
+Opcional (mejoras futuras):
+7. Añade analytics para tracking
+8. Implementa resetAppState() helper
+9. Considera logout automático por inactividad
+
+🔧 REFINAMIENTOS ADICIONALES
+1. Mejorar Manejo de Estado Global
+typescript
+
+// En tu queryClient config (App.tsx):
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Reset cache on logout
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
+
+// Función helper para resetear TODO el estado de la app
+export const resetAppState = () => {
+  queryClient.clear();
+  localStorage.clear();
+  sessionStorage.clear();
+};
+
+2. Añadir Analytics de Logout
+// En AuthProvider, antes de signOut:
+const logout = async () => {
+  // Opcional: enviar evento a analytics
+  if (window.analytics) {
+    window.analytics.track('user_logged_out', {
+      userId: user?.id,
+      timestamp: new Date().toISOString(),
+    });
+  }
+  
+  // Resto del código...
+};
+
+3. Manejar Tabs Múltiples
+typescript
+
+// Escuchar logout desde otras pestañas
+useEffect(() => {
+  const handleStorageChange = (e: StorageEvent) => {
+    if (e.key === 'logout' && e.newValue) {
+      // Otra pestaña inició logout
+      window.location.href = '/login';
+    }
+  };
+  
+  window.addEventListener('storage', handleStorageChange);
+  return () => window.removeEventListener('storage', handleStorageChange);
+}, []);
+
+
+
+📊 ANÁLISIS DE LOS STATS CALCULATIONS FIX
+⚠️ Problemas potenciales que debes verificar:
+.
+
+    Validar que TypeScript types están actualizados (interface TransactionStats)
+    ¿Los índices de la base de datos soportan los nuevos filtros?
+    sql (Valida todos los inidices existentes usando MCO supabase)
+
+    -- Verificar que existen estos índices:
+    CREATE INDEX IF NOT EXISTS idx_transaction_org_date 
+    ON "Transaction"("organizationId", "fechaValor" DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_transaction_org_amount 
+    ON "Transaction"("organizationId", "importe");

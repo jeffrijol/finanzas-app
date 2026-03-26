@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { apiClient } from '@/lib/api-client';
 import { DashboardLayout } from '@/components/dashboard/DashboardLayout';
 import { FileUploadPond } from '@/components/dashboard/FileUploadPond';
 import { TransactionReviewTable } from '@/components/dashboard/TransactionReviewTable';
@@ -10,6 +8,8 @@ import { useFileUploadFlow } from '@/hooks/useFileUploadFlow';
 import { Link } from 'react-router-dom';
 import { XCircle, BarChart3, TrendingUp, Save, CheckCheck, Download } from 'lucide-react';
 import { AnnualStatsChart } from '@/components/charts/AnnualStatsChart';
+import { useOrgItems } from '@/hooks/useOrgItems';
+import { useOrgStats } from '@/hooks/useOrgStats';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -52,15 +52,15 @@ export function HomePage() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [saveWithFeedback]);
 
-    // Fetch items
-    const { data: items = [] } = useQuery({
-        queryKey: ['items'],
-        queryFn: () => apiClient.getItems(),
-    });
+    // Fetch items using org-aware hook
+    const { data: items = [] } = useOrgItems();
 
-    const { data: stats } = useQuery({
-        queryKey: ['stats-home-chart'],
-        queryFn: () => apiClient.getStats({ startDate: '2025-01-01', endDate: '2025-12-31' }),
+    // Fetch stats using org-aware hook (current year)
+    const currentYear = new Date().getFullYear();
+    const { data: stats } = useOrgStats({ 
+        year: currentYear, 
+        startDate: `${currentYear}-01-01`, 
+        endDate: `${currentYear}-12-31` 
     });
 
     // Cálculos de progreso

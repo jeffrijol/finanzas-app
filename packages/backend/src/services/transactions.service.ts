@@ -3,6 +3,7 @@ import prisma from '../lib/prisma';
 
 export class TransactionsService {
     static async getTransactions(
+        organizationId: string,
         filters: TransactionFilters = {},
         pagination: PaginationParams = {}
     ) {
@@ -30,6 +31,7 @@ export class TransactionsService {
 
         // Construir where clause
         const where: any = {
+            organizationId,
             excelUpload: {
                 processed: true
             }
@@ -126,19 +128,25 @@ export class TransactionsService {
         };
     }
 
-    static async createTransaction(data: {
-        fechaValor: Date;
-        descripcion: string;
-        importe: number;
-        categoria: string;
-        saldo?: number;
-        itemAsignadoId?: string | null;
-        categoryId?: string | null;
-        metadata?: string | null;
-        excelUploadId?: string | null;
-    }) {
+    static async createTransaction(
+        organizationId: string,
+        userId: string,
+        data: {
+            fechaValor: Date;
+            descripcion: string;
+            importe: number;
+            categoria: string;
+            saldo?: number;
+            itemAsignadoId?: string | null;
+            categoryId?: string | null;
+            metadata?: string | null;
+            excelUploadId?: string | null;
+        }
+    ) {
         return prisma.transaction.create({
             data: {
+                organizationId,
+                userId,
                 fechaValor: data.fechaValor,
                 descripcion: data.descripcion,
                 importe: data.importe,
@@ -156,6 +164,7 @@ export class TransactionsService {
     }
 
     static async updateTransaction(
+        organizationId: string,
         id: string,
         data: {
             itemAsignadoId?: string | null;
@@ -164,7 +173,7 @@ export class TransactionsService {
         }
     ) {
         return prisma.transaction.update({
-            where: { id },
+            where: { id, organizationId },
             data: {
                 ...data,
                 itemAsignadoId: data.itemAsignadoId === '' ? null : data.itemAsignadoId,
@@ -175,13 +184,17 @@ export class TransactionsService {
         });
     }
 
-    static async deleteTransaction(id: string) {
+    static async deleteTransaction(organizationId: string, userId: string, id: string) {
         return prisma.transaction.delete({
-            where: { id },
+            where: { 
+                id, 
+                organizationId, // Validate tenant isolation
+                userId 
+            },
         });
     }
 
-    static async getStats(filters: TransactionFilters = {}): Promise<TransactionStats> {
+    static async getStats(organizationId: string, filters: TransactionFilters = {}): Promise<TransactionStats> {
         const {
             startDate,
             endDate,
@@ -192,6 +205,7 @@ export class TransactionsService {
         } = filters;
 
         const where: any = {
+            organizationId,
             excelUpload: {
                 processed: true
             }
@@ -359,9 +373,10 @@ export class TransactionsService {
         };
     }
 
-    static async getCategories() {
+    static async getCategories(userId: string) {
         const categories = await prisma.transaction.groupBy({
             by: ['categoria'],
+            where: { userId },
             _count: {
                 id: true,
             },

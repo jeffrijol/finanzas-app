@@ -7,7 +7,8 @@ export class ExcelService {
         buffer: Buffer,
         filename: string,
         fileSize: number,
-        userId?: string
+        organizationId: string,
+        userId: string
     ): Promise<ExcelUploadResponse> {
         try {
             // Parsear el archivo Excel
@@ -30,7 +31,8 @@ export class ExcelService {
                     fileSize,
                     totalRows: result.totalRows,
                     processed: true, // Optimistamente procesado si el parseo funciono
-                    userId: userId,
+                    organizationId,
+                    userId,
                     errors: result.errors.length > 0 ? JSON.stringify(result.errors) : null,
                 }
             });
@@ -42,6 +44,8 @@ export class ExcelService {
                 descripcion: t.descripcion,
                 importe: t.importe,
                 saldo: t.saldo,
+                organizationId,
+                userId,
                 excelUploadId: upload.id, // Link to upload
                 metadata: JSON.stringify({ // Stringify for SQLite
                     fechaContable: t.fechaContable,
