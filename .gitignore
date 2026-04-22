@@ -17,6 +17,9 @@ build
 .env.test.local
 .env.production.local
 
+# Permitir plantillas de entorno seguras para documentar configuración
+!packages/backend/.env.local
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

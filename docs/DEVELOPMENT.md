@@ -51,22 +51,34 @@ Esto instalará todas las dependencias del monorepo utilizando TurboRepo.
 
 #### Backend (packages/backend/.env)
 
-Crear archivo `.env` en `packages/backend/` con las credenciales de Supabase:
+Duplica el archivo `packages/backend/.env.local` y renómbralo a `.env`. Luego, rellena las credenciales con los datos de tu proyecto de Supabase.
+
+**Detalle Crucial de Conexión a Base de Datos (IPv4 vs IPv6):**
+
+Los nuevos proyectos de Supabase utilizan IPv6 de forma predeterminada para conexiones directas. Puesto que muchas redes locales y de desarrollo (como el puerto 5432) todavía no soportan IPv6, **es obligatorio usar el Connection Pooler (Supavisor)** para enrutar el tráfico vía IPv4.
+
+Al configurar tu `.env`, asegúrate de usar los hosts del Pooler (usualmente `aws-0` o `aws-1` seguido de tu región, revisa en *Supabase Dashboard > Connect > Prisma*).
 
 ```env
-# Connect to Supabase via connection pooling with Supavisor.
-# Transaction Mode (Port 6543) for application queries
-DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?pgbouncer=true&options=project%3D[PROJECT-REF]"
+# ------------------------------------------------------------
+# BASE DE DATOS - Supabase Connection Pooler (RECOMENDADO para IPv4)
+# ------------------------------------------------------------
+# Formato del usuario: postgres.[PROJECT-REF]
+# Formato del host:    aws-[N]-[REGION].pooler.supabase.com
 
-# Direct connection to the database. Used for migrations.
-# Session Mode (Port 5432) for migrations to support prepared statements.
-DIRECT_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?options=project%3D[PROJECT-REF]"
+# Transaction mode (Puerto 6543) - Usado para queries regulares de la aplicación:
+DATABASE_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-[N]-[REGION].pooler.supabase.com:6543/postgres?pgbouncer=true"
 
-# Supabase Client Configuration
+# Session mode (Puerto 5432) - Usado directamente por Prisma para migraciones:
+DIRECT_URL="postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-[N]-[REGION].pooler.supabase.com:5432/postgres"
+
+# ------------------------------------------------------------
+# CLIENTE SUPABASE
+# ------------------------------------------------------------
 SUPABASE_URL="https://[PROJECT-REF].supabase.co"
 SUPABASE_ANON_KEY="[YOUR-ANON-KEY]"
 
-# Server
+# Servidor
 PORT=3001
 NODE_ENV=development
 ```

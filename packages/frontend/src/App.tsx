@@ -12,6 +12,7 @@ import { AdminPage } from '@/pages/AdminPage';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { OrganizationProvider } from '@/providers/OrganizationProvider';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import Avance2025Report from '@/pages/Avance2025Report';
 
 
 function App() {
@@ -33,6 +34,9 @@ function App() {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
+            
+            {/* Desarrollo PDF - Sin protección de momento */}
+            <Route path="/avance2025" element={<Avance2025Report />} />
             
             <Route path="/dashboard" element={
               <ProtectedRoute>

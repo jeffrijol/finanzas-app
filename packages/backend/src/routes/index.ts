@@ -9,6 +9,7 @@ import { ApiResponseHelper } from '../utils/apiResponse';
 import { protect } from '../middleware/auth';
 import { requireAdmin } from '../middleware/require-admin';
 import * as securityStatsController from '../controllers/security-stats.controller';
+import { getAvance2025Data } from '../controllers/avance2025.controller';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -21,6 +22,9 @@ router.get('/health', (req, res) => {
         environment: process.env.NODE_ENV || 'development'
     }, 'API is healthy'));
 });
+
+// === RUTAS TEMPORALES DE DESARROLLO (PÚBLICAS) ===
+router.get('/dev/avance2025', getAvance2025Data);
 
 // Protected Routes
 router.use(protect);
